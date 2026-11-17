@@ -1,10 +1,23 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, protocol, shell } from 'electron'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { downloadTtsModel, getTtsModelStatus, serveTtsModelAsset } from './tts/modelStore.js'
+import { createMagpieRuntime } from './tts/magpieRuntime.js'
+import { createQwenRuntime } from './tts/qwenRuntime.js'
+import { createIrodoriRuntime } from './tts/irodoriRuntime.js'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const isMac = process.platform === 'darwin'
 let mainWindow
+let magpieRuntime
+let qwenRuntime
+let irodoriRuntime
+let quittingAfterTtsStop = false
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'kanafish-cache',
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true }
+}])
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -41,16 +54,59 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
-
   mainWindow.on('closed', () => { mainWindow = undefined })
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await protocol.handle('kanafish-cache', serveTtsModelAsset)
+  magpieRuntime = createMagpieRuntime({
+    userDataDir: app.getPath('userData'),
+    onProgress: (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:magpie-progress', progress)
+    }
+  })
+  qwenRuntime = createQwenRuntime({
+    userDataDir: app.getPath('userData'),
+    onProgress: (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:qwen-progress', progress)
+    }
+  })
+  irodoriRuntime = createIrodoriRuntime({
+    userDataDir: app.getPath('userData'),
+    onProgress: (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:irodori-progress', progress)
+    }
+  })
   ipcMain.handle('kanafish:exit-app', () => app.quit())
+  ipcMain.handle('kanafish:tts-model-status', () => getTtsModelStatus())
+  ipcMain.handle('kanafish:tts-download-model', (event) => downloadTtsModel('supertonic-3', {
+    onProgress: (progress) => {
+      if (!event.sender.isDestroyed()) event.sender.send('kanafish:tts-download-progress', progress)
+    }
+  }))
+  ipcMain.handle('kanafish:magpie-status', () => magpieRuntime.getStatus())
+  ipcMain.handle('kanafish:magpie-download-model', () => magpieRuntime.downloadModel())
+  ipcMain.handle('kanafish:magpie-synthesize', (_event, request = {}) => magpieRuntime.synthesize(request.text, { voice: request.voice }))
+  ipcMain.handle('kanafish:qwen-status', () => qwenRuntime.getStatus())
+  ipcMain.handle('kanafish:qwen-download-model', () => qwenRuntime.downloadModel())
+  ipcMain.handle('kanafish:qwen-synthesize', (_event, request = {}) => qwenRuntime.synthesize(request.text, { voice: request.voice }))
+  ipcMain.handle('kanafish:irodori-status', () => irodoriRuntime.getStatus())
+  ipcMain.handle('kanafish:irodori-download-model', () => irodoriRuntime.downloadModel())
+  ipcMain.handle('kanafish:irodori-setup-python', () => irodoriRuntime.setupPythonRuntime())
+  ipcMain.handle('kanafish:irodori-synthesize', (_event, request = {}) => irodoriRuntime.synthesize(request.text))
+  ipcMain.handle('kanafish:irodori-clear-model-cache', () => irodoriRuntime.removeModelCache())
+  ipcMain.handle('kanafish:irodori-remove-python-runtime', () => irodoriRuntime.removePythonRuntime())
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', (event) => {
+  if ((!magpieRuntime && !qwenRuntime && !irodoriRuntime) || quittingAfterTtsStop) return
+  event.preventDefault()
+  quittingAfterTtsStop = true
+  void Promise.allSettled([magpieRuntime?.stop(), qwenRuntime?.stop(), irodoriRuntime?.stop()]).finally(() => app.quit())
 })
 
 app.on('window-all-closed', () => {

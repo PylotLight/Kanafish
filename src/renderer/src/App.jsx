@@ -3,7 +3,7 @@ import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight,
   CircleCheck, Clock3, Compass, Download, Flame, GraduationCap, Lightbulb, ListChecks,
   LockKeyhole, LogOut, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Settings,
-  Sparkles, Sun, Target, Type, X
+  Sparkles, Sun, Target, Type, Volume2, X
 } from 'lucide-react'
 import { loadPreferences, savePreferences } from '../preferences.js'
 import course from '../../../course/course-v1.json'
@@ -11,6 +11,8 @@ import {
   createInitialProgress, getCourseStats, getDueCards, getFlashcards, getLessons,
   getRetrievalPrompt, markLessonComplete, normalizeProgress, rateCard, saveLessonSession, saveMilestone
 } from '../learning.js'
+import { useTts } from './tts/useTts.js'
+import VoiceLabPage from './tts/VoiceLabPage.jsx'
 
 const STORAGE_KEY = 'kanafish-progress-v1'
 const todayISO = () => {
@@ -43,6 +45,7 @@ function getLocalStorage() {
 function App() {
   const [preferences, setPreferences] = useState(() => loadPreferences(getLocalStorage()))
   const [progress, setProgress] = useState(loadProgress)
+  const tts = useTts()
   const progressRef = useRef(progress)
   const [persistenceError, setPersistenceError] = useState('')
   const [view, setView] = useState('today')
@@ -121,6 +124,7 @@ function App() {
           <NavButton icon={<Compass size={18} />} label="Course path" active={view === 'course'} onClick={() => navigate('course')} />
           <NavButton icon={<RotateCcw size={18} />} label="Review cards" active={view === 'review'} onClick={() => navigate('review')} badge={dueCards.length || null} />
           <NavButton icon={<BookOpen size={18} />} label="Phrasebook" active={view === 'phrasebook'} onClick={() => navigate('phrasebook')} />
+          <NavButton icon={<Volume2 size={18} />} label="Voice Lab" active={view === 'voice-lab'} onClick={() => navigate('voice-lab')} />
           <NavButton icon={<Target size={18} />} label="Milestones" active={view === 'milestones'} onClick={() => navigate('milestones')} />
         </nav>
         <div className="sidebar-progress">
@@ -148,13 +152,14 @@ function App() {
         <div className="page-content">
           {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} />}
           {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} />}
-          {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} onPatch={patchLesson} onComplete={() => {
+          {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} tts={tts} onPatch={patchLesson} onComplete={() => {
             updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO()))
             setView('today')
             setSelectedLessonId(null)
           }} onBack={() => navigate('course')} />}
           {view === 'review' && <ReviewPage cards={dueCards} onRate={(cardId, rating) => updateProgress((state) => rateCard(state, cardId, rating, todayISO()))} onPhrasebook={() => navigate('phrasebook')} />}
           {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} />}
+          {view === 'voice-lab' && <VoiceLabPage tts={tts} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
           {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} />}
         </div>
@@ -173,7 +178,7 @@ function ProgressBar({ value }) {
 
 function viewTitle(view, lesson) {
   if (view === 'lesson') return lesson?.title || 'Lesson'
-  return ({ today: 'Today', course: 'Course path', review: 'Review cards', phrasebook: 'Phrasebook', milestones: 'Milestones', settings: 'Settings' })[view] || 'Today'
+  return ({ today: 'Today', course: 'Course path', review: 'Review cards', phrasebook: 'Phrasebook', 'voice-lab': 'Voice Lab', milestones: 'Milestones', settings: 'Settings' })[view] || 'Today'
 }
 
 function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, progress }) {
@@ -262,7 +267,7 @@ function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLe
   )
 }
 
-function LessonPage({ week, lesson, course, progress, onPatch, onComplete, onBack }) {
+function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, onBack }) {
   const session = progress.lessonSessions?.[lesson.id] || {}
   const [step, setStep] = useState(session.step || 0)
   const [showMeaning, setShowMeaning] = useState(false)
@@ -332,7 +337,8 @@ function LessonPage({ week, lesson, course, progress, onPatch, onComplete, onBac
         </section>}
         {step === 1 && <section className="practice-card">
           <StepLabel number="02" label="SCENE & DIALOGUE" /><h2>Picture the moment.</h2><div className="scene-banner"><Compass size={18} /><span>{lesson.scene}</span></div><div className="text-first-notice"><span className="notice-dot" /> Text-first scene <span>Partner/tutor option: read the lines once at a natural pace with meanings hidden.</span></div>
-          <div className="dialogue-list">{lesson.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{line.ja}</strong>{showMeaning && <span className="dialogue-meaning">{line.en}</span>}</div></div>)}</div>
+          <div className="dialogue-list">{lesson.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{line.ja}</strong>{showMeaning && <span className="dialogue-meaning">{line.en}</span>}<button type="button" className="dialogue-play-button" onClick={() => void tts.playText(line.ja).catch(() => {})} disabled={!tts.modelStatus?.installed || tts.busy} aria-label={`Play ${labelSpeaker(line.speaker)} line in Japanese`} title={tts.modelStatus?.installed ? 'Play with the local voice model' : 'Download the local voice model in Voice Lab'}><Volume2 size={14} /></button></div></div>)}</div>
+          {tts.error && <div className="tts-inline-error" role="alert"><span>Local speech: {tts.error}</span></div>}
           <div className="lesson-tools"><button className={`outline-button ${showMeaning ? 'tool-on' : ''}`} onClick={() => setShowMeaning(!showMeaning)}>{showMeaning ? <X size={15} /> : <BookOpen size={15} />}{showMeaning ? 'Hide meanings' : 'Reveal English meanings'}</button><button className={`outline-button ${showPhrases ? 'tool-on' : ''}`} onClick={() => setShowPhrases(!showPhrases)}>{showPhrases ? <X size={15} /> : <Lightbulb size={15} />}{showPhrases ? 'Hide phrase bank' : 'Open phrase bank'}</button></div>
           {showPhrases && <div className="phrase-bank-inline">{week.phraseBank.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><strong lang="ja">{item.ja}</strong><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
           <div className="practice-footer"><span className="muted-caption">Kana stays visible throughout.</span><button className="primary-button" onClick={() => goStep(2)}>Check what you understood <ArrowRight size={15} /></button></div>

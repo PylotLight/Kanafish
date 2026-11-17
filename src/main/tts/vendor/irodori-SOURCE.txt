@@ -1,0 +1,6 @@
+Irodori-TTS inference package vendored from Aratako/Irodori-TTS
+Upstream commit: 382205679ebc32295b7d1bfb329327d04c8f4eed
+License: MIT (see irodori-LICENSE.txt)
+Repository: https://github.com/Aratako/Irodori-TTS
+
+Only Python package source needed by the optional sidecar is included. Model and codec weights are not vendored; Kanafish downloads them only at the user's request from the pinned Hugging Face revisions in irodoriRuntime.js.

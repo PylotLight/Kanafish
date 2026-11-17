@@ -1,0 +1,14 @@
+# Inference dependencies pinned from Aratako/Irodori-TTS uv.lock at source commit
+# 382205679ebc32295b7d1bfb329327d04c8f4eed. PyTorch packages are installed
+# separately by irodoriRuntime.js to select CPU-only wheels on Windows/Linux and
+# the native PyPI wheels (including MPS support) on macOS.
+transformers==5.12.1
+huggingface-hub==1.23.0
+safetensors==0.7.0
+sentencepiece==0.1.99
+dacvae @ git+https://github.com/facebookresearch/dacvae.git@414c20785fc3a28a373073ea8ef7a1316eeeaca6
+peft==0.18.1
+accelerate==1.13.0
+torchao==0.16.0
+numpy==2.2.6
+soundfile==0.13.1

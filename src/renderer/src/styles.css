@@ -240,6 +240,10 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .dialogue-own .dialogue-bubble { border-color: light-dark(#d9e9dc, #3e5141); border-radius: 10px 3px 10px 10px; background: light-dark(#edf5ed, #121d12); }
 .dialogue-bubble strong { display: block; color: light-dark(#35584e, #cadbd7); font-family: 'Noto Sans JP', sans-serif; font-size: calc(15px * var(--text-scale, 1.18)); font-weight: 500; line-height: 1.6; }
 .dialogue-meaning { display: block; margin-top: 5px; color: light-dark(#819087, #c8cdca); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); line-height: 1.4; }
+.dialogue-bubble { position: relative; padding-right: 44px; }
+.dialogue-play-button { position: absolute; top: 50%; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; transform: translateY(-50%); border: 1px solid light-dark(#dfe8dd, #3e4a40); border-radius: 8px; background: light-dark(#f4f7f1, #172016); color: light-dark(#548071, #c5d9d2); cursor: pointer; }
+.dialogue-play-button:hover:not(:disabled) { border-color: light-dark(#bdd5c1, #3a5244); background: light-dark(#eaf3e9, #132117); color: light-dark(#2f6e60, #d2e6e1); }
+.dialogue-play-button:disabled { opacity: .45; cursor: not-allowed; }
 .lesson-tools { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
 .outline-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; padding: 0 10px; border: 1px solid light-dark(#e1e7e0, #444c43); border-radius: 6px; background: light-dark(#fff, #141414); color: light-dark(#6c8276, #c9d1cd); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); font-weight: 600; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
 .outline-button:hover { border-color: light-dark(#c7d9ca, #3e4b40); background: light-dark(#f2f7f1, #131c12); }

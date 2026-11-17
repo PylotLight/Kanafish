@@ -1,6 +1,6 @@
 # Kanafish
 
-Kanafish is a Japanese travel and conversation-learning Fish app. The first desktop implementation is text-first: it turns the existing practical course into short interactive lessons, daily recall, searchable phrase cards, and learner-recorded checkpoints. It does not require generated audio, speech recognition, or automated scoring.
+Kanafish is a Japanese travel and conversation-learning app. The first desktop implementation is text-first: it turns the existing practical course into short interactive lessons, daily recall, searchable phrase cards, and learner-recorded checkpoints. It does not require speech recognition or automated scoring.
 
 ## What works now
 
@@ -10,6 +10,7 @@ Kanafish is a Japanese travel and conversation-learning Fish app. The first desk
 - **Spaced retrieval:** previous-lesson recall, a changed-scene revisit in the first lesson of a week, longer-spaced weak-item recall in the third lesson, plus rated phrase/kana/kanji flashcards.
 - **Phrasebook and checkpoints:** searchable course language and fields for learner-entered milestone evidence and next practice targets.
 - **Local-first progress:** versioned progress stored on this device, with JSON export and a visible warning plus export action if device storage fails. Completion is freely self-recorded; it is not a fluency or automatic speaking score.
+- **Local TTS Voice Lab:** Supertonic 3 runs through ONNX Runtime WebGPU with a WebAssembly CPU fallback. NVIDIA Magpie and Qwen3-TTS 0.6B CustomVoice use optional, separately installed NeMo-Speech.cpp and codec.cpp runtimes. Irodori-TTS v4.1-Small has an optional app-managed Python sidecar with PyTorch MPS-on-Mac/CPU fallback. Python is needed only if a learner chooses Irodori; the other engines are unaffected. All pinned model weights are downloaded only on request and stay outside Git; Qwen uses its built-in Japanese Ono Anna preset.
 - **Glass desktop shell:** Bun, Electron, React, and electron-vite, with native macOS vibrancy and motion that respects reduced-motion settings.
 
 ## Run and test
@@ -22,7 +23,7 @@ bun run dev
 
 The development runner checks the package manifest and lockfile, runs `bun install` when dependencies are missing or changed, then starts `electron-vite`. Installation also downloads the Electron runtime. You can run `bun install` explicitly first, or use `bun run dev:bare` when dependencies are already installed.
 
-Run the dependency-free course, learning-engine, and setup tests with `bun test`. Create a production Electron build with `bun run build`.
+Run the course, learning-engine, TTS registry/runtime tests, and production Electron build with `bun run check`.
 
 ## Course and design notes
 
@@ -33,8 +34,9 @@ Run the dependency-free course, learning-engine, and setup tests with `bun test`
 - [Course system and retrieval cadence](docs/course-system.md)
 - [Structured course data](course/course-v1.json) and [schema](course/course.schema.json)
 - [Phased app roadmap](docs/app-roadmap.md)
-- [Japanese TTS options](docs/tts-options.md) — research only; audio integration remains deferred.
+- [Japanese TTS options](docs/tts-options.md) — benchmark evidence, model limitations, and the current in-app support boundary.
+- [Optional TTS runtime setup](docs/tts-runtime.md) — NeMo-Speech.cpp and codec.cpp build requirements, Irodori’s app-managed Python environment, local model/cache controls, benchmark results, and licensing notes.
 
 ## Status
 
-The app is a working text-first MVP foundation and the course data remains a draft for proficient-speaker review and learner piloting. Learners can open lessons and move between steps in any order; marking a lesson complete is a self-attestation, not a gate or automatic check that every activity was done. Timing, Japanese phrasing, and checkpoint thresholds should be tuned from feedback. TTS, STT, recording, accounts, cloud sync, and automated speaking evaluation are not part of this implementation.
+The app is a working text-first MVP foundation with optional local TTS testing; the course data remains a draft for proficient-speaker review and learner piloting. Learners can open lessons and move between steps in any order; marking a lesson complete is a self-attestation, not a gate or automatic check that every activity was done. Timing, Japanese phrasing, and checkpoint thresholds should be tuned from feedback. Model downloads happen only when requested; speech synthesis runs locally. STT, recording, accounts, cloud sync, and automated speaking evaluation are not part of this implementation.
