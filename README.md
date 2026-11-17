@@ -14,14 +14,15 @@ Kanafish is a Japanese travel and conversation-learning Fish app. The first desk
 
 ## Run and test
 
-Install dependencies with Bun, then start the desktop app:
+Start the desktop app with Bun:
 
 ```sh
-bun install
 bun run dev
 ```
 
-Run the dependency-free course and learning-engine tests with `bun test`. Create a production Electron build with `bun run build`.
+The development runner checks the package manifest and lockfile, runs `bun install` when dependencies are missing or changed, then starts `electron-vite`. Installation also downloads the Electron runtime. You can run `bun install` explicitly first, or use `bun run dev:bare` when dependencies are already installed.
+
+Run the dependency-free course, learning-engine, and setup tests with `bun test`. Create a production Electron build with `bun run build`.
 
 ## Course and design notes
 
