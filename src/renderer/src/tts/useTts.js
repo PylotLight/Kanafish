@@ -7,8 +7,10 @@ export function useTts() {
   const activeAudioRef = useRef(null)
   const [modelStatus, setModelStatus] = useState(null)
   const [magpieStatus, setMagpieStatus] = useState(null)
+  const [qwenStatus, setQwenStatus] = useState(null)
   const [statusError, setStatusError] = useState('')
   const [magpieStatusError, setMagpieStatusError] = useState('')
+  const [qwenStatusError, setQwenStatusError] = useState('')
   const [downloadProgress, setDownloadProgress] = useState(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
@@ -16,6 +18,10 @@ export function useTts() {
   const [magpieDownloading, setMagpieDownloading] = useState(false)
   const [magpieDownloadError, setMagpieDownloadError] = useState('')
   const [magpieVoice, setMagpieVoice] = useState('Aria')
+  const [qwenProgress, setQwenProgress] = useState(null)
+  const [qwenDownloading, setQwenDownloading] = useState(false)
+  const [qwenDownloadError, setQwenDownloadError] = useState('')
+  const [qwenVoice, setQwenVoice] = useState('ono_anna')
   const [activeModelId, setActiveModelId] = useState('supertonic-3')
   const [backend, setBackend] = useState('')
   const [engineProgress, setEngineProgress] = useState(null)
@@ -28,9 +34,10 @@ export function useTts() {
       setStatusError('The local TTS model manager is available in the Kanafish desktop app.')
       return null
     }
-    const [supertonicResult, magpieResult] = await Promise.allSettled([
+    const [supertonicResult, magpieResult, qwenResult] = await Promise.allSettled([
       window.kanafish.getTtsModelStatus(),
-      window.kanafish.getMagpieStatus ? window.kanafish.getMagpieStatus() : Promise.resolve(null)
+      window.kanafish.getMagpieStatus ? window.kanafish.getMagpieStatus() : Promise.resolve(null),
+      window.kanafish.getQwenStatus ? window.kanafish.getQwenStatus() : Promise.resolve(null)
     ])
     if (supertonicResult.status === 'fulfilled') {
       setModelStatus(supertonicResult.value)
@@ -44,6 +51,12 @@ export function useTts() {
     } else {
       setMagpieStatusError(magpieResult.reason?.message || 'Could not inspect the Magpie runtime.')
     }
+    if (qwenResult.status === 'fulfilled') {
+      setQwenStatus(qwenResult.value)
+      setQwenStatusError('')
+    } else {
+      setQwenStatusError(qwenResult.reason?.message || 'Could not inspect the codec.cpp runtime.')
+    }
     return supertonicResult.status === 'fulfilled' ? supertonicResult.value : null
   }, [])
 
@@ -55,11 +68,15 @@ export function useTts() {
     const stopMagpieProgress = window.kanafish?.onMagpieProgress?.((progress) => {
       if (active) setMagpieProgress(progress)
     })
+    const stopQwenProgress = window.kanafish?.onQwenProgress?.((progress) => {
+      if (active) setQwenProgress(progress)
+    })
     void refreshModelStatus()
     return () => {
       active = false
       stopSupertonicProgress?.()
       stopMagpieProgress?.()
+      stopQwenProgress?.()
       workerRef.current?.terminate()
       workerRef.current = null
       for (const item of pendingRef.current.values()) item.reject(new Error('TTS session closed'))
@@ -110,6 +127,25 @@ export function useTts() {
     }
   }, [])
 
+  const downloadQwenModel = useCallback(async () => {
+    if (!window.kanafish?.downloadQwenModel) throw new Error('Qwen downloads are available in the Kanafish desktop app.')
+    setQwenDownloading(true)
+    setQwenDownloadError('')
+    setQwenProgress({ modelId: 'qwen3-tts-0.6b-customvoice', state: 'downloading', message: 'Preparing the local Qwen model cache…' })
+    try {
+      const status = await window.kanafish.downloadQwenModel()
+      setQwenStatus(status)
+      setQwenProgress({ modelId: status.id, state: 'complete', downloadedBytes: status.totalBytes, totalBytes: status.totalBytes, completedFiles: 2, totalFiles: 2, message: 'Qwen3-TTS CustomVoice is cached and checksum-verified.' })
+      return status
+    } catch (downloadFailure) {
+      const message = downloadFailure?.message || 'Could not download the Qwen model files from Hugging Face.'
+      setQwenDownloadError(message)
+      throw downloadFailure
+    } finally {
+      setQwenDownloading(false)
+    }
+  }, [])
+
   const ensureWorker = useCallback(() => {
     if (workerRef.current) return workerRef.current
     const worker = new Worker(new URL('./supertonic.worker.js', import.meta.url), { type: 'module' })
@@ -149,6 +185,22 @@ export function useTts() {
   const synthesize = useCallback((text, options = {}) => {
     if (!text?.trim()) return Promise.reject(new Error('Enter Japanese text to synthesize.'))
     setError('')
+    if (activeModelId === 'qwen3-tts-0.6b-customvoice') {
+      if (!qwenStatus?.modelInstalled) return Promise.reject(new Error('Download the Qwen3-TTS model in Voice Lab before generating speech.'))
+      if (!window.kanafish?.synthesizeQwen) return Promise.reject(new Error('Qwen synthesis is available in the Kanafish desktop app.'))
+      setBusyCount((count) => count + 1)
+      setEngineProgress({ name: 'Local codec.cpp service', current: 1, total: 1 })
+      return window.kanafish.synthesizeQwen({ text, voice: options.voice || qwenVoice }).then((result) => {
+        setBackend(result.backend)
+        setEngineProgress(null)
+        setError('')
+        return result
+      }).catch((failure) => {
+        setEngineProgress(null)
+        setError(failure?.message || 'Qwen synthesis failed.')
+        throw failure
+      }).finally(() => setBusyCount((count) => Math.max(0, count - 1)))
+    }
     if (activeModelId === 'magpie-v2607') {
       if (!magpieStatus?.modelInstalled) return Promise.reject(new Error('Download the Magpie model stack in Voice Lab before generating speech.'))
       if (!window.kanafish?.synthesizeMagpie) return Promise.reject(new Error('Magpie synthesis is available in the Kanafish desktop app.'))
@@ -174,7 +226,7 @@ export function useTts() {
       pendingRef.current.set(id, { resolve, reject })
       worker.postMessage({ type: 'synthesize', id, text, options })
     })
-  }, [activeModelId, ensureWorker, magpieStatus?.modelInstalled, magpieVoice, modelStatus?.installed])
+  }, [activeModelId, ensureWorker, magpieStatus?.modelInstalled, magpieVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
 
   const playText = useCallback(async (text, options = {}) => {
     const result = await synthesize(text, options)
@@ -207,8 +259,10 @@ export function useTts() {
   return {
     modelStatus,
     magpieStatus,
+    qwenStatus,
     statusError,
     magpieStatusError,
+    qwenStatusError,
     refreshModelStatus,
     downloadProgress,
     downloading,
@@ -220,6 +274,12 @@ export function useTts() {
     downloadMagpieModel,
     magpieVoice,
     setMagpieVoice,
+    qwenProgress,
+    qwenDownloading,
+    qwenDownloadError,
+    downloadQwenModel,
+    qwenVoice,
+    setQwenVoice,
     activeModelId,
     setActiveModelId,
     backend,

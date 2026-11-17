@@ -10,7 +10,7 @@ Kanafish is a Japanese travel and conversation-learning app. The first desktop i
 - **Spaced retrieval:** previous-lesson recall, a changed-scene revisit in the first lesson of a week, longer-spaced weak-item recall in the third lesson, plus rated phrase/kana/kanji flashcards.
 - **Phrasebook and checkpoints:** searchable course language and fields for learner-entered milestone evidence and next practice targets.
 - **Local-first progress:** versioned progress stored on this device, with JSON export and a visible warning plus export action if device storage fails. Completion is freely self-recorded; it is not a fluency or automatic speaking score.
-- **Local TTS Voice Lab:** Supertonic 3 runs through ONNX Runtime WebGPU with a WebAssembly CPU fallback. NVIDIA Magpie can also be downloaded and synthesized locally when an optional NeMo-Speech.cpp runtime with Japanese HTTP TTS support is installed. Both provide repeatable Japanese test lines and lesson-line playback; their weights stay outside Git.
+- **Local TTS Voice Lab:** Supertonic 3 runs through ONNX Runtime WebGPU with a WebAssembly CPU fallback. NVIDIA Magpie and Qwen3-TTS 0.6B CustomVoice can also synthesize locally through optional, separately installed NeMo-Speech.cpp and codec.cpp runtimes. Their pinned weights are downloaded on request and stay outside Git; Qwen uses its built-in Japanese Ono Anna preset.
 - **Glass desktop shell:** Bun, Electron, React, and electron-vite, with native macOS vibrancy and motion that respects reduced-motion settings.
 
 ## Run and test
@@ -35,7 +35,7 @@ Run the course, learning-engine, TTS registry/runtime tests, and production Elec
 - [Structured course data](course/course-v1.json) and [schema](course/course.schema.json)
 - [Phased app roadmap](docs/app-roadmap.md)
 - [Japanese TTS options](docs/tts-options.md) — benchmark evidence, model limitations, and the current in-app support boundary.
-- [Optional Magpie runtime setup](docs/tts-runtime.md) — NeMo-Speech.cpp Japanese-build requirements and licensing notes.
+- [Optional native TTS runtime setup](docs/tts-runtime.md) — NeMo-Speech.cpp and codec.cpp build requirements, local model caching, benchmark results, and licensing notes.
 
 ## Status
 

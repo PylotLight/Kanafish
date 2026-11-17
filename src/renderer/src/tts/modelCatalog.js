@@ -30,15 +30,30 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     availableInApp: true
   }),
   Object.freeze({
+    id: 'qwen3-tts-0.6b-customvoice',
+    name: 'Qwen3-TTS 0.6B CustomVoice',
+    status: 'runnable',
+    statusLabel: 'Runnable with optional native runtime',
+    languages: 'Japanese + 9 languages',
+    parameters: '0.6B · Q8_0 GGUF pair',
+    weightsLicense: 'Apache-2.0',
+    codeLicense: 'MIT runtime',
+    runtime: 'Pinned codec.cpp C++ server; CPU tested, Metal-ready on macOS',
+    evidence: 'Four-line CPU benchmark: 3.44–6.06× real time on eight threads; the actual Kanafish adapter also generated a Japanese WAV (3.09× on one short line). Mac Metal and human listening tests have not been done.',
+    sourceUrl: 'https://huggingface.co/BricksDisplay/Qwen3-TTS-12Hz-0.6B-CustomVoice-GGUF',
+    codeUrl: 'https://github.com/mybigday/codec.cpp/tree/d5e385229ea5a0f48fff696fed4699a852aa43b7',
+    availableInApp: true
+  }),
+  Object.freeze({
     id: 'irodori-v4.1-small',
     name: 'Irodori-TTS v4.1-Small',
     status: 'candidate',
-    statusLabel: 'Worthwhile, Python-only route',
+    statusLabel: 'Research only · no end-to-end JS TTS',
     languages: 'Japanese only',
     parameters: 'About 0.8B · FP32 checkpoint',
     weightsLicense: 'MIT',
-    runtime: 'Official Python runtime supports CPU and MPS; no Kanafish backend yet',
-    evidence: 'CPU-tested here, but slow: 3.11–6.02× real-time factor and 12.93 s model/codec load. Official MPS path is documented but has not been tested on the owner’s Mac.',
+    runtime: 'Python CPU inference tested; no complete v4.1 JavaScript/ONNX adapter',
+    evidence: 'ONNX Runtime Web/WASM loaded and ran one MF duration graph in Node, but no Japanese WAV was synthesized. MF is a different checkpoint variant; its general-use decoder is available, but no matching JS pipeline was found.',
     sourceUrl: 'https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small',
     codeUrl: 'https://github.com/Aratako/Irodori-TTS',
     availableInApp: false

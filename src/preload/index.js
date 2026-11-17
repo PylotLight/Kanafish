@@ -18,5 +18,14 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
     const listener = (_event, progress) => callback(progress)
     ipcRenderer.on('kanafish:magpie-progress', listener)
     return () => ipcRenderer.removeListener('kanafish:magpie-progress', listener)
+  },
+  getQwenStatus: () => ipcRenderer.invoke('kanafish:qwen-status'),
+  downloadQwenModel: () => ipcRenderer.invoke('kanafish:qwen-download-model'),
+  synthesizeQwen: (request) => ipcRenderer.invoke('kanafish:qwen-synthesize', request),
+  onQwenProgress: (callback) => {
+    if (typeof callback !== 'function') return () => {}
+    const listener = (_event, progress) => callback(progress)
+    ipcRenderer.on('kanafish:qwen-progress', listener)
+    return () => ipcRenderer.removeListener('kanafish:qwen-progress', listener)
   }
 }))

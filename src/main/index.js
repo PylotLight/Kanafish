@@ -3,12 +3,14 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { downloadTtsModel, getTtsModelStatus, serveTtsModelAsset } from './tts/modelStore.js'
 import { createMagpieRuntime } from './tts/magpieRuntime.js'
+import { createQwenRuntime } from './tts/qwenRuntime.js'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const isMac = process.platform === 'darwin'
 let mainWindow
 let magpieRuntime
-let quittingAfterMagpieStop = false
+let qwenRuntime
+let quittingAfterTtsStop = false
 
 protocol.registerSchemesAsPrivileged([{
   scheme: 'kanafish-cache',
@@ -61,6 +63,12 @@ app.whenReady().then(async () => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:magpie-progress', progress)
     }
   })
+  qwenRuntime = createQwenRuntime({
+    userDataDir: app.getPath('userData'),
+    onProgress: (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:qwen-progress', progress)
+    }
+  })
   ipcMain.handle('kanafish:exit-app', () => app.quit())
   ipcMain.handle('kanafish:tts-model-status', () => getTtsModelStatus())
   ipcMain.handle('kanafish:tts-download-model', (event) => downloadTtsModel('supertonic-3', {
@@ -71,6 +79,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('kanafish:magpie-status', () => magpieRuntime.getStatus())
   ipcMain.handle('kanafish:magpie-download-model', () => magpieRuntime.downloadModel())
   ipcMain.handle('kanafish:magpie-synthesize', (_event, request = {}) => magpieRuntime.synthesize(request.text, { voice: request.voice }))
+  ipcMain.handle('kanafish:qwen-status', () => qwenRuntime.getStatus())
+  ipcMain.handle('kanafish:qwen-download-model', () => qwenRuntime.downloadModel())
+  ipcMain.handle('kanafish:qwen-synthesize', (_event, request = {}) => qwenRuntime.synthesize(request.text, { voice: request.voice }))
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -78,10 +89,10 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', (event) => {
-  if (!magpieRuntime || quittingAfterMagpieStop) return
+  if ((!magpieRuntime && !qwenRuntime) || quittingAfterTtsStop) return
   event.preventDefault()
-  quittingAfterMagpieStop = true
-  void magpieRuntime.stop().finally(() => app.quit())
+  quittingAfterTtsStop = true
+  void Promise.allSettled([magpieRuntime?.stop(), qwenRuntime?.stop()]).finally(() => app.quit())
 })
 
 app.on('window-all-closed', () => {

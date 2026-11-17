@@ -1,47 +1,88 @@
-# Optional Magpie runtime for Kanafish
+# Optional native TTS runtimes
 
-Kanafish can use NVIDIA Magpie Multilingual v2607 as a fully local Japanese TTS option when the separate NeMo-Speech.cpp native runtime is installed. Kanafish does not bundle that runtime or the model weights. The Japanese text frontend is optional in NeMo-Speech.cpp builds, so a normal prebuilt runtime may be present but still be unusable for Japanese.
+Kanafish can use NVIDIA Magpie Multilingual v2607 or Qwen3-TTS 0.6B CustomVoice through optional native runtimes. The app does not bundle the native executables or model weights. It downloads model assets only when requested and keeps them in the app-specific cache, outside Git.
 
-## Build a Japanese-capable runtime
+## Qwen3-TTS 0.6B CustomVoice with codec.cpp
 
-Use NeMo-Speech.cpp v0.3.0 or newer, with HTTP and Japanese TTS enabled. Kanafish also verifies that the runtime's model index resolves Magpie and NanoCodec to the revisions pinned below; an index that selects different revisions is rejected. Install the platform build prerequisites (Git, CMake, Ninja, and a C++ compiler), then clone the official source and enable both the HTTP server and Japanese frontend:
+Qwen uses the built-in Japanese Ono Anna voice (`ono_anna`); it does not need a reference recording. The app requires a compatible `codec.cpp` `tts-server` before it offers the model download. It checks the server’s advertised HTTP/WAV options, then verifies the Japanese voice list when starting the model service.
+
+### Build the optional server
+
+The tested source is `mybigday/codec.cpp` commit `d5e385229ea5a0f48fff696fed4699a852aa43b7`, with its pinned llama.cpp submodule. Build tools (CMake, Git, and a C++ compiler) are required; Python is not required by Kanafish at runtime.
+
+For a CPU build:
+
+```sh
+git clone --recursive https://github.com/mybigday/codec.cpp.git
+cd codec.cpp
+git checkout d5e385229ea5a0f48fff696fed4699a852aa43b7
+git submodule update --init --recursive
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target tts-server --parallel
+```
+
+For Apple Silicon/macOS, add Metal at configure time:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGGML_METAL=ON
+cmake --build build --target tts-server --parallel
+```
+
+Point Kanafish at the resulting executable if it is not found in a standard location:
+
+```sh
+KANAFISH_CODEC_CPP_TTS_SERVER_PATH=/absolute/path/to/codec.cpp/build/tts-server
+```
+
+The app tries the GPU backend on macOS and falls back to CPU if startup fails. This CPU sandbox cannot verify Apple Metal; the UI labels that route as requested, not as Mac-tested. For slower CPUs, `KANAFISH_CODEC_CPP_THREADS` can set the thread count; the default is up to eight threads.
+
+### Model download and local service
+
+The source model is [`Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice). Kanafish uses the preconverted Q8_0 pair from [`BricksDisplay/Qwen3-TTS-12Hz-0.6B-CustomVoice-GGUF`](https://huggingface.co/BricksDisplay/Qwen3-TTS-12Hz-0.6B-CustomVoice-GGUF), pinned to revision `22f3c6369919f6374f790a65c6fe3aed0ec5f86b`:
+
+| File | Size | SHA-256 |
+|---|---:|---|
+| `qwen3-tts-0.6b-customvoice-q8_0.gguf` | 639,442,656 bytes | `a2a621131e578cce546be74efa741eb5fc68d73be90a24ebef8c9f3f1c4cb4a8` |
+| `codec-q8_0.gguf` | 1,310,488,032 bytes | `959a179d9254c3da23ba4118129ac1f5c556fad8b2764841dd2cedba61ac8c72` |
+
+The first download is about 1.95 GB. Kanafish streams the files to its user-data cache, checks their exact sizes and SHA-256 digests, and does not add weights to the repository. It starts a local-only service bound to `127.0.0.1` with a temporary access token; text and generated audio do not go to a remote service.
+
+The GGUF model weights are Apache-2.0; codec.cpp is MIT. Those licenses apply to separate components. Check the source model card and the third-party GGUF repository’s provenance before redistributing model files or generated output.
+
+### CPU test results and limits
+
+The pinned codec.cpp `tts-server` and actual Qwen pair were tested on the sandbox CPU. The four Voice Lab lines previously benchmarked on eight threads had generation/audio times of 6.61/1.92 seconds (RTF 3.44), 23.59/4.96 seconds (4.76), 59.11/9.76 seconds (6.06), and 47.26/8.32 seconds (5.68). A later Kanafish-adapter smoke test discovered the server, verified the cached model pair and Japanese preset, then generated a valid 24 kHz mono WAV for `こんにちは。`: 6.93 seconds to generate 2.24 seconds of audio (RTF 3.09). The separate smoke-test timing is not a human quality score.
+
+The local service took about 11 seconds to become ready in the initial CPU measurement. These results mean Qwen is slow on this sandbox CPU. There has been no human listening review and no Mac/Metal test.
+
+## NVIDIA Magpie Multilingual v2607 with NeMo-Speech.cpp
+
+Kanafish can run Japanese Magpie only with an optional NeMo-Speech.cpp v0.3.0+ build that reports `http`, `tts`, and `tts_japanese` in `nemo-speech doctor`. A stock prebuilt runtime may lack the Japanese frontend. The NeMo-Speech.cpp runtime is not bundled.
+
+For a CPU build, clone the official source and enable HTTP and Japanese support:
 
 ```sh
 git clone --branch v0.3.0 --recurse-submodules https://github.com/NVIDIA/NeMo-Speech.cpp.git
 cd NeMo-Speech.cpp
 git submodule update --init llama.cpp third_party/open_jtalk third_party/cpp-httplib
-```
-
-For a CPU build:
-
-```sh
 scripts/configure.sh cpu-tts -DNEMO_SPEECH_BUILD_HTTP=ON -DNEMO_SPEECH_TTS_WITH_JA=ON
 cmake --build --preset cpu-tts --parallel
 ```
 
-For a Mac with Apple Metal, use the `metal-tts` preset and the same feature flags:
+For a Mac build, replace `cpu-tts` with `metal-tts` in the last two commands. Metal is a native C++ backend and is distinct from PyTorch MPS; neither has been tested on the owner’s Mac. If the executable is outside a standard path, set `KANAFISH_NEMO_SPEECH_PATH` in the environment used to launch Kanafish.
 
-```sh
-scripts/configure.sh metal-tts -DNEMO_SPEECH_BUILD_HTTP=ON -DNEMO_SPEECH_TTS_WITH_JA=ON
-cmake --build --preset metal-tts --parallel
-```
+The v2607 model, tokenizer and NanoCodec stack are pinned to separate revisions and total 668,084,511 bytes (about 637 MiB). Kanafish checks the model index against those pins and downloads files only after the user requests it. The model provides five preset voices: Aria, Jason, John, Leo, and Sofia. The NeMo-Speech.cpp runtime source is Apache-2.0; the Magpie weights use the separate NVIDIA Open Model License.
 
-The exact CMake flags and dependencies are documented in the [official build guide](https://github.com/NVIDIA/NeMo-Speech.cpp/blob/v0.3.0/docs/build.md). Confirm that `nemo-speech doctor` reports `http`, `tts`, and `tts_japanese` in its Features list. If the Japanese feature is absent, Kanafish deliberately disables the Magpie download and synthesis controls rather than pretending Japanese is supported.
+On the sandbox CPU, the Japanese-enabled runtime synthesized the same four lines at 1.42–1.56× real time, with about 2.12 seconds for service startup. No human listening review or Mac Metal/MPS test has been performed. See the [NeMo-Speech.cpp build guide](https://github.com/NVIDIA/NeMo-Speech.cpp/blob/v0.3.0/docs/build.md), [Magpie model card](https://huggingface.co/nvidia/magpie_tts_multilingual_357m), and [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/).
 
-Kanafish looks for `nemo-speech` on `PATH` and in common user installation paths. If it is installed elsewhere, set `KANAFISH_NEMO_SPEECH_PATH` to the executable path in the environment used to launch Kanafish.
+## Irodori-TTS v4.1: JavaScript/ONNX investigation
 
-## Download and use
+Irodori remains out of the runnable catalog because a complete app path has not generated audio. The available [JavaScript/WebGPU project](https://github.com/ngc-shj/irodori-tts-webgpu) targets Irodori v3 and its graph/tokenizer contract; it is not interchangeable with v4.1.
 
-Choose **NVIDIA Magpie Multilingual v2607** in Voice Lab and request its download. Kanafish asks NeMo-Speech.cpp to pull the TTS model and its required tokenizer and NanoCodec into an app-specific local cache. The pinned model revision is `19806879b16d3f2ccf28fb112b1bcd16a3c7923e`; the codec revision is `fc00890b604aa2de298d2641ffc6c5f6caf8c4d7`. The measured model stack is 668,084,511 bytes (about 637 MiB). Model files are not stored in Git.
+A bounded test used the MF ONNX export [`Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8`](https://huggingface.co/Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8), pinned to revision `0701bc6758cbb364a9577d5799a90a45baa8ffa2`. This is the v4.1-Small-MF MeanFlow variant, not the plain v4.1-Small checkpoint. With the app’s existing `onnxruntime-web` package in Node’s WASM backend, the test loaded the 87 MB `duration.onnx` graph and executed it with synthetic zero conditioning; it returned `log_frames`. This proves that the package can execute that component, not that it can synthesize Japanese speech. No browser or WebGPU device was available.
 
-On first use, Kanafish starts a loopback-only HTTP service bound to `127.0.0.1`, with a temporary random access token. The service loads once and serves repeated synthesis requests; Kanafish stops it when the app exits. Available preset voices are Aria, Jason, John, Leo, and Sofia. No user reference audio is needed or recorded. Lesson playback uses the currently selected local backend.
+The full MF pack is about 1.90 GB. It includes the ModernBERT tokenizer, text and speaker encoders, duration predictor, context-KV graph, MeanFlow `dit_step` graph, and the general-purpose `dacvae_decode.onnx` audio decoder. The separate, much faster `voice_decoder_a.bin` is an optional distilled replacement for that ONNX decoder and is encrypted for the UltraAlarm app; it is not required when using `dacvae_decode.onnx`. The pack README documents Android measurements but does not publish a JavaScript runner for the tokenizer, shared conditioning, context-KV handling and MeanFlow sampling. Implementing and validating that full pipeline is the blocker. The plain v4.1-Small ONNX export is separate and its large graphs exceed the sandbox’s remaining disk space.
 
-## Sandbox results and limitations
+The upstream Python/PyTorch v4.1-Small route has already generated speech in a separate benchmark, at 3.11–6.02× real time with about 12.93 seconds for model/codec load. It is a possible optional sidecar, not integrated into Kanafish. The owner can decide whether to pursue that route; it needs a separate Python environment and a large model/codec cache. No Irodori model weights are bundled or downloaded by Kanafish.
 
-The Japanese-enabled NeMo-Speech.cpp v0.3.0 build successfully synthesized the same four Japanese lines used for the other CPU tests on an x86_64 CPU. The local model service took about 2.12 seconds to become ready. Across the four lines, Magpie’s real-time factor was 1.42–1.56 (higher than 1.0 means generation took longer than the resulting audio). The model was downloaded and synthesized without reference audio. These measurements describe this sandbox CPU only; they do not prove how a Mac Metal build will perform.
-
-The owner’s Mac was unavailable. NeMo’s Metal backend is a native C++ backend and is distinct from PyTorch MPS. Neither Metal nor MPS was tested. No human listening assessment has been performed; synthesis timing does not establish pronunciation accuracy, clarity, or naturalness.
-
-## Licenses
-
-The NeMo-Speech.cpp runtime source is Apache-2.0. Magpie v2607 model weights are licensed separately under the [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/) and are not included with Kanafish. Review that model license and the [Magpie model card](https://huggingface.co/nvidia/magpie_tts_multilingual_357m) for the intended deployment before distributing the model or generated outputs. The app’s runtime license does not replace or extend the weights license.
+Sources: [v4.1-Small model card](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small), [MF ONNX pack README and manifest](https://huggingface.co/Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8), and [upstream Python inference instructions](https://github.com/Aratako/Irodori-TTS).
