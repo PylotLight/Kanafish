@@ -6,13 +6,15 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "bun scripts/dev.js",
+    "dev:bare": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron ./out/main/index.js",
     "preview": "electron-vite preview",
     "test": "bun test",
     "test:course": "bun test tests",
-    "check": "bun run test && bun run build"
+    "check": "bun run test && bun run build",
+    "postinstall": "install-electron"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.2.1",
