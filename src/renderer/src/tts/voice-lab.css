@@ -92,6 +92,11 @@
 .magpie-runtime-help code { color: var(--ink); font-size: .95em; }
 .magpie-runtime-help a { display: inline-flex; align-items: center; gap: 4px; color: var(--teal); text-decoration: none; }
 .magpie-runtime-help a:hover { text-decoration: underline; }
+.irodori-action-row { margin-top: 10px; }
+.irodori-cache-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.tts-cache-button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--cream); color: var(--muted); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); cursor: pointer; }
+.tts-cache-button:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+.tts-cache-button:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 900px) {
   .voice-lab-grid { grid-template-columns: 1fr; }
   .voice-model-summary { margin-left: 0; }

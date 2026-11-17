@@ -27,5 +27,17 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
     const listener = (_event, progress) => callback(progress)
     ipcRenderer.on('kanafish:qwen-progress', listener)
     return () => ipcRenderer.removeListener('kanafish:qwen-progress', listener)
+  },
+  getIrodoriStatus: () => ipcRenderer.invoke('kanafish:irodori-status'),
+  downloadIrodoriModel: () => ipcRenderer.invoke('kanafish:irodori-download-model'),
+  setupIrodoriPython: () => ipcRenderer.invoke('kanafish:irodori-setup-python'),
+  synthesizeIrodori: (request) => ipcRenderer.invoke('kanafish:irodori-synthesize', request),
+  clearIrodoriModelCache: () => ipcRenderer.invoke('kanafish:irodori-clear-model-cache'),
+  removeIrodoriPythonRuntime: () => ipcRenderer.invoke('kanafish:irodori-remove-python-runtime'),
+  onIrodoriProgress: (callback) => {
+    if (typeof callback !== 'function') return () => {}
+    const listener = (_event, progress) => callback(progress)
+    ipcRenderer.on('kanafish:irodori-progress', listener)
+    return () => ipcRenderer.removeListener('kanafish:irodori-progress', listener)
   }
 }))

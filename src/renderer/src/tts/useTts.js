@@ -8,9 +8,11 @@ export function useTts() {
   const [modelStatus, setModelStatus] = useState(null)
   const [magpieStatus, setMagpieStatus] = useState(null)
   const [qwenStatus, setQwenStatus] = useState(null)
+  const [irodoriStatus, setIrodoriStatus] = useState(null)
   const [statusError, setStatusError] = useState('')
   const [magpieStatusError, setMagpieStatusError] = useState('')
   const [qwenStatusError, setQwenStatusError] = useState('')
+  const [irodoriStatusError, setIrodoriStatusError] = useState('')
   const [downloadProgress, setDownloadProgress] = useState(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
@@ -21,6 +23,11 @@ export function useTts() {
   const [qwenProgress, setQwenProgress] = useState(null)
   const [qwenDownloading, setQwenDownloading] = useState(false)
   const [qwenDownloadError, setQwenDownloadError] = useState('')
+  const [irodoriProgress, setIrodoriProgress] = useState(null)
+  const [irodoriDownloading, setIrodoriDownloading] = useState(false)
+  const [irodoriDownloadError, setIrodoriDownloadError] = useState('')
+  const [irodoriSettingUp, setIrodoriSettingUp] = useState(false)
+  const [irodoriSetupError, setIrodoriSetupError] = useState('')
   const [qwenVoice, setQwenVoice] = useState('ono_anna')
   const [activeModelId, setActiveModelId] = useState('supertonic-3')
   const [backend, setBackend] = useState('')
@@ -34,10 +41,11 @@ export function useTts() {
       setStatusError('The local TTS model manager is available in the Kanafish desktop app.')
       return null
     }
-    const [supertonicResult, magpieResult, qwenResult] = await Promise.allSettled([
+    const [supertonicResult, magpieResult, qwenResult, irodoriResult] = await Promise.allSettled([
       window.kanafish.getTtsModelStatus(),
       window.kanafish.getMagpieStatus ? window.kanafish.getMagpieStatus() : Promise.resolve(null),
-      window.kanafish.getQwenStatus ? window.kanafish.getQwenStatus() : Promise.resolve(null)
+      window.kanafish.getQwenStatus ? window.kanafish.getQwenStatus() : Promise.resolve(null),
+      window.kanafish.getIrodoriStatus ? window.kanafish.getIrodoriStatus() : Promise.resolve(null)
     ])
     if (supertonicResult.status === 'fulfilled') {
       setModelStatus(supertonicResult.value)
@@ -57,6 +65,12 @@ export function useTts() {
     } else {
       setQwenStatusError(qwenResult.reason?.message || 'Could not inspect the codec.cpp runtime.')
     }
+    if (irodoriResult.status === 'fulfilled') {
+      setIrodoriStatus(irodoriResult.value)
+      setIrodoriStatusError('')
+    } else {
+      setIrodoriStatusError(irodoriResult.reason?.message || 'Could not inspect the optional Irodori runtime.')
+    }
     return supertonicResult.status === 'fulfilled' ? supertonicResult.value : null
   }, [])
 
@@ -71,12 +85,16 @@ export function useTts() {
     const stopQwenProgress = window.kanafish?.onQwenProgress?.((progress) => {
       if (active) setQwenProgress(progress)
     })
+    const stopIrodoriProgress = window.kanafish?.onIrodoriProgress?.((progress) => {
+      if (active) setIrodoriProgress(progress)
+    })
     void refreshModelStatus()
     return () => {
       active = false
       stopSupertonicProgress?.()
       stopMagpieProgress?.()
       stopQwenProgress?.()
+      stopIrodoriProgress?.()
       workerRef.current?.terminate()
       workerRef.current = null
       for (const item of pendingRef.current.values()) item.reject(new Error('TTS session closed'))
@@ -146,6 +164,66 @@ export function useTts() {
     }
   }, [])
 
+  const downloadIrodoriModel = useCallback(async () => {
+    if (!window.kanafish?.downloadIrodoriModel) throw new Error('Irodori downloads are available in the Kanafish desktop app.')
+    setIrodoriDownloading(true)
+    setIrodoriDownloadError('')
+    setIrodoriProgress({ modelId: 'irodori-v4.1-small', state: 'downloading', downloadedBytes: 0, totalBytes: irodoriStatus?.approximateBytes || 0, message: 'Preparing the pinned Irodori model cache…' })
+    try {
+      const status = await window.kanafish.downloadIrodoriModel()
+      setIrodoriStatus(status)
+      setIrodoriProgress({ modelId: status.id, state: 'complete', downloadedBytes: status.downloadedBytes, totalBytes: status.approximateBytes, completedFiles: status.files.length, totalFiles: status.files.length, message: 'Irodori model, tokenizer and codec are checksum-verified.' })
+      return status
+    } catch (downloadFailure) {
+      const message = downloadFailure?.message || 'Could not download the pinned Irodori model and codec.'
+      setIrodoriDownloadError(message)
+      if (window.kanafish?.getIrodoriStatus) {
+        try { setIrodoriStatus(await window.kanafish.getIrodoriStatus()) } catch {}
+      }
+      throw downloadFailure
+    } finally {
+      setIrodoriDownloading(false)
+    }
+  }, [irodoriStatus?.approximateBytes])
+
+  const setupIrodoriPython = useCallback(async () => {
+    if (!window.kanafish?.setupIrodoriPython) throw new Error('Irodori setup is available in the Kanafish desktop app.')
+    setIrodoriSettingUp(true)
+    setIrodoriSetupError('')
+    setIrodoriProgress({ modelId: 'irodori-v4.1-small', state: 'setting-up', message: 'Preparing the isolated Irodori Python environment…' })
+    try {
+      const status = await window.kanafish.setupIrodoriPython()
+      setIrodoriStatus(status)
+      setIrodoriProgress({ modelId: status.id, state: 'setup-complete', message: status.mpsAvailable ? 'Isolated Irodori runtime is ready; PyTorch MPS is available.' : 'Isolated Irodori runtime is ready; CPU backend is available.' })
+      return status
+    } catch (setupFailure) {
+      const message = setupFailure?.message || 'Could not set up Irodori’s optional Python runtime.'
+      setIrodoriSetupError(message)
+      if (window.kanafish?.getIrodoriStatus) {
+        try { setIrodoriStatus(await window.kanafish.getIrodoriStatus()) } catch {}
+      }
+      throw setupFailure
+    } finally {
+      setIrodoriSettingUp(false)
+    }
+  }, [])
+
+  const clearIrodoriModelCache = useCallback(async () => {
+    if (!window.kanafish?.clearIrodoriModelCache) throw new Error('Irodori cache controls are available in the Kanafish desktop app.')
+    const status = await window.kanafish.clearIrodoriModelCache()
+    setIrodoriStatus(status)
+    setIrodoriProgress(null)
+    return status
+  }, [])
+
+  const removeIrodoriPythonRuntime = useCallback(async () => {
+    if (!window.kanafish?.removeIrodoriPythonRuntime) throw new Error('Irodori runtime controls are available in the Kanafish desktop app.')
+    const status = await window.kanafish.removeIrodoriPythonRuntime()
+    setIrodoriStatus(status)
+    setIrodoriProgress(null)
+    return status
+  }, [])
+
   const ensureWorker = useCallback(() => {
     if (workerRef.current) return workerRef.current
     const worker = new Worker(new URL('./supertonic.worker.js', import.meta.url), { type: 'module' })
@@ -185,6 +263,23 @@ export function useTts() {
   const synthesize = useCallback((text, options = {}) => {
     if (!text?.trim()) return Promise.reject(new Error('Enter Japanese text to synthesize.'))
     setError('')
+    if (activeModelId === 'irodori-v4.1-small') {
+      if (!irodoriStatus?.modelInstalled) return Promise.reject(new Error('Download the Irodori model and codec in Voice Lab before generating speech.'))
+      if (!irodoriStatus?.runtimeReady) return Promise.reject(new Error('Set up the optional Irodori Python runtime in Voice Lab before generating speech.'))
+      if (!window.kanafish?.synthesizeIrodori) return Promise.reject(new Error('Irodori synthesis is available in the Kanafish desktop app.'))
+      setBusyCount((count) => count + 1)
+      setEngineProgress({ name: 'Local Irodori Python sidecar', current: 1, total: 1 })
+      return window.kanafish.synthesizeIrodori({ text }).then((result) => {
+        setBackend(result.backend)
+        setEngineProgress(null)
+        setError('')
+        return result
+      }).catch((failure) => {
+        setEngineProgress(null)
+        setError(failure?.message || 'Irodori synthesis failed.')
+        throw failure
+      }).finally(() => setBusyCount((count) => Math.max(0, count - 1)))
+    }
     if (activeModelId === 'qwen3-tts-0.6b-customvoice') {
       if (!qwenStatus?.modelInstalled) return Promise.reject(new Error('Download the Qwen3-TTS model in Voice Lab before generating speech.'))
       if (!window.kanafish?.synthesizeQwen) return Promise.reject(new Error('Qwen synthesis is available in the Kanafish desktop app.'))
@@ -226,7 +321,7 @@ export function useTts() {
       pendingRef.current.set(id, { resolve, reject })
       worker.postMessage({ type: 'synthesize', id, text, options })
     })
-  }, [activeModelId, ensureWorker, magpieStatus?.modelInstalled, magpieVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
+  }, [activeModelId, ensureWorker, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
 
   const playText = useCallback(async (text, options = {}) => {
     const result = await synthesize(text, options)
@@ -260,9 +355,11 @@ export function useTts() {
     modelStatus,
     magpieStatus,
     qwenStatus,
+    irodoriStatus,
     statusError,
     magpieStatusError,
     qwenStatusError,
+    irodoriStatusError,
     refreshModelStatus,
     downloadProgress,
     downloading,
@@ -280,6 +377,15 @@ export function useTts() {
     downloadQwenModel,
     qwenVoice,
     setQwenVoice,
+    irodoriProgress,
+    irodoriDownloading,
+    irodoriDownloadError,
+    downloadIrodoriModel,
+    irodoriSettingUp,
+    irodoriSetupError,
+    setupIrodoriPython,
+    clearIrodoriModelCache,
+    removeIrodoriPythonRuntime,
     activeModelId,
     setActiveModelId,
     backend,

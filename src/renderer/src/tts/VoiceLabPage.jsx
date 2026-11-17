@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, AlertCircle, Check, Cpu, Download, ExternalLink, HardDrive, LockKeyhole, Sparkles, Volume2 } from 'lucide-react'
+import { Activity, AlertCircle, Check, Cpu, Download, ExternalLink, HardDrive, LockKeyhole, Sparkles, Trash2, Volume2 } from 'lucide-react'
 import { TTS_MODEL_CATALOG } from './modelCatalog.js'
 
 const SAMPLE_LINES = [
@@ -11,7 +11,7 @@ const SAMPLE_LINES = [
 
 function formatBytes(value = 0) {
   if (value < 1_000_000) return `${Math.round(value / 1_000)} KB`
-  return `${(value / 1_000_000).toFixed(value >= 1_000_000_000 ? 2 : 0)} MB`
+  return value >= 1_000_000_000 ? `${(value / 1_000_000_000).toFixed(2)} GB` : `${(value / 1_000_000).toFixed(0)} MB`
 }
 
 function formatSeconds(value) {
@@ -40,16 +40,20 @@ export default function VoiceLabPage({ tts }) {
   const supertonic = tts.modelStatus
   const magpie = tts.magpieStatus
   const qwen = tts.qwenStatus
+  const irodori = tts.irodoriStatus
   const progress = tts.downloadProgress
   const downloadPercent = progress?.totalBytes ? Math.min(100, Math.round((progress.downloadedBytes / progress.totalBytes) * 100)) : 0
   const qwenProgress = tts.qwenProgress
   const qwenDownloadPercent = qwenProgress?.totalBytes ? Math.min(100, Math.round((qwenProgress.downloadedBytes / qwenProgress.totalBytes) * 100)) : 0
+  const irodoriProgress = tts.irodoriProgress
+  const irodoriDownloadPercent = irodoriProgress?.totalBytes ? Math.min(100, Math.round((irodoriProgress.downloadedBytes / irodoriProgress.totalBytes) * 100)) : 0
   const activeModel = TTS_MODEL_CATALOG.find((candidate) => candidate.id === tts.activeModelId) || TTS_MODEL_CATALOG[0]
   const isMagpie = activeModel.id === 'magpie-v2607'
   const isQwen = activeModel.id === 'qwen3-tts-0.6b-customvoice'
+  const isIrodori = activeModel.id === 'irodori-v4.1-small'
   const isSupertonic = activeModel.id === 'supertonic-3'
-  const isInstalled = isMagpie ? Boolean(magpie?.modelInstalled) : isQwen ? Boolean(qwen?.modelInstalled) : Boolean(supertonic?.installed)
-  const canGenerate = isMagpie ? Boolean(magpie?.runtimeReady && magpie?.modelInstalled) : isQwen ? Boolean(qwen?.runtimeReady && qwen?.modelInstalled) : Boolean(supertonic?.installed)
+  const isInstalled = isMagpie ? Boolean(magpie?.modelInstalled) : isQwen ? Boolean(qwen?.modelInstalled) : isIrodori ? Boolean(irodori?.modelInstalled) : Boolean(supertonic?.installed)
+  const canGenerate = isMagpie ? Boolean(magpie?.runtimeReady && magpie?.modelInstalled) : isQwen ? Boolean(qwen?.runtimeReady && qwen?.modelInstalled) : isIrodori ? Boolean(irodori?.runtimeReady && irodori?.modelInstalled) : Boolean(supertonic?.installed)
   const unsupportedModels = TTS_MODEL_CATALOG.filter((candidate) => !candidate.availableInApp)
 
   async function runSample(sample = text) {
@@ -77,6 +81,24 @@ export default function VoiceLabPage({ tts }) {
     void tts.downloadQwenModel().catch(() => {})
   }
 
+  function startIrodoriDownload() {
+    void tts.downloadIrodoriModel().catch(() => {})
+  }
+
+  function startIrodoriSetup() {
+    void tts.setupIrodoriPython().catch(() => {})
+  }
+
+  function clearIrodoriModelCache() {
+    if (!window.confirm('Remove Irodori’s downloaded model, tokenizer and codec from this device? You can download them again later.')) return
+    void tts.clearIrodoriModelCache().catch((error) => setTestError(error?.message || 'Could not clear the Irodori model cache.'))
+  }
+
+  function removeIrodoriPythonRuntime() {
+    if (!window.confirm('Remove Irodori’s app-managed Python environment? This does not affect other Kanafish engines.')) return
+    void tts.removeIrodoriPythonRuntime().catch((error) => setTestError(error?.message || 'Could not remove the Irodori Python environment.'))
+  }
+
   function selectModel(id) {
     tts.setActiveModelId(id)
     setLastResult(null)
@@ -87,18 +109,18 @@ export default function VoiceLabPage({ tts }) {
     <div className="page-intro">
       <div className="eyebrow"><span className="eyebrow-line" /> LOCAL SPEECH TESTING</div>
       <h1>Voice Lab<span className="title-period">.</span></h1>
-      <p>Compare three Japanese speech models with the same travel-conversation lines. Magpie and Qwen use optional native C++ runtimes; model weights are fetched only when requested.</p>
+          <p>Compare four Japanese speech models with the same travel-conversation lines. Irodori uses an optional app-managed Python sidecar; Magpie and Qwen use optional native C++ runtimes. Model weights are fetched only when requested.</p>
     </div>
 
     <div className="voice-model-choice" role="group" aria-label="Select a local speech model">
       {TTS_MODEL_CATALOG.filter((candidate) => candidate.availableInApp).map((candidate) => <button key={candidate.id} type="button" className={candidate.id === tts.activeModelId ? 'selected' : ''} aria-pressed={candidate.id === tts.activeModelId} onClick={() => selectModel(candidate.id)}>
-        <span>{candidate.name}</span><small>{candidate.id === 'magpie-v2607' ? 'Native runtime · 5 voices' : candidate.id === 'qwen3-tts-0.6b-customvoice' ? 'Native codec.cpp · ono_anna' : 'Browser ONNX · CPU fallback'}</small>
+        <span>{candidate.name}</span><small>{candidate.id === 'magpie-v2607' ? 'Native runtime · 5 voices' : candidate.id === 'qwen3-tts-0.6b-customvoice' ? 'Native codec.cpp · ono_anna' : candidate.id === 'irodori-v4.1-small' ? 'Optional Python sidecar · MPS/CPU' : 'Browser ONNX · CPU fallback'}</small>
       </button>)}
     </div>
 
     <div className="voice-lab-grid">
       <section className="voice-lab-panel voice-model-panel" aria-labelledby="active-voice-heading">
-        <div className="voice-panel-heading"><span className="voice-panel-icon"><Sparkles size={18} /></span><div><span className="eyebrow">SELECTED LOCAL MODEL</span><h2 id="active-voice-heading">{activeModel.name}</h2></div><span className="tts-status-tag status-runnable">Runnable</span></div>
+        <div className="voice-panel-heading"><span className="voice-panel-icon"><Sparkles size={18} /></span><div><span className="eyebrow">SELECTED LOCAL MODEL</span><h2 id="active-voice-heading">{activeModel.name}</h2></div><span className="tts-status-tag status-runnable">{isIrodori && !canGenerate ? 'Setup required' : 'Runnable'}</span></div>
         {isSupertonic ? <>
           <p className="voice-model-summary">Japanese and 30 other languages. Compact ONNX model; its pinned weights stay outside the app checkout.</p>
           <div className="voice-spec-grid">
@@ -137,6 +159,41 @@ export default function VoiceLabPage({ tts }) {
             <p>On Mac, NeMo uses its native Metal backend, which is distinct from PyTorch MPS. Metal and MPS have not been tested here.</p>
             <a href="https://github.com/NVIDIA/NeMo-Speech.cpp/blob/v0.3.0/docs/build.md" target="_blank" rel="noreferrer">NeMo-Speech.cpp build guide <ExternalLink size={13} /></a>
           </details>
+        </> : isIrodori ? <>
+          <p className="voice-model-summary">Japanese-only v4.1-Small using its MIT checkpoint and MIT DACVAE codec. This optional app-managed Python sidecar uses PyTorch MPS when available on macOS and falls back to CPU. It uses no reference recording.</p>
+          <div className="voice-spec-grid">
+            <div><span>Model + codec</span><strong>About 3.50 GB · FP32</strong></div>
+            <div><span>License</span><strong>MIT weights, runtime and codec</strong></div>
+            <div><span>Backend</span><strong>PyTorch MPS when available · CPU fallback</strong></div>
+            <div><span>Integrated CPU test</span><strong>5.47× real time · 11.55 s load</strong></div>
+          </div>
+          {tts.irodoriStatusError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {tts.irodoriStatusError}</div>}
+          {tts.irodoriSetupError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {tts.irodoriSetupError}</div>}
+          {tts.irodoriDownloadError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {tts.irodoriDownloadError}</div>}
+          {irodori?.runtimeReady ? <div className="tts-ready-state" role="status"><Check size={15} /><span>App-managed Python environment ready · Python {irodori.pythonVersion} · {irodori.mpsAvailable ? 'PyTorch MPS detected' : 'CPU backend available'}</span></div> : <div className="tts-inline-error" role="status"><AlertCircle size={15} /><span>{irodori?.runtimeError || 'Set up the optional Python environment before using Irodori.'}</span></div>}
+          <div className="tts-download-cta irodori-action-row">
+            <button className="primary-button" onClick={startIrodoriSetup} disabled={tts.irodoriSettingUp || tts.busy || irodori?.runtimeReady}><Cpu size={15} /> {tts.irodoriSettingUp ? 'Setting up…' : irodori?.runtimeReady ? 'Python runtime ready' : 'Set up Python runtime'}</button>
+            <span>Needs Python 3.10–3.13 to bootstrap; installs an isolated environment for Irodori only, using additional disk space beyond the model cache.</span>
+          </div>
+          {tts.irodoriSettingUp && <div className="tts-download-state" aria-live="polite"><div className="tts-progress-copy"><span><Activity size={15} /> {irodoriProgress?.message || 'Installing the optional Irodori runtime…'}</span><strong>In progress</strong></div><small>PyTorch and pinned inference dependencies are installed only after you choose setup.</small></div>}
+          {tts.irodoriDownloading ? <div className="tts-download-state" aria-live="polite">
+            <div className="tts-progress-copy"><span><Download size={15} /> {irodoriProgress?.message || `Downloading ${irodoriProgress?.file || 'Irodori model files'}…`}</span><strong>{irodoriDownloadPercent}%</strong></div>
+            <div className="tts-progress-track"><span style={{ width: `${irodoriDownloadPercent}%` }} /></div>
+            <small>{formatBytes(irodoriProgress?.downloadedBytes || 0)} of {formatBytes(irodoriProgress?.totalBytes || irodori?.approximateBytes || 3_500_634_824)} · {irodoriProgress?.completedFiles || 0} of {irodoriProgress?.totalFiles || 4} files</small>
+          </div> : irodori?.modelInstalled ? <div className="tts-ready-state" role="status"><Check size={15} /><span>Checksum-verified model, tokenizer and codec cached · {formatBytes(irodori.approximateBytes)}</span></div> : <div className="tts-download-cta irodori-action-row">
+            <button className="primary-button" onClick={startIrodoriDownload} disabled={tts.irodoriDownloading}><Download size={15} /> Download Irodori</button>
+            <span>About 3.50 GB · requires about 3.63 GB free; downloaded only when requested.</span>
+          </div>}
+          {(irodori?.downloadedBytes > 0 || irodori?.pythonEnvironmentExists) && <div className="irodori-cache-controls">
+            {irodori?.downloadedBytes > 0 && <button type="button" className="tts-cache-button" onClick={clearIrodoriModelCache} disabled={tts.irodoriDownloading || tts.busy}><Trash2 size={14} /> Clear Irodori model cache</button>}
+            {irodori?.pythonEnvironmentExists && <button type="button" className="tts-cache-button" onClick={removeIrodoriPythonRuntime} disabled={tts.irodoriSettingUp || tts.busy}><Trash2 size={14} /> Remove Python environment</button>}
+          </div>}
+          <details className="magpie-runtime-help irodori-runtime-help"><summary>Runtime, pinned assets and responsible use</summary>
+            <p>Kanafish creates a separate Python virtual environment and does not install Python or these dependencies for Supertonic, Magpie or Qwen. The model checkpoint, tokenizer and codec are pinned to Hugging Face revisions and checked by exact size and SHA-256 before use. The app does not bundle or commit model weights.</p>
+            <p>The model card asks users not to clone or impersonate a person without consent or to create misleading synthetic speech/deepfakes. Irodori uses no reference audio in this Voice Lab path. The optional upstream SilentCipher package is not installed, so this build does not watermark generated audio with it.</p>
+            <a href="https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small" target="_blank" rel="noreferrer">Irodori v4.1 model card <ExternalLink size={13} /></a>
+            <a href="https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim" target="_blank" rel="noreferrer">Japanese DACVAE codec card <ExternalLink size={13} /></a>
+          </details>
         </> : <>
           <p className="voice-model-summary">Japanese CustomVoice checkpoint with the built-in Ono Anna preset; no reference recording is needed. The optional C++ server stays on this device and the app downloads the pinned Q8_0 files only after you request them.</p>
           <div className="voice-spec-grid">
@@ -163,8 +220,8 @@ export default function VoiceLabPage({ tts }) {
             <a href="https://huggingface.co/BricksDisplay/Qwen3-TTS-12Hz-0.6B-CustomVoice-GGUF/tree/22f3c6369919f6374f790a65c6fe3aed0ec5f86b" target="_blank" rel="noreferrer">Pinned Qwen model files <ExternalLink size={13} /></a>
           </details>
         </>}
-        {tts.engineProgress && <div className="tts-engine-progress"><Activity size={14} /> {isMagpie ? tts.magpieProgress?.message || 'Starting the native service…' : isQwen ? tts.qwenProgress?.message || 'Starting the native service…' : `Loading ${tts.engineProgress.name} (${tts.engineProgress.current}/${tts.engineProgress.total})`}</div>}
-        <div className="voice-local-note"><LockKeyhole size={15} /><span>Text and generated audio stay on this device. Magpie and Qwen bind local-only services; Qwen uses a fixed preset and Kanafish does not record or upload your voice.</span></div>
+        {tts.engineProgress && <div className="tts-engine-progress"><Activity size={14} /> {isMagpie ? tts.magpieProgress?.message || 'Starting the native service…' : isQwen ? tts.qwenProgress?.message || 'Starting the native service…' : isIrodori ? irodoriProgress?.message || 'Starting the local Python sidecar…' : `Loading ${tts.engineProgress.name} (${tts.engineProgress.current}/${tts.engineProgress.total})`}</div>}
+        <div className="voice-local-note"><LockKeyhole size={15} /><span>Text and generated audio stay on this device. Magpie and Qwen bind local-only services; Qwen uses a fixed preset. Irodori runs in an optional local Python sidecar; no reference audio is used.</span></div>
       </section>
 
       <section className="voice-lab-panel voice-test-panel" aria-labelledby="try-line-heading">
@@ -189,6 +246,7 @@ export default function VoiceLabPage({ tts }) {
           <Volume2 size={16} /> {tts.busy ? 'Generating…' : 'Generate and play'}
         </button>
         {!isInstalled && <small className="voice-test-hint">Download the selected model first to enable local playback.</small>}
+        {isIrodori && irodori?.modelInstalled && !irodori?.runtimeReady && <small className="voice-test-hint">Set up the optional Irodori Python environment before generating speech.</small>}
         {isMagpie && magpie?.modelInstalled && !magpie?.runtimeReady && <small className="voice-test-hint">Synthesis is unavailable until the native runtime includes Japanese TTS and HTTP support.</small>}
         {isQwen && qwen?.modelInstalled && !qwen?.runtimeReady && <small className="voice-test-hint">Synthesis is unavailable until a compatible codec.cpp tts-server is installed.</small>}
         {testError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {testError}</div>}
@@ -200,11 +258,11 @@ export default function VoiceLabPage({ tts }) {
       </section>
     </div>
 
-    <section className="tts-benchmark-note"><Cpu size={16} /><span><strong>What the sandbox CPU tests say:</strong> Supertonic ran at 0.21–0.46× real time; Magpie at 1.42–1.56× with a 2.12 s service load; Qwen took 6.61–59.11 s to generate the four samples (3.44–6.06× real time). Irodori’s separate Python benchmark ran at 3.11–6.02×. ONNX Runtime Web/WASM also ran the MF export’s duration graph on Node, but that component probe did not generate audio. These are speed tests, not naturalness scores. No human listening review or Mac Metal/MPS test has been done.</span></section>
+    <section className="tts-benchmark-note"><Cpu size={16} /><span><strong>What the sandbox CPU tests say:</strong> Supertonic ran at 0.21–0.46× real time; Magpie at 1.42–1.56×; Qwen at 3.44–6.06×; Irodori’s separate four-line benchmark at 3.11–6.02×. The integrated Kanafish Irodori path also passed a 48 kHz WAV test at 5.47× real time after an 11.55-second model load. CPU playback is slow. The earlier ONNX Runtime Web/WASM probe only ran an MF duration graph; it did not generate audio. These are speed tests, not naturalness scores. No human listening review or Mac Metal/MPS test has been done.</span></section>
 
     <section className="tts-candidates-section" aria-labelledby="candidate-models-heading">
       <div className="tts-candidates-heading"><div><span className="eyebrow">NOT SUPPORTED HERE YET</span><h2 id="candidate-models-heading">Other models reviewed</h2></div><span className="tts-candidates-count">{unsupportedModels.length} reviewed</span></div>
-      <p className="tts-candidates-intro">Irodori v4.1 remains research-only: the available JavaScript/WebGPU pipeline targets v3. The v4.1-Small-MF pack’s duration graph did run in Node/WASM, and it includes a general-use ONNX audio decoder, but no matching JS pipeline was available to join its tokenizer, encoders, MeanFlow steps and decoder into WAV. The Python CPU path has been benchmarked separately but is not integrated; the owner can choose whether to pursue that optional sidecar. Mio also requires Python; Qwen Base still lacks a verified preset-voice path; Chatterbox is retired. No untested placeholder is selectable.</p>
+      <p className="tts-candidates-intro">Mio also requires Python and does not yet have a verified complete app path; Qwen Base still lacks a verified preset-voice path; Chatterbox is retired. No untested placeholder is selectable.</p>
       <div className="tts-candidate-grid">{unsupportedModels.map((candidate) => <CandidateCard key={candidate.id} model={candidate} />)}</div>
       <div className="tts-candidate-footnote"><HardDrive size={14} /> Candidate weights are not downloaded. Magpie, Qwen and Irodori model/runtime licenses are separate and must be reviewed independently.</div>
     </section>

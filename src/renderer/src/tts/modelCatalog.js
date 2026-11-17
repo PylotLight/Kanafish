@@ -47,16 +47,16 @@ export const TTS_MODEL_CATALOG = Object.freeze([
   Object.freeze({
     id: 'irodori-v4.1-small',
     name: 'Irodori-TTS v4.1-Small',
-    status: 'candidate',
-    statusLabel: 'Research only · no end-to-end JS TTS',
+    status: 'runnable',
+    statusLabel: 'Runnable with optional Python sidecar',
     languages: 'Japanese only',
     parameters: 'About 0.8B · FP32 checkpoint',
     weightsLicense: 'MIT',
-    runtime: 'Python CPU inference tested; no complete v4.1 JavaScript/ONNX adapter',
-    evidence: 'ONNX Runtime Web/WASM loaded and ran one MF duration graph in Node, but no Japanese WAV was synthesized. MF is a different checkpoint variant; its general-use decoder is available, but no matching JS pipeline was found.',
+    runtime: 'App-managed Python sidecar; PyTorch MPS when available on macOS with CPU fallback',
+    evidence: 'Integrated Kanafish CPU path generated and validated a 48 kHz RIFF/WAVE for こんにちは。: 11.55 s model load, 8.09 s generation for 1.48 s audio (RTF 5.47). Mac/MPS and human listening tests have not been done.',
     sourceUrl: 'https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small',
     codeUrl: 'https://github.com/Aratako/Irodori-TTS',
-    availableInApp: false
+    availableInApp: true
   }),
   Object.freeze({
     id: 'miotts-0.6b',
