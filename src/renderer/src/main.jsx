@@ -4,6 +4,7 @@ import App from './App.jsx'
 import './styles.css'
 import './glass.css'
 import './appearance.css'
+import './tts/voice-lab.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

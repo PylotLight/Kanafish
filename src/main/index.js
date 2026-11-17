@@ -1,10 +1,19 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, protocol, shell } from 'electron'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { downloadTtsModel, getTtsModelStatus, serveTtsModelAsset } from './tts/modelStore.js'
+import { createMagpieRuntime } from './tts/magpieRuntime.js'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const isMac = process.platform === 'darwin'
 let mainWindow
+let magpieRuntime
+let quittingAfterMagpieStop = false
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'kanafish-cache',
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true }
+}])
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -41,16 +50,38 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
-
   mainWindow.on('closed', () => { mainWindow = undefined })
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await protocol.handle('kanafish-cache', serveTtsModelAsset)
+  magpieRuntime = createMagpieRuntime({
+    userDataDir: app.getPath('userData'),
+    onProgress: (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:magpie-progress', progress)
+    }
+  })
   ipcMain.handle('kanafish:exit-app', () => app.quit())
+  ipcMain.handle('kanafish:tts-model-status', () => getTtsModelStatus())
+  ipcMain.handle('kanafish:tts-download-model', (event) => downloadTtsModel('supertonic-3', {
+    onProgress: (progress) => {
+      if (!event.sender.isDestroyed()) event.sender.send('kanafish:tts-download-progress', progress)
+    }
+  }))
+  ipcMain.handle('kanafish:magpie-status', () => magpieRuntime.getStatus())
+  ipcMain.handle('kanafish:magpie-download-model', () => magpieRuntime.downloadModel())
+  ipcMain.handle('kanafish:magpie-synthesize', (_event, request = {}) => magpieRuntime.synthesize(request.text, { voice: request.voice }))
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', (event) => {
+  if (!magpieRuntime || quittingAfterMagpieStop) return
+  event.preventDefault()
+  quittingAfterMagpieStop = true
+  void magpieRuntime.stop().finally(() => app.quit())
 })
 
 app.on('window-all-closed', () => {
