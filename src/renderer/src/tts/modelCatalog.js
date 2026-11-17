@@ -59,17 +59,32 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     availableInApp: true
   }),
   Object.freeze({
+    id: 'irodori-v4.1-small-mf',
+    name: 'Irodori-TTS v4.1-Small-MF (int8 ONNX)',
+    status: 'runnable',
+    statusLabel: 'Runnable · no Python',
+    languages: 'Japanese only',
+    parameters: 'MeanFlow-distilled · 4 sampling steps · 1.69 GB ONNX pack',
+    weightsLicense: 'MIT component licenses; model card labels the pack “other”',
+    codeLicense: 'MIT reference runner',
+    runtime: 'JavaScript ONNX Runtime WebAssembly CPU; no Python',
+    evidence: 'Separate distilled MF checkpoint; it is not plain v4.1-Small. The Node/JavaScript ONNX path generated a valid non-silent 48 kHz WAV for こんにちは。 First run took 12.78 s for 1.20 s audio (RTF 10.65, including model load) on this sandbox CPU. Mac/WebGPU and human listening tests are pending.',
+    sourceUrl: 'https://huggingface.co/Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8',
+    codeUrl: 'https://github.com/kgmkm/muse-irodori-voice',
+    availableInApp: true
+  }),
+  Object.freeze({
     id: 'miotts-0.6b',
     name: 'MioTTS-0.6B',
     status: 'advanced',
     statusLabel: 'Advanced / end-to-end unverified',
     languages: 'Japanese + English',
-    parameters: '0.6B LLM; separate codec required',
-    weightsLicense: 'Apache-2.0 for 0.6B model',
-    runtime: 'GGUF LLM server plus MioCodec and Python API service',
-    evidence: 'Has a published GGUF route. The complete pipeline is not verified on CPU or Apple Metal; the vendor’s fast RTF claims are from an RTX 5090.',
-    sourceUrl: 'https://huggingface.co/Aratako/MioTTS-0.6B',
-    codeUrl: 'https://github.com/Aratako/MioTTS-Inference',
+    parameters: '0.6B LLM + MioCodec-v2 decoder',
+    weightsLicense: 'Apache-2.0 model · MIT codec',
+    runtime: 'CrispASR C++ miotts backend; MioCodec-v2 GGUF plus tokenizer and Japanese voice preset',
+    evidence: 'CrispASR documents the exact MioTTS-0.6B + MioCodec-v2 route and Japanese presets. Kanafish has not integrated it or generated a Japanese WAV; it is not selectable.',
+    sourceUrl: 'https://huggingface.co/cstr/miotts-0.6b-GGUF',
+    codeUrl: 'https://github.com/CrispStrobe/CrispASR',
     availableInApp: false
   }),
   Object.freeze({

@@ -6,6 +6,7 @@ import { delimiter, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { spawn } from 'node:child_process'
 import { createServer } from 'node:net'
 import { performance } from 'node:perf_hooks'
+import { NATIVE_RUNTIME_PLANS } from './nativeRuntimeSetup.js'
 
 export const MAGPIE_RUNTIME = Object.freeze({
   id: 'magpie-v2607',
@@ -83,7 +84,7 @@ export function normalizeMagpieError(error) {
   return message
 }
 
-export function getNemoSpeechCandidates({ env = process.env, home = homedir(), platform = process.platform } = {}) {
+export function getNemoSpeechCandidates({ env = process.env, home = homedir(), platform = process.platform, userDataDir = '' } = {}) {
   const candidates = []
   if (env.KANAFISH_NEMO_SPEECH_PATH) candidates.push(env.KANAFISH_NEMO_SPEECH_PATH)
   const localAppData = env.LOCALAPPDATA || join(home, 'AppData', 'Local')
@@ -95,6 +96,7 @@ export function getNemoSpeechCandidates({ env = process.env, home = homedir(), p
     if (platform === 'darwin') candidates.push(join(home, 'Library', 'Application Support', 'NeMo-Speech', 'bin', 'nemo-speech'))
     candidates.push('/usr/local/bin/nemo-speech', '/opt/homebrew/bin/nemo-speech')
   }
+  if (userDataDir) candidates.push(join(userDataDir, 'native-runtimes', 'nemo-speech', NATIVE_RUNTIME_PLANS.nemoSpeech.revision, 'install', 'bin', platform === 'win32' ? 'nemo-speech.exe' : 'nemo-speech'))
   if (env.PATH) {
     for (const entry of env.PATH.split(delimiter)) {
       candidates.push(join(entry, platform === 'win32' ? 'nemo-speech.exe' : 'nemo-speech'))
@@ -226,7 +228,8 @@ export function createMagpieRuntime({
   platform = process.platform,
   fetchImpl = globalThis.fetch,
   spawnImpl = spawn,
-  onProgress = () => {}
+  onProgress = () => {},
+  nativeRuntimeSetup = null
 } = {}) {
   if (!userDataDir) throw new Error('A Kanafish user-data directory is required for the Magpie cache.')
   if (typeof fetchImpl !== 'function') throw new Error('The local HTTP client is unavailable.')
@@ -243,7 +246,7 @@ export function createMagpieRuntime({
   let serverLoadSeconds = null
 
   async function findCommand() {
-    for (const candidate of getNemoSpeechCandidates({ env, home, platform })) {
+    for (const candidate of getNemoSpeechCandidates({ env, home, platform, userDataDir })) {
       if (await commandExists(candidate, platform)) return candidate
     }
     return null
@@ -284,7 +287,11 @@ export function createMagpieRuntime({
   }
 
   async function getStatus() {
-    const [runtime, manifest] = await Promise.all([inspectRuntime(), readManifest()])
+    const [runtime, manifest, nativeSetup] = await Promise.all([
+      inspectRuntime(),
+      readManifest(),
+      nativeRuntimeSetup?.getStatus ? nativeRuntimeSetup.getStatus('nemoSpeech') : Promise.resolve(null)
+    ])
     const totalBytes = manifest?.artifacts?.reduce((sum, item) => sum + item.bytes, 0) || 0
     return {
       id: MAGPIE_RUNTIME.id,
@@ -296,8 +303,32 @@ export function createMagpieRuntime({
       modelRevision: MAGPIE_RUNTIME.modelRevision,
       cachePath: cacheRoot,
       voices: MAGPIE_RUNTIME.voices,
+      nativeSetup,
       ...runtime
     }
+  }
+
+  async function setupRuntime() {
+    if (!nativeRuntimeSetup?.setup) throw new Error('In-app NeMo-Speech.cpp setup is unavailable in this Kanafish build.')
+    if (downloadPromise) throw new Error('Wait for the Magpie model download to finish before building its runtime.')
+    if (serverProcess) await stopServer()
+    await nativeRuntimeSetup.setup('nemoSpeech', async (executable, runCheck) => {
+      const [version, doctor] = await Promise.all([
+        runCheck(executable, ['--version']),
+        runCheck(executable, ['doctor'])
+      ])
+      const versionOutput = version.stdout || version.stderr
+      const doctorOutput = doctor.stdout || doctor.stderr
+      if (!supportsJapaneseHttpTts(versionOutput, doctorOutput)) throw new Error('The built NeMo runtime did not report version 0.3.0+ with HTTP, TTS, and Japanese TTS enabled.')
+      if (!parseNemoFeatures(doctorOutput).includes('model_pull')) throw new Error('This NeMo build cannot download Magpie model files; model_pull support is required.')
+    })
+    const status = await getStatus()
+    if (!status.runtimeReady || !status.canDownload) throw new Error(status.runtimeError || 'The built NeMo runtime did not pass Kanafish’s Magpie readiness check.')
+    return status
+  }
+
+  async function cancelRuntimeSetup() {
+    return nativeRuntimeSetup?.cancel ? nativeRuntimeSetup.cancel('nemoSpeech') : { cancelled: false }
   }
 
   async function downloadModel() {
@@ -458,7 +489,7 @@ export function createMagpieRuntime({
     }
   }
 
-  return Object.freeze({ getStatus, downloadModel, synthesize, stop: stopServer })
+  return Object.freeze({ getStatus, downloadModel, setupRuntime, cancelRuntimeSetup, synthesize, stop: stopServer })
 }
 
 export { withinDirectory as isPathWithinDirectory }

@@ -6,6 +6,7 @@ import { delimiter, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { spawn } from 'node:child_process'
 import { createServer } from 'node:net'
 import { performance } from 'node:perf_hooks'
+import { NATIVE_RUNTIME_PLANS } from './nativeRuntimeSetup.js'
 
 export const QWEN3_TTS_RUNTIME = Object.freeze({
   id: 'qwen3-tts-0.6b-customvoice',
@@ -54,7 +55,7 @@ function fileSignature(info) {
   return `${info.size}:${info.mtimeMs}:${info.ctimeMs}:${info.ino}`
 }
 
-export function getCodecCppServerCandidates({ env = process.env, home = homedir(), platform = process.platform } = {}) {
+export function getCodecCppServerCandidates({ env = process.env, home = homedir(), platform = process.platform, userDataDir = '' } = {}) {
   const executable = platform === 'win32' ? 'tts-server.exe' : 'tts-server'
   const candidates = []
   if (env.KANAFISH_CODEC_CPP_TTS_SERVER_PATH) candidates.push(env.KANAFISH_CODEC_CPP_TTS_SERVER_PATH)
@@ -68,6 +69,7 @@ export function getCodecCppServerCandidates({ env = process.env, home = homedir(
     candidates.push(join(home, 'Library', 'Application Support', 'Kanafish', 'codec.cpp', 'build', executable))
     candidates.push('/usr/local/bin/tts-server', '/opt/homebrew/bin/tts-server')
   }
+  if (userDataDir) candidates.push(join(userDataDir, 'native-runtimes', 'codec.cpp', NATIVE_RUNTIME_PLANS.codecCpp.revision, 'install', 'bin', executable))
   if (env.PATH) {
     for (const entry of env.PATH.split(delimiter)) candidates.push(join(entry, executable))
   }
@@ -192,7 +194,8 @@ export function createQwenRuntime({
   fetchImpl = globalThis.fetch,
   spawnImpl = spawn,
   onProgress = () => {},
-  runtimeConfig = QWEN3_TTS_RUNTIME
+  runtimeConfig = QWEN3_TTS_RUNTIME,
+  nativeRuntimeSetup = null
 } = {}) {
   if (!userDataDir) throw new Error('A Kanafish user-data directory is required for the Qwen TTS cache.')
   if (typeof fetchImpl !== 'function') throw new Error('The local HTTP client is unavailable.')
@@ -211,7 +214,7 @@ export function createQwenRuntime({
   const verifiedFileSignatures = new Map()
 
   async function findCommand() {
-    for (const candidate of getCodecCppServerCandidates({ env, home, platform })) {
+    for (const candidate of getCodecCppServerCandidates({ env, home, platform, userDataDir })) {
       if (await commandExists(candidate, platform)) return candidate
     }
     return null
@@ -234,6 +237,23 @@ export function createQwenRuntime({
     } catch (error) {
       return { runtimeFound: true, runtimeReady: false, canDownload: false, runtimePath: path, runtimeError: error?.message || 'Could not inspect codec.cpp tts-server.' }
     }
+  }
+
+  async function setupRuntime() {
+    if (!nativeRuntimeSetup?.setup) throw new Error('In-app codec.cpp setup is unavailable in this Kanafish build.')
+    if (downloadPromise) throw new Error('Wait for the Qwen model download to finish before building its runtime.')
+    if (serverProcess) await stopServer()
+    await nativeRuntimeSetup.setup('codecCpp', async (executable, runCheck) => {
+      const { stdout, stderr } = await runCheck(executable, ['--help'])
+      if (!supportsCodecCppTtsServer(`${stdout}\n${stderr}`)) throw new Error('The built codec.cpp server did not advertise the required OpenAI-compatible WAV features.')
+    })
+    const status = await getStatus()
+    if (!status.runtimeReady) throw new Error(status.runtimeError || 'The built codec.cpp runtime did not pass Kanafish’s readiness check.')
+    return status
+  }
+
+  async function cancelRuntimeSetup() {
+    return nativeRuntimeSetup?.cancel ? nativeRuntimeSetup.cancel('codecCpp') : { cancelled: false }
   }
 
   async function readManifest() {
@@ -267,7 +287,11 @@ export function createQwenRuntime({
   }
 
   async function getStatus() {
-    const [runtime, manifest] = await Promise.all([inspectRuntime(), readManifest()])
+    const [runtime, manifest, nativeSetup] = await Promise.all([
+      inspectRuntime(),
+      readManifest(),
+      nativeRuntimeSetup?.getStatus ? nativeRuntimeSetup.getStatus('codecCpp') : Promise.resolve(null)
+    ])
     return {
       id: runtimeConfig.id,
       name: runtimeConfig.name,
@@ -288,6 +312,7 @@ export function createQwenRuntime({
       sampleRate: runtimeConfig.sampleRate,
       serverLoadSeconds,
       serverBackend,
+      nativeSetup,
       ...runtime
     }
   }
@@ -514,7 +539,7 @@ export function createQwenRuntime({
     }
   }
 
-  return Object.freeze({ getStatus, downloadModel, synthesize, stop: stopServer })
+  return Object.freeze({ getStatus, downloadModel, setupRuntime, cancelRuntimeSetup, synthesize, stop: stopServer })
 }
 
 export { isPathWithinDirectory }

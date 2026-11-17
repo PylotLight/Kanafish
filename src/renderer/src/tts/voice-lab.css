@@ -24,6 +24,10 @@
 .voice-spec-grid strong { color: var(--ink); font-size: calc(10px * var(--text-scale, 1.18)); font-weight: 650; line-height: 1.35; }
 .tts-download-cta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .tts-download-cta > span, .voice-test-hint { color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
+.native-runtime-setup { margin: 10px 0 0; align-items: center; }
+.native-runtime-setup > span { flex: 1 1 200px; }
+.runtime-blockers { margin: 9px 0 0; padding: 9px 11px 9px 27px; border: 1px solid var(--line); border-radius: 8px; background: var(--cream); color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
+.runtime-blockers li + li { margin-top: 4px; }
 .tts-download-state { padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--cream); }
 .tts-progress-copy { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--ink); font-size: calc(10px * var(--text-scale, 1.18)); }
 .tts-progress-copy span { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
