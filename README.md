@@ -1,25 +1,31 @@
-# Japanese for Travel & Conversation
+# Kanafish
 
-A communication-first Japanese course for practical travel and beginner-to-basic conversation. The goal is to help a learner take part in useful exchanges—not to finish a grammar or kanji syllabus.
+Kanafish is a Japanese travel and conversation-learning Fish app. It turns a practical, communication-first course into short interactive lessons with visible progress—without making a broad kanji syllabus or automated speech scoring a prerequisite.
 
-## Starting design
+## Learning direction
 
-- Practice real functions: greetings and politeness; introductions; questions and follow-ups; requests and transactions; directions, time and plans; preferences and recommendations; simple explanations and stories; problems, clarification and help.
-- Progress through four stages: **recognize → respond with support → adapt the exchange → communicate with less scripting**.
-- Bring **hiragana and katakana** into conversation materials from the start, rather than making kana a separate prerequisite course.
-- Add only a small number of **useful, section-relevant kanji**, with readings alongside them. Kanji is not a gate to speaking.
-- Track practical speaking and listening outcomes across a provisional 12-week sequence. Targets are drafts to calibrate with a learner.
+The course helps beginners take part in useful exchanges: greetings, introductions, questions, requests, directions, plans, preferences, simple explanations, and asking for help. Lessons move through four stages: **recognize → respond with support → adapt the exchange → communicate with less scripting**.
 
-## Course documents
+Hiragana and katakana appear alongside the phrases learners say and hear. Each section introduces only kanji that help in that situation, with readings for unfamiliar forms. The provisional **12-week plan and its milestone checks remain the course backbone**; they are drafts to tune through a learner pilot, not claims of fluency.
 
-- [Course design](docs/course-design.md): scope, functional categories, progression and script policy.
-- [12-week outline](docs/12-week-plan.md): a first-pass sequence and observable checkpoints.
-- [Lesson template](docs/lesson-template.md): a consistent format for future lessons.
+## App experience
 
-## Not in this first phase
+A lesson should let learners work through a short dialogue, choose or reveal useful responses, practise changing details, revisit kana, and check what they understood. Role-play and milestone checks stay focused on observable communication. Progress should show lesson activity and learner-recorded checkpoint evidence, not imply automated evaluation.
 
-An AI system for TTS/STT-based speaking evaluation is a future possibility, not part of the current build. For now, speaking and listening checks can be run with a tutor, partner or self-recording and a simple rubric. No app or automated evaluator is implemented here yet.
+The MVP can support speaking and listening practice with visible prompts and a partner, tutor, or learner-led routine. **TTS, STT, and automated speaking evaluation are later extensions—not MVP scope.**
+
+## Desktop direction
+
+Follow the existing Fish desktop convention: **Bun, Electron, React, and electron-vite**. Start with a lightweight desktop shell, structured lesson content, and local progress tracking. The app itself is not implemented yet.
+
+See [the phased app roadmap](docs/app-roadmap.md) for a staged direction that separates a useful MVP from later speech features.
+
+## Starter documents
+
+- [Course design](docs/course-design.md): scope, functional categories, progression, and script policy.
+- [12-week plan](docs/12-week-plan.md): the preserved first-pass course sequence and observable checkpoints.
+- [Lesson template](docs/lesson-template.md): a reusable structure for future interactive lessons.
 
 ## Status
 
-Curriculum scaffold, v0.1. Next useful step: pilot the first few lessons, then tune the pacing and milestone thresholds from learner experience.
+Curriculum scaffold, v0.1. Next: pilot the first few lessons and tune pacing and milestone thresholds from learner experience before expanding the app scope.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Teach beginner-to-basic Japanese for practical travel and everyday conversation. Speaking and listening are the center of the course; reading and writing support those interactions.
+Teach beginner-to-basic Japanese for practical travel and everyday conversation. Speaking and listening are the center of the course; reading and writing support those interactions. Kanafish should turn this course into short interactive practice, not replace it with a generic vocabulary or grammar syllabus.
 
 ## Functional categories
 
@@ -33,10 +33,16 @@ Each functional category should recur across stages. The learner should revisit 
 - Show a kana reading with unfamiliar kanji. Early goals should usually be recognition in context, not writing from memory or broad kanji coverage.
 - Keep the script presentation consistent within each lesson and make the learner's reading support explicit. Whether to retain romaji as a temporary optional scaffold can be decided during the first pilot.
 
+## Interactive lesson experience
+
+A lesson should connect a short situation and dialogue to a small number of useful phrases, a response or comprehension activity, supported speaking practice, and a chance to adapt the exchange. Kana practice belongs in the same context. Hints and phrase banks can support early attempts and then recede as the learner retries with a changed detail.
+
+Progress should make practice visible: lesson status, revisited activities, and learner-entered observations or evidence for the existing milestone checks. Completion is not a fluency score; the app should present the observable task criteria so learners can understand what they did and what to practise next.
+
 ## Evidence of learning
 
-Assess what a learner can do in a short exchange and what they can understand from clear, beginner-level spoken Japanese. Prefer observable checks—successful requests, key details understood, follow-up questions and repair strategies—over abstract claims of fluency. The checkpoints in the 12-week outline are provisional and should be adjusted after piloting.
+Assess what a learner can do in a short exchange and what they can understand from clear, beginner-level spoken Japanese. Prefer observable checks—successful requests, key details understood, follow-up questions and repair strategies—over abstract claims of fluency. The checkpoints in the [12-week outline](12-week-plan.md) are provisional and should be adjusted after piloting.
 
 ## Deferred technical work
 
-TTS/STT and automated speaking evaluation are intentionally out of scope for the curriculum scaffold. A later technical phase can be designed after the lesson format and human-readable assessment rubric have been tested.
+TTS/STT and automated speaking evaluation are intentionally out of scope for the MVP. Speaking and listening checks can initially use a tutor, partner, visible prompt, or learner-led routine and a simple rubric. A later technical phase can be designed after the lesson format and human-readable assessment rubric have been tested.
