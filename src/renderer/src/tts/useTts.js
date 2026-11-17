@@ -10,11 +10,13 @@ export function useTts() {
   const [qwenStatus, setQwenStatus] = useState(null)
   const [irodoriStatus, setIrodoriStatus] = useState(null)
   const [irodoriMfOnnxStatus, setIrodoriMfOnnxStatus] = useState(null)
+  const [mioStatus, setMioStatus] = useState(null)
   const [statusError, setStatusError] = useState('')
   const [magpieStatusError, setMagpieStatusError] = useState('')
   const [qwenStatusError, setQwenStatusError] = useState('')
   const [irodoriStatusError, setIrodoriStatusError] = useState('')
   const [irodoriMfOnnxStatusError, setIrodoriMfOnnxStatusError] = useState('')
+  const [mioStatusError, setMioStatusError] = useState('')
   const [downloadProgress, setDownloadProgress] = useState(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
@@ -35,6 +37,12 @@ export function useTts() {
   const [irodoriMfOnnxProgress, setIrodoriMfOnnxProgress] = useState(null)
   const [irodoriMfOnnxDownloading, setIrodoriMfOnnxDownloading] = useState(false)
   const [irodoriMfOnnxDownloadError, setIrodoriMfOnnxDownloadError] = useState('')
+  const [mioProgress, setMioProgress] = useState(null)
+  const [mioDownloading, setMioDownloading] = useState(false)
+  const [mioDownloadError, setMioDownloadError] = useState('')
+  const [mioSettingUp, setMioSettingUp] = useState(false)
+  const [mioSetupError, setMioSetupError] = useState('')
+  const [mioVoice, setMioVoice] = useState('jp_female')
   const [irodoriSettingUp, setIrodoriSettingUp] = useState(false)
   const [irodoriSetupError, setIrodoriSetupError] = useState('')
   const [qwenVoice, setQwenVoice] = useState('ono_anna')
@@ -50,12 +58,13 @@ export function useTts() {
       setStatusError('The local TTS model manager is available in the Kanafish desktop app.')
       return null
     }
-    const [supertonicResult, magpieResult, qwenResult, irodoriResult, irodoriMfOnnxResult] = await Promise.allSettled([
+    const [supertonicResult, magpieResult, qwenResult, irodoriResult, irodoriMfOnnxResult, mioResult] = await Promise.allSettled([
       window.kanafish.getTtsModelStatus(),
       window.kanafish.getMagpieStatus ? window.kanafish.getMagpieStatus() : Promise.resolve(null),
       window.kanafish.getQwenStatus ? window.kanafish.getQwenStatus() : Promise.resolve(null),
       window.kanafish.getIrodoriStatus ? window.kanafish.getIrodoriStatus() : Promise.resolve(null),
-      window.kanafish.getIrodoriMfOnnxStatus ? window.kanafish.getIrodoriMfOnnxStatus() : Promise.resolve(null)
+      window.kanafish.getIrodoriMfOnnxStatus ? window.kanafish.getIrodoriMfOnnxStatus() : Promise.resolve(null),
+      window.kanafish.getMioStatus ? window.kanafish.getMioStatus() : Promise.resolve(null)
     ])
     if (supertonicResult.status === 'fulfilled') {
       setModelStatus(supertonicResult.value)
@@ -87,6 +96,12 @@ export function useTts() {
     } else {
       setIrodoriMfOnnxStatusError(irodoriMfOnnxResult.reason?.message || 'Could not inspect the Irodori MF ONNX cache.')
     }
+    if (mioResult.status === 'fulfilled') {
+      setMioStatus(mioResult.value)
+      setMioStatusError('')
+    } else {
+      setMioStatusError(mioResult.reason?.message || 'Could not inspect the MioTTS runtime or model cache.')
+    }
     return supertonicResult.status === 'fulfilled' ? supertonicResult.value : null
   }, [])
 
@@ -112,6 +127,9 @@ export function useTts() {
     const stopIrodoriMfOnnxProgress = window.kanafish?.onIrodoriMfOnnxProgress?.((progress) => {
       if (active) setIrodoriMfOnnxProgress(progress)
     })
+    const stopMioProgress = window.kanafish?.onMioProgress?.((progress) => {
+      if (active) setMioProgress(progress)
+    })
     void refreshModelStatus()
     return () => {
       active = false
@@ -121,6 +139,7 @@ export function useTts() {
       stopNativeRuntimeSetupProgress?.()
       stopIrodoriProgress?.()
       stopIrodoriMfOnnxProgress?.()
+      stopMioProgress?.()
       workerRef.current?.terminate()
       workerRef.current = null
       for (const item of pendingRef.current.values()) item.reject(new Error('TTS session closed'))
@@ -328,6 +347,62 @@ export function useTts() {
     return status
   }, [])
 
+  const setupMioRuntime = useCallback(async () => {
+    if (!window.kanafish?.setupMioRuntime) throw new Error('CrispASR setup is available in the Kanafish desktop app.')
+    setMioSettingUp(true)
+    setMioSetupError('')
+    setMioProgress({ runtimeId: 'crispasr', state: 'setup', message: 'Preparing the pinned CrispASR runtime…' })
+    try {
+      const status = await window.kanafish.setupMioRuntime()
+      setMioStatus(status)
+      setMioProgress({ runtimeId: 'crispasr', state: 'runtime-ready', message: `CrispASR ${status.runtimeVersion} with MioTTS is ready.` })
+      return status
+    } catch (failure) {
+      const message = failure?.message || 'Could not install the pinned CrispASR runtime.'
+      setMioSetupError(message)
+      try { setMioStatus(await window.kanafish.getMioStatus()) } catch {}
+      throw failure
+    } finally {
+      setMioSettingUp(false)
+    }
+  }, [])
+
+  const downloadMioModel = useCallback(async () => {
+    if (!window.kanafish?.downloadMioModel) throw new Error('MioTTS downloads are available in the Kanafish desktop app.')
+    setMioDownloading(true)
+    setMioDownloadError('')
+    setMioProgress({ modelId: 'miotts-0.6b', state: 'downloading', downloadedBytes: 0, totalBytes: mioStatus?.totalBytes || 540_000_888, message: 'Preparing the pinned MioTTS model cache…' })
+    try {
+      const status = await window.kanafish.downloadMioModel()
+      setMioStatus(status)
+      setMioProgress({ modelId: status.id, state: 'complete', downloadedBytes: status.totalBytes, totalBytes: status.totalBytes, completedFiles: status.files.length, totalFiles: status.files.length, message: 'MioTTS model, tokenizer and Japanese voices are checksum-verified.' })
+      return status
+    } catch (failure) {
+      const message = failure?.message || 'Could not download the pinned MioTTS model files.'
+      setMioDownloadError(message)
+      try { setMioStatus(await window.kanafish.getMioStatus()) } catch {}
+      throw failure
+    } finally {
+      setMioDownloading(false)
+    }
+  }, [mioStatus?.totalBytes])
+
+  const removeMioModelCache = useCallback(async () => {
+    if (!window.kanafish?.removeMioModelCache) throw new Error('MioTTS cache controls are available in the Kanafish desktop app.')
+    const status = await window.kanafish.removeMioModelCache()
+    setMioStatus(status)
+    setMioProgress(null)
+    return status
+  }, [])
+
+  const removeMioRuntime = useCallback(async () => {
+    if (!window.kanafish?.removeMioRuntime) throw new Error('CrispASR runtime controls are available in the Kanafish desktop app.')
+    const status = await window.kanafish.removeMioRuntime()
+    setMioStatus(status)
+    setMioProgress(null)
+    return status
+  }, [])
+
   const ensureWorker = useCallback(() => {
     if (workerRef.current) return workerRef.current
     const worker = new Worker(new URL('./supertonic.worker.js', import.meta.url), { type: 'module' })
@@ -367,6 +442,23 @@ export function useTts() {
   const synthesize = useCallback((text, options = {}) => {
     if (!text?.trim()) return Promise.reject(new Error('Enter Japanese text to synthesize.'))
     setError('')
+    if (activeModelId === 'miotts-0.6b') {
+      if (!mioStatus?.modelInstalled) return Promise.reject(new Error('Download the pinned MioTTS-0.6B model and Japanese voice preset in Voice Lab before generating speech.'))
+      if (!mioStatus?.runtimeReady) return Promise.reject(new Error('Install the pinned CrispASR runtime in Voice Lab before generating speech.'))
+      if (!window.kanafish?.synthesizeMio) return Promise.reject(new Error('MioTTS synthesis is available in the Kanafish desktop app.'))
+      setBusyCount((count) => count + 1)
+      setEngineProgress({ name: 'CrispASR 0.8.54 MioTTS · CPU', current: 1, total: 1 })
+      return window.kanafish.synthesizeMio({ text, voice: options.voice || mioVoice }).then((result) => {
+        setBackend(result.backend)
+        setEngineProgress(null)
+        setError('')
+        return result
+      }).catch((failure) => {
+        setEngineProgress(null)
+        setError(failure?.message || 'MioTTS synthesis failed.')
+        throw failure
+      }).finally(() => setBusyCount((count) => Math.max(0, count - 1)))
+    }
     if (activeModelId === 'irodori-v4.1-small-mf') {
       if (!irodoriMfOnnxStatus?.installed) return Promise.reject(new Error('Download the separate Irodori v4.1-Small-MF ONNX pack in Voice Lab before generating speech.'))
       if (!window.kanafish?.synthesizeIrodoriMfOnnx) return Promise.reject(new Error('Irodori MF ONNX synthesis is available in the Kanafish desktop app.'))
@@ -441,7 +533,7 @@ export function useTts() {
       pendingRef.current.set(id, { resolve, reject })
       worker.postMessage({ type: 'synthesize', id, text, options })
     })
-  }, [activeModelId, ensureWorker, irodoriMfOnnxStatus?.installed, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
+  }, [activeModelId, ensureWorker, irodoriMfOnnxStatus?.installed, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, mioStatus?.modelInstalled, mioStatus?.runtimeReady, mioVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
 
   const playText = useCallback(async (text, options = {}) => {
     const result = await synthesize(text, options)
@@ -477,11 +569,13 @@ export function useTts() {
     qwenStatus,
     irodoriStatus,
     irodoriMfOnnxStatus,
+    mioStatus,
     statusError,
     magpieStatusError,
     qwenStatusError,
     irodoriStatusError,
     irodoriMfOnnxStatusError,
+    mioStatusError,
     refreshModelStatus,
     downloadProgress,
     downloading,
@@ -516,6 +610,17 @@ export function useTts() {
     irodoriMfOnnxDownloadError,
     downloadIrodoriMfOnnxModel,
     removeIrodoriMfOnnxModel,
+    mioProgress,
+    mioDownloading,
+    mioDownloadError,
+    downloadMioModel,
+    mioSettingUp,
+    mioSetupError,
+    setupMioRuntime,
+    removeMioModelCache,
+    removeMioRuntime,
+    mioVoice,
+    setMioVoice,
     irodoriSettingUp,
     irodoriSetupError,
     setupIrodoriPython,

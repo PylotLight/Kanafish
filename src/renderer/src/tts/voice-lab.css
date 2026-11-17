@@ -40,6 +40,11 @@
 .tts-inline-error { display: flex; align-items: flex-start; gap: 7px; margin: 9px 0; padding: 9px 10px; border: 1px solid #e7c9c1; border-radius: 8px; background: #fbefeb; color: #8d4f3e; font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; overflow-wrap: anywhere; }
 .tts-inline-error svg { flex: 0 0 auto; margin-top: 1px; }
 .app-shell[data-theme='dark'] .tts-inline-error, .app-shell[data-theme='amoled'] .tts-inline-error { border-color: #553831; background: #2d211e; color: #e5ad9e; }
+.mio-license-note { display: flex; align-items: flex-start; gap: 8px; margin: 10px 0 12px; padding: 10px 11px; border: 1px solid #e6d9b8; border-radius: 8px; background: #faf4e4; color: #725d2c; font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.5; }
+.mio-license-note svg { flex: 0 0 auto; margin-top: 1px; }
+.mio-license-note strong { color: #5e4a1e; }
+.app-shell[data-theme='dark'] .mio-license-note, .app-shell[data-theme='amoled'] .mio-license-note { border-color: #4c452e; background: #302b1c; color: #d5c698; }
+.app-shell[data-theme='dark'] .mio-license-note strong, .app-shell[data-theme='amoled'] .mio-license-note strong { color: #f0dfad; }
 .tts-engine-progress { display: flex; align-items: center; gap: 6px; margin-top: 9px; color: var(--muted); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); }
 .tts-engine-progress svg { color: var(--teal); }
 .voice-local-note { display: flex; gap: 7px; margin-top: 13px; color: var(--muted); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); line-height: 1.45; }

@@ -59,5 +59,17 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
     const listener = (_event, progress) => callback(progress)
     ipcRenderer.on('kanafish:irodori-progress', listener)
     return () => ipcRenderer.removeListener('kanafish:irodori-progress', listener)
+  },
+  getMioStatus: () => ipcRenderer.invoke('kanafish:mio-status'),
+  setupMioRuntime: () => ipcRenderer.invoke('kanafish:mio-setup-runtime'),
+  downloadMioModel: () => ipcRenderer.invoke('kanafish:mio-download-model'),
+  synthesizeMio: (request) => ipcRenderer.invoke('kanafish:mio-synthesize', request),
+  removeMioModelCache: () => ipcRenderer.invoke('kanafish:mio-remove-model-cache'),
+  removeMioRuntime: () => ipcRenderer.invoke('kanafish:mio-remove-runtime'),
+  onMioProgress: (callback) => {
+    if (typeof callback !== 'function') return () => {}
+    const listener = (_event, progress) => callback(progress)
+    ipcRenderer.on('kanafish:mio-progress', listener)
+    return () => ipcRenderer.removeListener('kanafish:mio-progress', listener)
   }
 }))

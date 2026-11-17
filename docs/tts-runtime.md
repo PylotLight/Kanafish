@@ -72,11 +72,30 @@ The text path ports the Irodori normalizer and rare-token splitting behavior. It
 
 The earlier bounded ONNX probe only ran the duration graph; that result was superseded by the complete Node/WASM smoke test above. The JavaScript/WebGPU reference project [irodori-tts-webgpu](https://github.com/ngc-shj/irodori-tts-webgpu) targets v3 and is not compatible with v4.1. The full v4.1-MF pipeline was ported from the MIT-licensed [Muse Irodori voice reference runner](https://github.com/kgmkm/muse-irodori-voice); its license is preserved in `src/main/tts/vendor/muse-irodori-voice-LICENSE.txt`. Tokenizer logic is based on the pinned upstream Irodori source, and the tokenizer dependency's Apache-2.0 license is also preserved under `src/main/tts/vendor/`.
 
-## MioTTS-0.6B: promising C++ route, not yet integrated
+## MioTTS-0.6B with the app-managed CrispASR runtime
 
-The preferred 0.6B option has a documented C++ route in [CrispASR's MioTTS backend](https://github.com/CrispStrobe/CrispASR/blob/main/docs/tts.md). Its [`cstr/miotts-0.6b-GGUF` model card](https://huggingface.co/cstr/miotts-0.6b-GGUF) documents the MioTTS-0.6B Qwen3 model together with the **MioCodec-25Hz-44.1kHz-v2** decoder in a single GGUF, plus a Qwen3 `tokenizer.json` and Japanese `jp_female.emb.gguf` or `jp_male.emb.gguf` preset. The card describes MioTTS-0.6B as Apache-2.0 and MioCodec weights as MIT; a Japanese voice preset is required for intelligible output. The C++ backend thus appears to support the exact 0.6B/MioCodec-v2 route—the unrelated 0.1B variant is not substituted.
+Voice Lab now offers the exact **MioTTS-0.6B** checkpoint through [CrispASR's native `miotts` C++ backend](https://github.com/CrispStrobe/CrispASR/blob/main/docs/tts.md). This uses the `cstr/miotts-0.6b-GGUF` pack at Hugging Face revision `fab3cdbef802fb5f1047708c27378c6e34ec230f`, with its Q4_K MioTTS-0.6B model, MioCodec-v2, tokenizer, and Japanese preset embeddings. It is not the separate 0.1B checkpoint used in the `mmnga/mio-tts-cpp` quickstart.
 
-Kanafish has not integrated CrispASR or generated a Japanese WAV from this route. It is therefore not selectable or downloadable. Before enabling it, the next practical step is to pin a CrispASR revision, build and runtime interface, verify that the C++ backend can produce Japanese 44.1 kHz WAV on the target CPU/Mac, and only then wire in checksum-verified model/tokenizer/preset assets. The published model card's ASR roundtrip is not a Kanafish synthesis test, and upstream speed claims are not evidence of performance on the owner's Mac.
+On Linux x86_64 and macOS Intel/Apple Silicon, Voice Lab downloads the pinned CrispASR v0.8.54 prebuilt archive into Kanafish app data, verifies its SHA-256 before extraction, then checks the exact version and that its backend advertises MioTTS TTS support. Windows has no pinned runtime. No Python, compiler, source build, or 8 GiB build preflight is required. The runtime archive pins are:
+
+| Platform | Archive size | SHA-256 |
+|---|---:|---|
+| Linux x86_64 | 44,185,817 bytes | `a5612bca2dbb096b81972f573ec024a5944d3a63fc18ccd2d9a8489758ddb6f1` |
+| macOS Apple Silicon | 18,679,584 bytes | `7b04a0ad344293f360636985e26a02efb8ef7f84fa2def991eaa3f4237f105dc` |
+| macOS Intel | 19,275,032 bytes | `b1f263696566de64f1a8d36ae4014acf8dcb2c6376431d0cb30a011d7bd7c5c6` |
+
+The four model files total **540,000,888 bytes** (about 540 MB):
+
+| File | Size | SHA-256 |
+|---|---:|---|
+| `miotts-0.6b-q4_k.gguf` | 526,181,408 bytes | `65e3d4692d377e2483339f52da4ead8afdf6374749bc5cf5ba4b8a8b283d340d` |
+| `tokenizer.json` | 13,817,944 bytes | `abcde038b87ccd029a4523b0c5cec1da6d84b4f3d68b351495df086d63033f1f` |
+| `jp_female.emb.gguf` | 768 bytes | `1a99490f54aedefc98010ae53101f1cd49fd73a2cfc043e2009e3e2795a1ffdb` |
+| `jp_male.emb.gguf` | 768 bytes | `6365e075530afba927e0158c7b834cef987e1a9757b2a5df5080f5022ca68ea6` |
+
+Kanafish downloads weights only after the learner requests them and keeps both weights and runtime binaries outside Git, under app data; Voice Lab can clear the model cache or remove the runtime. The model weights are Apache-2.0, MioCodec-v2 weights are MIT, and CrispASR is MIT. These are separate terms; see the [MioTTS-0.6B model card](https://huggingface.co/cstr/miotts-0.6b-GGUF) and [CrispASR source](https://github.com/CrispStrobe/CrispASR). The upstream [MioTTS preset notes](https://github.com/Aratako/MioTTS-Inference) say its default Japanese presets were generated with T5Gemma-TTS and Gemini and that audio generated with those presets cannot be used commercially. Kanafish's included Japanese female and male presets are those defaults, so the output restriction applies to audio made with them, separately from the model and codec licenses. The app uses synthetic speaker identity; it does not add a watermark.
+
+**Integrated no-Python smoke test:** the Kanafish adapter installed the runtime into a temporary app-data directory, downloaded and checksum-verified all four pinned files, then called `createMioRuntime.synthesize()` with `こんにちは。`. It returned a valid, non-silent 54,802-byte mono 44.1 kHz PCM16 WAV, 0.60 seconds long, with a peak sample of 18,859. The latest repeat took 2.81 seconds (RTF 4.68, including the new native process and model loading) on Linux CPU; an earlier run took 2.91 seconds (RTF 4.84). The temporary runtime and model cache were removed after each test. This proves the app-managed adapter works on Linux CPU, not that the Mac builds have been tested or that the voice sounds natural: no Mac testing or human listening review has been done.
 
 ## What the owner should verify on Mac
 

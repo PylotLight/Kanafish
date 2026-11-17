@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { TTS_MODEL_CATALOG, RUNNABLE_TTS_MODEL_IDS } from '../src/renderer/src/tts/modelCatalog.js'
 
 describe('TTS model catalog', () => {
-  test('marks only integrated Supertonic, Magpie, Qwen and Irodori adapters runnable', () => {
-    expect(RUNNABLE_TTS_MODEL_IDS).toEqual(['supertonic-3', 'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf'])
+  test('marks only integrated Supertonic, Magpie, Qwen, Irodori and Mio adapters runnable', () => {
+    expect(RUNNABLE_TTS_MODEL_IDS).toEqual(['supertonic-3', 'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b'])
     expect(TTS_MODEL_CATALOG.filter((model) => model.availableInApp).map((model) => model.id)).toEqual(RUNNABLE_TTS_MODEL_IDS)
   })
 
@@ -11,7 +11,7 @@ describe('TTS model catalog', () => {
     for (const id of ['supertonic-3', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b', 'qwen3-tts-0.6b-base', 'qwen3-tts-0.6b-customvoice', 'magpie-v2607']) {
       expect(TTS_MODEL_CATALOG.some((model) => model.id === id)).toBe(true)
     }
-    for (const candidate of TTS_MODEL_CATALOG.filter((model) => !['supertonic-3', 'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf'].includes(model.id))) {
+    for (const candidate of TTS_MODEL_CATALOG.filter((model) => !['supertonic-3', 'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b'].includes(model.id))) {
       expect(candidate.availableInApp).toBe(false)
       expect(candidate.sourceUrl.startsWith('https://')).toBe(true)
       expect(candidate.weightsLicense).toBeTruthy()
@@ -46,6 +46,20 @@ describe('TTS model catalog', () => {
     expect(magpie.weightsLicense).toBe('NVIDIA Open Model License')
     expect(magpie.codeLicense).toBe('Apache-2.0 runtime')
     expect(magpie.runtime).toContain('Japanese frontend')
+  })
+
+  test('marks only the exact MioTTS-0.6B checkpoint runnable after integrated WAV validation', () => {
+    const mio = TTS_MODEL_CATALOG.find((model) => model.id === 'miotts-0.6b')
+    expect(mio.availableInApp).toBe(true)
+    expect(mio.parameters).toContain('0.6B')
+    expect(mio.parameters).not.toContain('0.1B')
+    expect(mio.runtime).toContain('no Python')
+    expect(mio.evidence).toContain('44.1 kHz PCM16 WAV')
+    expect(mio.evidence).toContain('RTF 4.68')
+    expect(mio.evidence).toContain('non-commercial')
+    expect(mio.evidence).toContain('Mac tests are pending')
+    expect(mio.weightsLicense).toContain('Apache-2.0')
+    expect(mio.weightsLicense).toContain('MIT codec')
   })
 
   test('keeps retired Chatterbox out of the runnable shortlist', () => {

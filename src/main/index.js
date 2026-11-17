@@ -7,6 +7,7 @@ import { createQwenRuntime } from './tts/qwenRuntime.js'
 import { createIrodoriRuntime } from './tts/irodoriRuntime.js'
 import { createIrodoriMfOnnxRuntime } from './tts/irodoriMfRuntime.js'
 import { createNativeRuntimeSetup } from './tts/nativeRuntimeSetup.js'
+import { createMioRuntime } from './tts/mioRuntime.js'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const isMac = process.platform === 'darwin'
@@ -16,6 +17,7 @@ let qwenRuntime
 let nativeRuntimeSetup
 let irodoriRuntime
 let irodoriMfOnnxRuntime
+let mioRuntime
 let quittingAfterTtsStop = false
 
 protocol.registerSchemesAsPrivileged([{
@@ -94,6 +96,12 @@ app.whenReady().then(async () => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:irodori-mf-onnx-progress', progress)
     }
   })
+  mioRuntime = createMioRuntime({
+    userDataDir: app.getPath('userData'),
+    onProgress: (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:mio-progress', progress)
+    }
+  })
   ipcMain.handle('kanafish:exit-app', () => app.quit())
   ipcMain.handle('kanafish:tts-model-status', () => getTtsModelStatus())
   ipcMain.handle('kanafish:tts-download-model', (event) => downloadTtsModel('supertonic-3', {
@@ -121,6 +129,12 @@ app.whenReady().then(async () => {
   ipcMain.handle('kanafish:irodori-mf-onnx-download-model', () => irodoriMfOnnxRuntime.downloadModel())
   ipcMain.handle('kanafish:irodori-mf-onnx-remove-model', () => irodoriMfOnnxRuntime.removeModel())
   ipcMain.handle('kanafish:irodori-mf-onnx-synthesize', (_event, request = {}) => irodoriMfOnnxRuntime.synthesize(request.text))
+  ipcMain.handle('kanafish:mio-status', () => mioRuntime.getStatus())
+  ipcMain.handle('kanafish:mio-setup-runtime', () => mioRuntime.setupRuntime())
+  ipcMain.handle('kanafish:mio-download-model', () => mioRuntime.downloadModel())
+  ipcMain.handle('kanafish:mio-synthesize', (_event, request = {}) => mioRuntime.synthesize(request.text, { voice: request.voice }))
+  ipcMain.handle('kanafish:mio-remove-model-cache', () => mioRuntime.removeModelCache())
+  ipcMain.handle('kanafish:mio-remove-runtime', () => mioRuntime.removeRuntime())
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -128,10 +142,10 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', (event) => {
-  if ((!magpieRuntime && !qwenRuntime && !irodoriRuntime && !irodoriMfOnnxRuntime) || quittingAfterTtsStop) return
+  if ((!magpieRuntime && !qwenRuntime && !irodoriRuntime && !irodoriMfOnnxRuntime && !mioRuntime) || quittingAfterTtsStop) return
   event.preventDefault()
   quittingAfterTtsStop = true
-  void Promise.allSettled([nativeRuntimeSetup?.cancel(), magpieRuntime?.stop(), qwenRuntime?.stop(), irodoriRuntime?.stop(), irodoriMfOnnxRuntime?.stop()]).finally(() => app.quit())
+  void Promise.allSettled([nativeRuntimeSetup?.cancel(), magpieRuntime?.stop(), qwenRuntime?.stop(), irodoriRuntime?.stop(), irodoriMfOnnxRuntime?.stop(), mioRuntime?.stop()]).finally(() => app.quit())
 })
 
 app.on('window-all-closed', () => {

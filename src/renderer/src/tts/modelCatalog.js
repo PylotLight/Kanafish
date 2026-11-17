@@ -76,16 +76,17 @@ export const TTS_MODEL_CATALOG = Object.freeze([
   Object.freeze({
     id: 'miotts-0.6b',
     name: 'MioTTS-0.6B',
-    status: 'advanced',
-    statusLabel: 'Advanced / end-to-end unverified',
+    status: 'runnable',
+    statusLabel: 'Runnable with pinned native runtime',
     languages: 'Japanese + English',
     parameters: '0.6B LLM + MioCodec-v2 decoder',
     weightsLicense: 'Apache-2.0 model · MIT codec',
-    runtime: 'CrispASR C++ miotts backend; MioCodec-v2 GGUF plus tokenizer and Japanese voice preset',
-    evidence: 'CrispASR documents the exact MioTTS-0.6B + MioCodec-v2 route and Japanese presets. Kanafish has not integrated it or generated a Japanese WAV; it is not selectable.',
+    codeLicense: 'MIT runtime',
+    runtime: 'Pinned CrispASR 0.8.54 native C++ CPU process; app-managed prebuilt runtime; no Python',
+    evidence: 'Integrated Kanafish adapter installed the pinned runtime and verified all four model assets, then generated a non-silent mono 44.1 kHz PCM16 WAV for こんにちは。: 2.81 s for 0.60 s audio (RTF 4.68) on Linux CPU. Human listening and Mac tests are pending; the bundled Japanese presets have an upstream non-commercial output restriction.',
     sourceUrl: 'https://huggingface.co/cstr/miotts-0.6b-GGUF',
     codeUrl: 'https://github.com/CrispStrobe/CrispASR',
-    availableInApp: false
+    availableInApp: true
   }),
   Object.freeze({
     id: 'qwen3-tts-0.6b-base',

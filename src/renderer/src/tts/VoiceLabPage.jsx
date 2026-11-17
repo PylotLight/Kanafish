@@ -42,6 +42,7 @@ export default function VoiceLabPage({ tts }) {
   const qwen = tts.qwenStatus
   const irodori = tts.irodoriStatus
   const irodoriMf = tts.irodoriMfOnnxStatus
+  const mio = tts.mioStatus
   const progress = tts.downloadProgress
   const magpieProgress = tts.magpieProgress
   const downloadPercent = progress?.totalBytes ? Math.min(100, Math.round((progress.downloadedBytes / progress.totalBytes) * 100)) : 0
@@ -51,14 +52,17 @@ export default function VoiceLabPage({ tts }) {
   const irodoriDownloadPercent = irodoriProgress?.totalBytes ? Math.min(100, Math.round((irodoriProgress.downloadedBytes / irodoriProgress.totalBytes) * 100)) : 0
   const irodoriMfProgress = tts.irodoriMfOnnxProgress
   const irodoriMfDownloadPercent = irodoriMfProgress?.totalBytes ? Math.min(100, Math.round((irodoriMfProgress.downloadedBytes / irodoriMfProgress.totalBytes) * 100)) : 0
+  const mioProgress = tts.mioProgress
+  const mioDownloadPercent = mioProgress?.totalBytes ? Math.min(100, Math.round((mioProgress.downloadedBytes / mioProgress.totalBytes) * 100)) : 0
   const activeModel = TTS_MODEL_CATALOG.find((candidate) => candidate.id === tts.activeModelId) || TTS_MODEL_CATALOG[0]
   const isMagpie = activeModel.id === 'magpie-v2607'
   const isQwen = activeModel.id === 'qwen3-tts-0.6b-customvoice'
   const isIrodoriMf = activeModel.id === 'irodori-v4.1-small-mf'
   const isIrodori = activeModel.id === 'irodori-v4.1-small'
   const isSupertonic = activeModel.id === 'supertonic-3'
-  const isInstalled = isMagpie ? Boolean(magpie?.modelInstalled) : isQwen ? Boolean(qwen?.modelInstalled) : isIrodoriMf ? Boolean(irodoriMf?.installed) : isIrodori ? Boolean(irodori?.modelInstalled) : Boolean(supertonic?.installed)
-  const canGenerate = isMagpie ? Boolean(magpie?.runtimeReady && magpie?.modelInstalled) : isQwen ? Boolean(qwen?.runtimeReady && qwen?.modelInstalled) : isIrodoriMf ? Boolean(irodoriMf?.runtimeReady && irodoriMf?.installed) : isIrodori ? Boolean(irodori?.runtimeReady && irodori?.modelInstalled) : Boolean(supertonic?.installed)
+  const isMio = activeModel.id === 'miotts-0.6b'
+  const isInstalled = isMagpie ? Boolean(magpie?.modelInstalled) : isQwen ? Boolean(qwen?.modelInstalled) : isIrodoriMf ? Boolean(irodoriMf?.installed) : isIrodori ? Boolean(irodori?.modelInstalled) : isMio ? Boolean(mio?.modelInstalled) : Boolean(supertonic?.installed)
+  const canGenerate = isMagpie ? Boolean(magpie?.runtimeReady && magpie?.modelInstalled) : isQwen ? Boolean(qwen?.runtimeReady && qwen?.modelInstalled) : isIrodoriMf ? Boolean(irodoriMf?.runtimeReady && irodoriMf?.installed) : isIrodori ? Boolean(irodori?.runtimeReady && irodori?.modelInstalled) : isMio ? Boolean(mio?.runtimeReady && mio?.modelInstalled) : Boolean(supertonic?.installed)
   const unsupportedModels = TTS_MODEL_CATALOG.filter((candidate) => !candidate.availableInApp)
 
   async function runSample(sample = text) {
@@ -66,7 +70,7 @@ export default function VoiceLabPage({ tts }) {
     setTestError('')
     setLastResult(null)
     try {
-      const options = isMagpie ? { voice: tts.magpieVoice } : isQwen ? { voice: tts.qwenVoice } : {}
+      const options = isMagpie ? { voice: tts.magpieVoice } : isQwen ? { voice: tts.qwenVoice } : isMio ? { voice: tts.mioVoice } : {}
       const result = await tts.playText(sample, options)
       setLastResult(result)
     } catch (error) {
@@ -104,6 +108,24 @@ export default function VoiceLabPage({ tts }) {
     void tts.downloadIrodoriMfOnnxModel().catch(() => {})
   }
 
+  function startMioRuntimeSetup() {
+    void tts.setupMioRuntime().catch(() => {})
+  }
+
+  function startMioDownload() {
+    void tts.downloadMioModel().catch(() => {})
+  }
+
+  function clearMioModelCache() {
+    if (!window.confirm('Remove MioTTS-0.6B, its tokenizer and Japanese voice presets from this device? You can download them again later.')) return
+    void tts.removeMioModelCache().catch((error) => setTestError(error?.message || 'Could not clear the MioTTS model cache.'))
+  }
+
+  function removeMioRuntime() {
+    if (!window.confirm('Remove CrispASR from Kanafish app data? This keeps MioTTS model files and does not affect other TTS engines.')) return
+    void tts.removeMioRuntime().catch((error) => setTestError(error?.message || 'Could not remove the CrispASR runtime.'))
+  }
+
   function clearIrodoriMfOnnxCache() {
     if (!window.confirm('Remove the downloaded Irodori MF ONNX model files from this device? You can download them again later.')) return
     void tts.removeIrodoriMfOnnxModel().catch((error) => setTestError(error?.message || 'Could not clear the Irodori MF ONNX cache.'))
@@ -133,18 +155,18 @@ export default function VoiceLabPage({ tts }) {
     <div className="page-intro">
       <div className="eyebrow"><span className="eyebrow-line" /> LOCAL SPEECH TESTING</div>
       <h1>Voice Lab<span className="title-period">.</span></h1>
-          <p>Compare Japanese speech models with the same travel-conversation lines. Plain Irodori v4.1 uses an optional Python sidecar; the separately distilled MF variant uses ONNX without Python. Magpie and Qwen use optional native C++ runtimes. Model weights are fetched only when requested.</p>
+          <p>Compare Japanese speech models with the same travel-conversation lines. MioTTS, Magpie and Qwen use app-managed native C++ runtimes without Python; plain Irodori v4.1 uses an optional Python sidecar, while its separately distilled MF variant uses ONNX. Model weights are fetched only when requested.</p>
     </div>
 
     <div className="voice-model-choice" role="group" aria-label="Select a local speech model">
       {TTS_MODEL_CATALOG.filter((candidate) => candidate.availableInApp).map((candidate) => <button key={candidate.id} type="button" className={candidate.id === tts.activeModelId ? 'selected' : ''} aria-pressed={candidate.id === tts.activeModelId} onClick={() => selectModel(candidate.id)}>
-        <span>{candidate.name}</span><small>{candidate.id === 'magpie-v2607' ? 'Native runtime · 5 voices' : candidate.id === 'qwen3-tts-0.6b-customvoice' ? 'Native codec.cpp · ono_anna' : candidate.id === 'irodori-v4.1-small-mf' ? 'MeanFlow-distilled · ONNX · no Python' : candidate.id === 'irodori-v4.1-small' ? 'Optional Python sidecar · MPS/CPU' : 'Browser ONNX · CPU fallback'}</small>
+        <span>{candidate.name}</span><small>{candidate.id === 'magpie-v2607' ? 'Native runtime · 5 voices' : candidate.id === 'qwen3-tts-0.6b-customvoice' ? 'Native codec.cpp · ono_anna' : candidate.id === 'miotts-0.6b' ? 'Native CrispASR · Japanese presets · no Python' : candidate.id === 'irodori-v4.1-small-mf' ? 'MeanFlow-distilled · ONNX · no Python' : candidate.id === 'irodori-v4.1-small' ? 'Optional Python sidecar · MPS/CPU' : 'Browser ONNX · CPU fallback'}</small>
       </button>)}
     </div>
 
     <div className="voice-lab-grid">
       <section className="voice-lab-panel voice-model-panel" aria-labelledby="active-voice-heading">
-        <div className="voice-panel-heading"><span className="voice-panel-icon"><Sparkles size={18} /></span><div><span className="eyebrow">SELECTED LOCAL MODEL</span><h2 id="active-voice-heading">{activeModel.name}</h2></div><span className="tts-status-tag status-runnable">{isIrodori && !canGenerate ? 'Setup required' : 'Runnable'}</span></div>
+        <div className="voice-panel-heading"><span className="voice-panel-icon"><Sparkles size={18} /></span><div><span className="eyebrow">SELECTED LOCAL MODEL</span><h2 id="active-voice-heading">{activeModel.name}</h2></div><span className="tts-status-tag status-runnable">{(isIrodori || isMio) && !canGenerate ? 'Setup required' : 'Runnable'}</span></div>
         {isSupertonic ? <>
           <p className="voice-model-summary">Japanese and 30 other languages. Compact ONNX model; its pinned weights stay outside the app checkout.</p>
           <div className="voice-spec-grid">
@@ -163,6 +185,36 @@ export default function VoiceLabPage({ tts }) {
             <button className="primary-button" onClick={startDownload} disabled={tts.downloading}><Download size={15} /> Download model</button>
             <span>About 399 MB · Wi-Fi recommended · resumes from valid cached files</span>
           </div>}
+        </> : isMio ? <>
+          <p className="voice-model-summary">MioTTS-0.6B using the exact 0.6B Q4_K model and MioCodec-v2, with Japanese preset voices. CrispASR documents Japanese and English support; only Japanese synthesis has been tested here. The pinned native C++ CPU runtime and model are downloaded into app data only when requested.</p>
+          <div className="voice-spec-grid">
+            <div><span>Model + tokenizer + voices</span><strong>{formatBytes(mio?.totalBytes || 540_000_888)} · Q4_K</strong></div>
+            <div><span>Model licenses</span><strong>Apache-2.0 model · MIT codec</strong></div>
+            <div><span>Backend</span><strong>CrispASR native C++ · CPU · no Python</strong></div>
+            <div><span>Output</span><strong>Japanese · mono 44.1 kHz PCM16 WAV</strong></div>
+          </div>
+          <div className="mio-license-note"><AlertCircle size={15} /><span><strong>Preset restriction:</strong> the bundled upstream Japanese voice presets are non-commercial. The upstream says audio generated with these default presets cannot be used commercially; this preset-specific restriction is separate from the model and codec licenses.</span></div>
+          {tts.mioStatusError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {tts.mioStatusError}</div>}
+          {tts.mioSetupError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {tts.mioSetupError}</div>}
+          {tts.mioDownloadError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {tts.mioDownloadError}</div>}
+          {mio?.runtimeReady ? <div className="tts-ready-state" role="status"><Check size={15} /><span>CrispASR {mio.runtimeVersion} verified · MioTTS backend available</span></div> : mio?.platformSupported ? <div className="tts-inline-error" role="status"><AlertCircle size={15} /><span>{mio?.runtimeFound ? (mio.runtimeError || 'The app-managed CrispASR runtime is not compatible.') : 'The pinned CrispASR runtime is not installed yet.'}</span></div> : <div className="tts-inline-error" role="status"><AlertCircle size={15} /><span>{mio?.runtimeError || 'A pinned CrispASR runtime is not available for this platform.'}</span></div>}
+          <div className="tts-download-cta native-runtime-setup">
+            <button className="primary-button" type="button" onClick={startMioRuntimeSetup} disabled={!mio?.canSetupRuntime || tts.mioSettingUp || tts.mioDownloading || tts.busy || mio?.runtimeReady}><Cpu size={15} /> {tts.mioSettingUp ? 'Installing runtime…' : mio?.runtimeReady ? 'CrispASR runtime ready' : 'Install no-Python runtime'}</button>
+            <span>{mio?.runtimeReady ? `Pinned v${mio.runtimeVersion} · app-private cache` : `Pinned ${mio?.runtimeAssetBytes ? formatBytes(mio.runtimeAssetBytes) : '18–44 MB'} prebuilt runtime · no source build or 8 GiB build requirement`}</span>
+          </div>
+          {tts.mioSettingUp && <div className="tts-download-state" aria-live="polite"><div className="tts-progress-copy"><span><Activity size={15} /> {mioProgress?.message || 'Installing CrispASR…'}</span><strong>{mioDownloadPercent}%</strong></div><div className="tts-progress-track"><span style={{ width: `${mioDownloadPercent}%` }} /></div><small>The archive is SHA-256 checked before extraction, then the runtime version and MioTTS backend are verified.</small></div>}
+          {tts.mioDownloading ? <div className="tts-download-state" aria-live="polite"><div className="tts-progress-copy"><span><Download size={15} /> {mioProgress?.message || `Downloading ${mioProgress?.file || 'MioTTS model files'}…`}</span><strong>{mioDownloadPercent}%</strong></div><div className="tts-progress-track"><span style={{ width: `${mioDownloadPercent}%` }} /></div><small>{formatBytes(mioProgress?.downloadedBytes || 0)} of {formatBytes(mioProgress?.totalBytes || mio?.totalBytes || 540_000_888)} · {mioProgress?.completedFiles || 0} of {mioProgress?.totalFiles || mio?.files?.length || 4} files</small></div> : mio?.modelInstalled ? <div className="tts-ready-state" role="status"><Check size={15} /><span>Checksum-verified MioTTS model and Japanese presets cached · {formatBytes(mio.totalBytes)}</span></div> : <div className="tts-download-cta">
+            <button className="primary-button" onClick={startMioDownload} disabled={!mio?.canDownload || tts.mioDownloading}><Download size={15} /> Download MioTTS-0.6B</button>
+            <span>About 540 MB · requires the runtime first · downloaded only when requested</span>
+          </div>}
+          {mio?.downloadedBytes > 0 && <div className="irodori-cache-controls"><button type="button" className="tts-cache-button" onClick={clearMioModelCache} disabled={tts.mioDownloading || tts.busy}><Trash2 size={14} /> Clear MioTTS model cache</button></div>}
+          {mio?.runtimeReady && <div className="irodori-cache-controls"><button type="button" className="tts-cache-button" onClick={removeMioRuntime} disabled={tts.mioSettingUp || tts.mioDownloading || tts.busy}><Trash2 size={14} /> Remove CrispASR runtime</button></div>}
+          <details className="magpie-runtime-help mio-runtime-help"><summary>Runtime, model pins and preset terms</summary>
+            <p>Kanafish installs CrispASR v0.8.54 from a pinned Linux x86_64, macOS Apple Silicon or macOS Intel release archive after verifying its SHA-256 digest. It then checks the exact runtime version and the presence of a TTS-capable <code>miotts</code> backend. Runtime files are kept in Kanafish app data; no Python, compiler or source build is needed.</p>
+            <p>The model is pinned to Hugging Face revision <code>fab3cdbef802fb5f1047708c27378c6e34ec230f</code>. Model, tokenizer and both Japanese presets have pinned sizes and SHA-256 checks. The model weights are Apache-2.0; MioCodec-v2 weights are MIT. The upstream <a href="https://github.com/Aratako/MioTTS-Inference" target="_blank" rel="noreferrer">preset notes</a> say default Japanese presets were generated using T5Gemma-TTS and Gemini and that outputs made with them cannot be used commercially. This build uses synthetic speaker identity and does not watermark audio.</p>
+            <a href="https://github.com/CrispStrobe/CrispASR/blob/main/docs/tts.md" target="_blank" rel="noreferrer">CrispASR MioTTS backend documentation <ExternalLink size={13} /></a>
+            <a href="https://huggingface.co/cstr/miotts-0.6b-GGUF/tree/fab3cdbef802fb5f1047708c27378c6e34ec230f" target="_blank" rel="noreferrer">Pinned MioTTS-0.6B model files <ExternalLink size={13} /></a>
+          </details>
         </> : isMagpie ? <>
           <p className="voice-model-summary">Japanese-capable multilingual model with five preset voices. Kanafish downloads the model, tokenizer and codec into a local cache; it does not bundle or redistribute the model weights.</p>
           <div className="voice-spec-grid">
@@ -289,8 +341,8 @@ export default function VoiceLabPage({ tts }) {
             <a href="https://huggingface.co/BricksDisplay/Qwen3-TTS-12Hz-0.6B-CustomVoice-GGUF/tree/22f3c6369919f6374f790a65c6fe3aed0ec5f86b" target="_blank" rel="noreferrer">Pinned Qwen model files <ExternalLink size={13} /></a>
           </details>
         </>}
-        {tts.engineProgress && <div className="tts-engine-progress"><Activity size={14} /> {isMagpie ? tts.magpieProgress?.message || 'Starting the native service…' : isQwen ? tts.qwenProgress?.message || 'Starting the native service…' : isIrodoriMf ? `Running ${tts.engineProgress.name}` : isIrodori ? irodoriProgress?.message || 'Starting the local Python sidecar…' : `Loading ${tts.engineProgress.name} (${tts.engineProgress.current}/${tts.engineProgress.total})`}</div>}
-        <div className="voice-local-note"><LockKeyhole size={15} /><span>Text and generated audio stay on this device. Magpie and Qwen bind local-only services; Qwen uses a fixed preset. Plain Irodori runs in an optional local Python sidecar; MF ONNX uses JavaScript/WASM without Python. Neither path uses reference audio here.</span></div>
+        {tts.engineProgress && <div className="tts-engine-progress"><Activity size={14} /> {isMio ? mioProgress?.message || 'Running local CrispASR MioTTS…' : isMagpie ? tts.magpieProgress?.message || 'Starting the native service…' : isQwen ? tts.qwenProgress?.message || 'Starting the native service…' : isIrodoriMf ? `Running ${tts.engineProgress.name}` : isIrodori ? irodoriProgress?.message || 'Starting the local Python sidecar…' : `Loading ${tts.engineProgress.name} (${tts.engineProgress.current}/${tts.engineProgress.total})`}</div>}
+        <div className="voice-local-note"><LockKeyhole size={15} /><span>Text and generated audio stay on this device. Magpie, Qwen and MioTTS use local native C++ processes; MioTTS uses CPU and Japanese presets. Plain Irodori runs in an optional local Python sidecar; MF ONNX uses JavaScript/WASM without Python. No reference audio is used here.</span></div>
       </section>
 
       <section className="voice-lab-panel voice-test-panel" aria-labelledby="try-line-heading">
@@ -303,6 +355,12 @@ export default function VoiceLabPage({ tts }) {
         {isQwen && <label className="voice-text-label" htmlFor="qwen-voice">Preset voice
           <select id="qwen-voice" className="voice-voice-select" value={tts.qwenVoice} onChange={(event) => tts.setQwenVoice(event.target.value)} disabled={tts.busy}>
             <option value="ono_anna">Ono Anna (Japanese)</option>
+          </select>
+        </label>}
+        {isMio && <label className="voice-text-label" htmlFor="mio-voice">Japanese preset voice
+          <select id="mio-voice" className="voice-voice-select" value={tts.mioVoice} onChange={(event) => tts.setMioVoice(event.target.value)} disabled={tts.busy}>
+            <option value="jp_female">Japanese female preset</option>
+            <option value="jp_male">Japanese male preset</option>
           </select>
         </label>}
         <label className="voice-text-label" htmlFor="voice-test-text">Text to speak</label>
@@ -328,13 +386,13 @@ export default function VoiceLabPage({ tts }) {
       </section>
     </div>
 
-    <section className="tts-benchmark-note"><Cpu size={16} /><span><strong>What the sandbox CPU tests say:</strong> Supertonic ran at 0.21–0.46× real time; Magpie at 1.42–1.56×; Qwen at 3.44–6.06×; plain Irodori’s separate four-line benchmark at 3.11–6.02×. The integrated plain v4.1-Small Python path passed a 48 kHz WAV test at 5.47× real time. The separate MF ONNX route generated a valid 48 kHz WAV on JavaScript/WASM in 12.78 s for 1.20 s audio (RTF 10.65, including model loading). CPU playback is slow. The earlier duration-only ONNX probe has been superseded by this complete MF test. These are speed tests, not naturalness scores. No human listening review or Mac Metal/MPS test has been done.</span></section>
+    <section className="tts-benchmark-note"><Cpu size={16} /><span><strong>What the sandbox CPU tests say:</strong> Supertonic ran at 0.21–0.46× real time; Magpie at 1.42–1.56×; Qwen at 3.44–6.06×; plain Irodori’s separate four-line benchmark at 3.11–6.02×. The integrated plain v4.1-Small Python path passed a 48 kHz WAV test at 5.47× real time. The separate MF ONNX route generated a valid 48 kHz WAV on JavaScript/WASM in 12.78 s for 1.20 s audio (RTF 10.65, including model loading). MioTTS's integrated no-Python adapter produced a valid 44.1 kHz WAV in 2.81 s for 0.60 s audio (RTF 4.68, including model/process startup). CPU playback is slow. These are speed tests, not naturalness scores; no human listening review or Mac test has been done.</span></section>
 
     <section className="tts-candidates-section" aria-labelledby="candidate-models-heading">
       <div className="tts-candidates-heading"><div><span className="eyebrow">NOT SUPPORTED HERE YET</span><h2 id="candidate-models-heading">Other models reviewed</h2></div><span className="tts-candidates-count">{unsupportedModels.length} reviewed</span></div>
-      <p className="tts-candidates-intro">MioTTS-0.6B has a documented Apache-2.0 C++ route in CrispASR using the MioCodec-v2 GGUF, but Kanafish has not integrated it or generated a verified Japanese WAV; it remains unselectable. Qwen Base still lacks a verified preset-voice path, and Chatterbox is retired. No untested placeholder is selectable.</p>
+      <p className="tts-candidates-intro">MioTTS-0.6B is now selectable through Kanafish's verified CrispASR no-Python path; its bundled Japanese preset outputs have an upstream non-commercial restriction. Qwen Base still lacks a verified preset-voice path, and Chatterbox is retired. No untested placeholder is selectable.</p>
       <div className="tts-candidate-grid">{unsupportedModels.map((candidate) => <CandidateCard key={candidate.id} model={candidate} />)}</div>
-      <div className="tts-candidate-footnote"><HardDrive size={14} /> Candidate weights are not downloaded. Magpie, Qwen and Irodori model/runtime licenses are separate and must be reviewed independently.</div>
+      <div className="tts-candidate-footnote"><HardDrive size={14} /> Candidate weights are not downloaded. Model, runtime and preset terms for Magpie, Qwen, Irodori and Mio are separate and must be reviewed independently.</div>
     </section>
   </div>
 }
