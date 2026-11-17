@@ -2,8 +2,10 @@ import { useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight,
   CircleCheck, Clock3, Compass, Download, Flame, GraduationCap, Lightbulb, ListChecks,
-  LockKeyhole, RotateCcw, Search, Sparkles, Target, X
+  LockKeyhole, LogOut, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Settings,
+  Sparkles, Sun, Target, Type, X
 } from 'lucide-react'
+import { loadPreferences, savePreferences } from '../preferences.js'
 import course from '../../../course/course-v1.json'
 import {
   createInitialProgress, getCourseStats, getDueCards, getFlashcards, getLessons,
@@ -30,7 +32,16 @@ function loadProgress() {
   }
 }
 
+function getLocalStorage() {
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
 function App() {
+  const [preferences, setPreferences] = useState(() => loadPreferences(getLocalStorage()))
   const [progress, setProgress] = useState(loadProgress)
   const progressRef = useRef(progress)
   const [persistenceError, setPersistenceError] = useState('')
@@ -90,15 +101,22 @@ function App() {
     window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
   }
 
+  function updatePreferences(patch) {
+    setPreferences(savePreferences(getLocalStorage(), { ...preferences, ...patch }))
+  }
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className="app-shell" data-theme={preferences.theme} style={{ '--text-scale': preferences.textScale }}>
+      <aside className={`sidebar ${preferences.sidebarCollapsed ? 'is-collapsed' : ''}`}>
         <div className="brand-lockup">
           <div className="brand-mark"><span>か</span><span>な</span></div>
           <div><strong>Kanafish</strong><small>Japanese, for real life</small></div>
+          <button type="button" className="sidebar-collapse-button" onClick={() => updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed })} aria-label={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!preferences.sidebarCollapsed} aria-controls="primary-nav" title={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            {preferences.sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
         <div className="course-chip"><span className="course-chip-dot" /> BEGINNER COURSE <span>12 WEEKS</span></div>
-        <nav className="primary-nav" aria-label="Main navigation">
+        <nav id="primary-nav" className="primary-nav" aria-label="Main navigation">
           <NavButton icon={<CalendarDays size={18} />} label="Today" active={view === 'today'} onClick={() => navigate('today')} />
           <NavButton icon={<Compass size={18} />} label="Course path" active={view === 'course'} onClick={() => navigate('course')} />
           <NavButton icon={<RotateCcw size={18} />} label="Review cards" active={view === 'review'} onClick={() => navigate('review')} badge={dueCards.length || null} />
@@ -112,7 +130,11 @@ function App() {
         </div>
         <div className="sidebar-bottom">
           <div className="local-note"><LockKeyhole size={15} /><span>Your progress stays on this device.</span></div>
-          <button className="quiet-button export-button" onClick={exportProgress}><Download size={15} /> Export progress</button>
+          <button type="button" className="quiet-button export-button" onClick={exportProgress} aria-label="Export progress" title="Export progress"><Download size={15} /><span>Export progress</span></button>
+          <div className="sidebar-utility" role="group" aria-label="App actions">
+            <NavButton icon={<Settings size={17} />} label="Settings" active={view === 'settings'} onClick={() => navigate('settings')} />
+            <button type="button" className="nav-button exit-button" onClick={() => window.kanafish?.exitApp?.()} aria-label="Exit Kanafish" title="Exit Kanafish"><LogOut size={17} /><span>Exit</span></button>
+          </div>
           <div className="profile-row"><div className="avatar">L</div><div><strong>Learner</strong><small>Self-paced practice</small></div><Sparkles className="profile-sparkle" size={16} /></div>
         </div>
       </aside>
@@ -134,6 +156,7 @@ function App() {
           {view === 'review' && <ReviewPage cards={dueCards} onRate={(cardId, rating) => updateProgress((state) => rateCard(state, cardId, rating, todayISO()))} onPhrasebook={() => navigate('phrasebook')} />}
           {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
+          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} />}
         </div>
       </main>
     </div>
@@ -141,7 +164,7 @@ function App() {
 }
 
 function NavButton({ icon, label, active, onClick, badge }) {
-  return <button className={`nav-button ${active ? 'active' : ''}`} onClick={onClick}>{icon}<span>{label}</span>{badge ? <em>{badge}</em> : null}</button>
+  return <button type="button" className={`nav-button ${active ? 'active' : ''}`} onClick={onClick} aria-label={label} aria-current={active ? 'page' : undefined} title={label}>{icon}<span>{label}</span>{badge ? <em>{badge}</em> : null}</button>
 }
 
 function ProgressBar({ value }) {
@@ -150,7 +173,7 @@ function ProgressBar({ value }) {
 
 function viewTitle(view, lesson) {
   if (view === 'lesson') return lesson?.title || 'Lesson'
-  return ({ today: 'Today', course: 'Course path', review: 'Review cards', phrasebook: 'Phrasebook', milestones: 'Milestones' })[view] || 'Today'
+  return ({ today: 'Today', course: 'Course path', review: 'Review cards', phrasebook: 'Phrasebook', milestones: 'Milestones', settings: 'Settings' })[view] || 'Today'
 }
 
 function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, progress }) {
@@ -425,6 +448,40 @@ function MilestonesPage({ weeks, progress, onSave }) {
       </section>
     })}</div>
     <div className="milestone-note"><Lightbulb size={16} /><span>Checkpoint tasks and thresholds are preserved from the course draft. They’re intended to be tuned in a learner pilot.</span></div>
+  </div>
+}
+
+function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange }) {
+  const themeOptions = [
+    { value: 'light', label: 'Light', detail: 'Soft paper and green glass.', icon: <Sun size={19} /> },
+    { value: 'dark', label: 'Dark', detail: 'A calm, low-light palette.', icon: <Moon size={19} /> },
+    { value: 'amoled', label: 'AMOLED', detail: 'Deep black surfaces for OLED screens.', icon: <CircleCheck size={19} /> }
+  ]
+  const sizeOptions = [
+    { value: 1, label: 'Standard', detail: '100% · compact' },
+    { value: 1.18, label: 'Comfortable', detail: '118% · recommended' },
+    { value: 1.32, label: 'Large', detail: '132% · extra readable' }
+  ]
+
+  return <div className="content-page settings-page page-enter">
+    <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> MAKE KANAFISH YOURS</div><h1>Settings<span className="title-period">.</span></h1><p>Choose a comfortable appearance and reading size. Your preferences stay on this device.</p></div>
+    <section className="settings-section" aria-labelledby="appearance-heading">
+      <div className="settings-section-heading"><div className="settings-section-icon"><Moon size={18} /></div><div><h2 id="appearance-heading">Appearance</h2><p>Pick the surface that feels right for your screen.</p></div></div>
+      <div className="settings-choice-grid" role="group" aria-labelledby="appearance-heading">
+        {themeOptions.map((option) => <button type="button" aria-pressed={theme === option.value} className={`settings-choice ${theme === option.value ? 'is-selected' : ''}`} key={option.value} onClick={() => onThemeChange(option.value)}>
+          <span className="settings-choice-icon">{option.icon}</span><span className="settings-choice-copy"><strong>{option.label}</strong><small>{option.detail}</small></span><span className="settings-radio-mark" aria-hidden="true" />
+        </button>)}
+      </div>
+    </section>
+    <section className="settings-section" aria-labelledby="readability-heading">
+      <div className="settings-section-heading"><div className="settings-section-icon"><Type size={18} /></div><div><h2 id="readability-heading">Text size</h2><p>Course explanations, labels, and controls scale together.</p></div></div>
+      <div className="settings-choice-grid settings-size-grid" role="group" aria-labelledby="readability-heading">
+        {sizeOptions.map((option) => <button type="button" aria-pressed={textScale === option.value} className={`settings-choice settings-size-choice ${textScale === option.value ? 'is-selected' : ''}`} key={option.value} onClick={() => onTextScaleChange(option.value)}>
+          <span className="settings-choice-copy"><strong>{option.label}</strong><small>{option.detail}</small></span><span className="settings-radio-mark" aria-hidden="true" />
+        </button>)}
+      </div>
+    </section>
+    <div className="settings-local-note"><LockKeyhole size={16} /><span>These settings and your learning progress are stored locally on this device.</span></div>
   </div>
 }
 

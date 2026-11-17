@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -22,6 +22,7 @@ function createWindow() {
     backgroundColor: isMac ? '#00000000' : '#edf1eb',
     title: 'Kanafish',
     webPreferences: {
+      preload: join(here, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -45,6 +46,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle('kanafish:exit-app', () => app.quit())
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

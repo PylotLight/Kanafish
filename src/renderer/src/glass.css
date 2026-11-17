@@ -14,28 +14,28 @@ body { -webkit-font-smoothing: antialiased; }
 .app-shell {
   position: relative;
   isolation: isolate;
-  border: 1px solid rgba(255, 255, 255, .58);
+  border: 1px solid light-dark(rgba(255, 255, 255, .58), rgba(76, 76, 76, .58));
   border-radius: 13px;
   background:
-    radial-gradient(115% 110% at 0% 0%, rgba(178, 207, 184, .42), transparent 57%),
-    radial-gradient(95% 95% at 100% 100%, rgba(227, 199, 157, .27), transparent 55%),
+    radial-gradient(115% 110% at 0% 0%, light-dark(rgba(178, 207, 184, .42), rgba(28, 41, 30, .42)), transparent 57%),
+    radial-gradient(95% 95% at 100% 100%, light-dark(rgba(227, 199, 157, .27), rgba(50, 37, 19, .27)), transparent 55%),
     var(--glass-base);
   -webkit-backdrop-filter: blur(38px) saturate(180%);
   backdrop-filter: blur(38px) saturate(180%);
   box-shadow: var(--glass-shadow);
 }
 .sidebar {
-  background: linear-gradient(155deg, rgba(238, 244, 238, .43), rgba(225, 235, 228, .24));
-  border-right: 1px solid rgba(255, 255, 255, .50);
+  background: linear-gradient(155deg, light-dark(rgba(238, 244, 238, .43), rgba(19, 28, 19, .43)), light-dark(rgba(225, 235, 228, .24), rgba(22, 30, 24, .24)));
+  border-right: 1px solid light-dark(rgba(255, 255, 255, .50), rgba(76, 76, 76, .50));
   -webkit-backdrop-filter: blur(34px) saturate(175%);
   backdrop-filter: blur(34px) saturate(175%);
 }
-.main-area { background: rgba(251, 251, 247, .12); }
+.main-area { background: light-dark(rgba(251, 251, 247, .12), rgba(28, 28, 16, .12)); }
 .topbar {
   position: relative;
   z-index: 2;
-  border-bottom-color: rgba(255, 255, 255, .48);
-  background: rgba(247, 249, 245, .35);
+  border-bottom-color: light-dark(rgba(255, 255, 255, .48), rgba(76, 76, 76, .48));
+  background: light-dark(rgba(247, 249, 245, .35), rgba(22, 27, 18, .35));
   -webkit-backdrop-filter: blur(24px) saturate(160%);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-app-region: drag;
@@ -51,15 +51,15 @@ body { -webkit-font-smoothing: antialiased; }
 .nav-button:hover:not(.active) { transform: translateX(2px); }
 .nav-button.active { box-shadow: inset 2px 0 #4f8778, inset 0 1px rgba(255,255,255,.58), 0 5px 18px rgba(44,83,65,.06); }
 .feature-card {
-  border-color: rgba(255, 255, 255, .73);
-  background: linear-gradient(122deg, rgba(229, 241, 230, .82), rgba(217, 235, 222, .64));
+  border-color: light-dark(rgba(255, 255, 255, .73), rgba(76, 76, 76, .73));
+  background: linear-gradient(122deg, light-dark(rgba(229, 241, 230, .82), rgba(19, 31, 20, .82)), light-dark(rgba(217, 235, 222, .64), rgba(20, 34, 24, .64)));
   box-shadow: 0 12px 30px -22px rgba(40, 82, 59, .33), inset 0 1px rgba(255,255,255,.75);
   -webkit-backdrop-filter: blur(28px) saturate(165%);
   backdrop-filter: blur(28px) saturate(165%);
 }
 .review-card, .weekly-card, .panel, .course-overview, .review-summary,
 .practice-card, .lesson-rail, .week-row, .milestone-card, .phrase-card {
-  border-color: rgba(255, 255, 255, .74);
+  border-color: light-dark(rgba(255, 255, 255, .74), rgba(76, 76, 76, .74));
   box-shadow: 0 12px 30px -24px rgba(34, 59, 45, .28), inset 0 1px rgba(255,255,255,.72);
 }
 .review-card, .weekly-card, .panel, .week-row, .milestone-card, .phrase-card,
@@ -139,13 +139,13 @@ body { -webkit-font-smoothing: antialiased; }
   }
 }
 
-.recall-context { margin: 9px 2px 0 43px; color: #849388; font-size: 9px; line-height: 1.5; animation: glass-reveal .2s ease both; }
-.save-warning { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 20px; border-bottom: 1px solid rgba(194, 151, 101, .28); background: rgba(250, 238, 218, .78); color: #7e6045; font-size: 10px; line-height: 1.45; }
-.save-warning button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid rgba(157, 121, 81, .3); border-radius: 6px; background: rgba(255,255,255,.6); color: #795c40; font-size: 9px; font-weight: 600; cursor: pointer; }
-.save-warning button:hover { background: rgba(255,255,255,.9); }
-.checkpoint-revisit { display: flex; align-items: flex-start; gap: 9px; margin: 12px 0; padding: 10px 11px; border: 1px solid rgba(255,255,255,.78); border-radius: 8px; background: linear-gradient(120deg, rgba(248,244,226,.72), rgba(245,248,235,.59)); box-shadow: inset 0 1px rgba(255,255,255,.8); }
-.checkpoint-revisit-icon { width: 25px; height: 25px; flex: 0 0 25px; display: grid; place-items: center; border-radius: 7px; background: rgba(232,229,204,.65); color: #897f4f; }
-.checkpoint-revisit span { display: block; margin: 1px 0 4px; color: #988b62; font-size: 8px; font-weight: 700; letter-spacing: .45px; }
-.checkpoint-revisit strong { display: block; color: #6b674a; font-size: 9px; font-weight: 500; line-height: 1.5; }
+.recall-context { margin: 9px 2px 0 43px; color: light-dark(#849388, #c8cdc9); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); line-height: 1.5; animation: glass-reveal .2s ease both; }
+.save-warning { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 20px; border-bottom: 1px solid light-dark(rgba(194, 151, 101, .28), rgba(70, 58, 45, .28)); background: light-dark(rgba(250, 238, 218, .78), rgba(41, 29, 9, .78)); color: light-dark(#7e6045, #dacfc5); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
+.save-warning button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid light-dark(rgba(157, 121, 81, .3), rgba(60, 52, 44, .3)); border-radius: 6px; background: light-dark(rgba(255,255,255,.6), rgba(20, 20, 20, .6)); color: light-dark(#795c40, #dbd0c5); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); font-weight: 600; cursor: pointer; }
+.save-warning button:hover { background: light-dark(rgba(255,255,255,.9), rgba(20, 20, 20, .9)); }
+.checkpoint-revisit { display: flex; align-items: flex-start; gap: 9px; margin: 12px 0; padding: 10px 11px; border: 1px solid light-dark(rgba(255,255,255,.78), rgba(76, 76, 76, .78)); border-radius: 8px; background: linear-gradient(120deg, light-dark(rgba(248,244,226,.72), rgba(37, 32, 12, .72)), light-dark(rgba(245,248,235,.59), rgba(28, 33, 14, .59))); box-shadow: inset 0 1px rgba(255,255,255,.8); }
+.checkpoint-revisit-icon { width: 25px; height: 25px; flex: 0 0 25px; display: grid; place-items: center; border-radius: 7px; background: light-dark(rgba(232,229,204,.65), rgba(37, 35, 20, .65)); color: light-dark(#897f4f, #d9d5c4); }
+.checkpoint-revisit span { display: block; margin: 1px 0 4px; color: light-dark(#988b62, #d5d1c4); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); font-weight: 700; letter-spacing: .45px; }
+.checkpoint-revisit strong { display: block; color: light-dark(#6b674a, #d7d5ca); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); font-weight: 500; line-height: 1.5; }
 .checkpoint-revisit { animation: glass-reveal .23s ease both; }
 @media (max-width: 620px) { .recall-context { margin-left: 2px; } }
