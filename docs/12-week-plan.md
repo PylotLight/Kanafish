@@ -1,6 +1,6 @@
 # Provisional 12-week plan
 
-This is a first-pass sequence, not a fixed syllabus. Each week combines a conversation function, short listening practice and script work that supports that function. Checkpoints are drafts to calibrate in a pilot.
+This is a first-pass sequence, not a fixed syllabus. Each week combines a conversation function, short listening practice and script work that supports that function. Checkpoints are drafts to calibrate in a pilot. The full three-session-per-week draft is in the [course system](course-system.md) and [app-ready course data](../course/course-v1.json).
 
 | Week | Practical focus | Speaking and listening practice | Kana / selective kanji |
 |---|---|---|---|

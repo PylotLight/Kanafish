@@ -12,14 +12,14 @@ Kanafish should help a learner practise useful Japanese exchanges, return to wea
 
 ## MVP direction
 
-Build a focused desktop app around the existing provisional 12-week course. A learner should be able to:
+Build a focused desktop app around the course system. A learner should be able to:
 
 1. Browse the course sequence and open a lesson.
 2. Work through a short exchange and check its gist and key details.
 3. Select an appropriate reply, reveal a hint or phrase bank, and try again with a changed detail or follow-up.
 4. Practise relevant hiragana and katakana in context, with only the kanji selected for that section.
 5. Complete a speaking or listening check using visible prompts and a partner, tutor, or learner-led routine.
-6. Mark a lesson’s practice complete, review prior activity, and record evidence or a reflection for the existing milestone checks.
+6. Mark a lesson’s practice complete, follow the course data’s brief spaced-retrieval prompts, review prior activity, and record evidence or a reflection for the existing milestone checks.
 
 For the first version, listening material can be presented as readable prompts for a partner or tutor to say, or used in a learner-led practice routine. Kanafish does not need generated audio, speech recording, transcription, or automated scoring to make the lesson flow interactive.
 
@@ -32,7 +32,7 @@ Use **Bun, Electron, React, and electron-vite**, matching the maintained Fish de
 ### Phase 1 — Foundation
 
 - Establish the Electron/React app shell and basic course navigation.
-- Define a small lesson-content format based on the [lesson template](lesson-template.md).
+- Define a small lesson-content format based on the [lesson template](lesson-template.md) and the [versioned course data](../course/course-v1.json).
 - Add versioned local storage for lesson status and learner-entered checkpoint notes.
 - Build only the reusable interaction patterns needed by the first pilot lessons.
 
@@ -49,19 +49,19 @@ Use **Bun, Electron, React, and electron-vite**, matching the maintained Fish de
 
 ### Phase 3 — Pilot and tune the course experience
 
-- Pilot the first few lessons with learners and collect feedback on pacing, prompts, kana support, and the usefulness of progress displays.
-- Calibrate the provisional thresholds in the [12-week plan](12-week-plan.md) from observed learner experience; preserve its course sequence and milestone intent.
-- Expand lesson content across the rest of the sequence only after the reusable lesson flow is working.
+- Pilot lessons from several parts of the complete [36-lesson course draft](../course/course-v1.json) and collect feedback on pacing, prompts, kana support, and progress displays.
+- Calibrate the provisional thresholds in the [12-week plan](12-week-plan.md) from observed learner experience; preserve its course sequence and milestone intent unless evidence supports a revision.
+- Treat current course content as a reviewed draft, not a production-approved syllabus; revise it from learner and proficient-speaker feedback.
 
 **Exit check:** the first learning loop is understandable and useful, and proposed course adjustments are based on pilot observations.
 
 ### Phase 4 — Later speech extension (not MVP)
 
-Only after the lesson format and human-readable rubric have been tested, investigate optional TTS, STT, and speaking feedback. Treat these as separate capabilities with their own accuracy, privacy, accessibility, and user-control decisions. They are not prerequisites for the MVP and should not silently change the existing milestone standards.
+Only after the lesson format and human-readable rubric have been tested, investigate optional TTS, STT, and speaking feedback. The [Japanese TTS options review](tts-options.md) recommends a small voice audition, not a vendor commitment or implementation. If TTS is added, put it behind a provider adapter, keep credentials out of the Electron renderer, cache stable lesson audio, offer normal-speed and learner-selected slower replays, and retain a no-audio fallback for desktop and phone use. Treat TTS, STT, and speaking feedback as separate capabilities with their own accuracy, privacy, licensing, cost, accessibility, and user-control decisions. They are not prerequisites for the MVP and should not silently change the existing milestone standards.
 
 ## Not part of the MVP
 
 - TTS, STT, voice recording, or automated pronunciation/speaking evaluation.
 - A broad kanji curriculum or kanji mastery gate.
 - Accounts, cloud sync, social features, or a backend requirement.
-- Building out the entire twelve-week content set before piloting the first lessons.
+- Treating the authored course draft as validated before a learner pilot.

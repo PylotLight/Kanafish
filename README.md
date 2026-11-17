@@ -20,12 +20,15 @@ Follow the existing Fish desktop convention: **Bun, Electron, React, and electro
 
 See [the phased app roadmap](docs/app-roadmap.md) for a staged direction that separates a useful MVP from later speech features.
 
-## Starter documents
+## Course and research
 
 - [Course design](docs/course-design.md): scope, functional categories, progression, and script policy.
 - [12-week plan](docs/12-week-plan.md): the preserved first-pass course sequence and observable checkpoints.
 - [Lesson template](docs/lesson-template.md): a reusable structure for future interactive lessons.
+- [Course system](docs/course-system.md): the full 36-lesson learning loop, progression, and honest progress model.
+- [Structured course data](course/course-v1.json): app-ready 12-week content, with a [JSON Schema](course/course.schema.json).
+- [Japanese TTS options](docs/tts-options.md): current provider comparison, pricing and licensing caveats, and a learner-first audition recommendation.
 
 ## Status
 
-Curriculum scaffold, v0.1. Next: pilot the first few lessons and tune pacing and milestone thresholds from learner experience before expanding the app scope.
+Course content v0.2: the complete 12-week, 36-lesson course system and milestone structure are drafted. Next: review Japanese with a proficient speaker and pilot the first lessons to tune pacing and thresholds. The app is not implemented yet; TTS/STT integration and automated speaking evaluation remain later work.
