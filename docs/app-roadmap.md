@@ -27,6 +27,10 @@ For the first version, listening material can be presented as readable prompts f
 
 Use **Bun, Electron, React, and electron-vite**, matching the maintained Fish desktop apps. Keep lesson content separate from the interface so the existing course sequence and checkpoints can be revised without redesigning the app. Prefer local progress storage for the initial version; keep records tied to stable lesson and milestone identifiers so later format changes are manageable. Cloud accounts, sync, and a backend are not required for the MVP.
 
+## Current implementation
+
+The repository now includes the Electron/React shell, a local-first course path, the five-step text-first lesson player, daily phrase/kana/kanji reviews, searchable phrasebook, and learner-entered milestone evidence. The first two roadmap phases have a working baseline; next, pilot the flow with beginners and a proficient Japanese speaker, then tune content and pacing from feedback. Audio, speech recording, and automated evaluation remain deferred.
+
 ## Phased roadmap
 
 ### Phase 1 — Foundation

@@ -1,34 +1,39 @@
 # Kanafish
 
-Kanafish is a Japanese travel and conversation-learning Fish app. It turns a practical, communication-first course into short interactive lessons with visible progress—without making a broad kanji syllabus or automated speech scoring a prerequisite.
+Kanafish is a Japanese travel and conversation-learning Fish app. The first desktop implementation is text-first: it turns the existing practical course into short interactive lessons, daily recall, searchable phrase cards, and learner-recorded checkpoints. It does not require generated audio, speech recognition, or automated scoring.
 
-## Learning direction
+## What works now
 
-The course helps beginners take part in useful exchanges: greetings, introductions, questions, requests, directions, plans, preferences, simple explanations, and asking for help. Lessons move through four stages: **recognize → respond with support → adapt the exchange → communicate with less scripting**.
+- **Daily learning:** a next-lesson card, course progress, a small review session, and a gentle recall-first routine.
+- **Interactive lessons:** prior-lesson warmup, readable dialogue with meanings revealed on demand, gist/detail and reply choices with explanations, changed-detail practice, partner/tutor prompts, and kana/kanji recognition in context.
+- **A full course path:** all 12 weeks and 36 existing lessons, with stable lesson IDs and the six original milestone IDs and task intent.
+- **Spaced retrieval:** previous-lesson recall, a changed-scene revisit in the first lesson of a week, longer-spaced weak-item recall in the third lesson, plus rated phrase/kana/kanji flashcards.
+- **Phrasebook and checkpoints:** searchable course language and fields for learner-entered milestone evidence and next practice targets.
+- **Local-first progress:** versioned progress stored on this device, with JSON export and a visible warning plus export action if device storage fails. Completion is freely self-recorded; it is not a fluency or automatic speaking score.
+- **Glass desktop shell:** Bun, Electron, React, and electron-vite, with native macOS vibrancy and motion that respects reduced-motion settings.
 
-Hiragana and katakana appear alongside the phrases learners say and hear. Each section introduces only kanji that help in that situation, with readings for unfamiliar forms. The provisional **12-week plan and its milestone checks remain the course backbone**; they are drafts to tune through a learner pilot, not claims of fluency.
+## Run and test
 
-## App experience
+Install dependencies with Bun, then start the desktop app:
 
-A lesson should let learners work through a short dialogue, choose or reveal useful responses, practise changing details, revisit kana, and check what they understood. Role-play and milestone checks stay focused on observable communication. Progress should show lesson activity and learner-recorded checkpoint evidence, not imply automated evaluation.
+```sh
+bun install
+bun run dev
+```
 
-The MVP can support speaking and listening practice with visible prompts and a partner, tutor, or learner-led routine. **TTS, STT, and automated speaking evaluation are later extensions—not MVP scope.**
+Run the dependency-free course and learning-engine tests with `bun test`. Create a production Electron build with `bun run build`.
 
-## Desktop direction
+## Course and design notes
 
-Follow the existing Fish desktop convention: **Bun, Electron, React, and electron-vite**. Start with a lightweight desktop shell, structured lesson content, and local progress tracking. The app itself is not implemented yet.
-
-See [the phased app roadmap](docs/app-roadmap.md) for a staged direction that separates a useful MVP from later speech features.
-
-## Course and research
-
-- [Course design](docs/course-design.md): scope, functional categories, progression, and script policy.
-- [12-week plan](docs/12-week-plan.md): the preserved first-pass course sequence and observable checkpoints.
-- [Lesson template](docs/lesson-template.md): a reusable structure for future interactive lessons.
-- [Course system](docs/course-system.md): the full 36-lesson learning loop, progression, and honest progress model.
-- [Structured course data](course/course-v1.json): app-ready 12-week content, with a [JSON Schema](course/course.schema.json).
-- [Japanese TTS options](docs/tts-options.md): current provider comparison, pricing and licensing caveats, and a learner-first audition recommendation.
+- [App usage guide](docs/app-guide.md)
+- [Course design](docs/course-design.md)
+- [12-week plan](docs/12-week-plan.md)
+- [Lesson template](docs/lesson-template.md)
+- [Course system and retrieval cadence](docs/course-system.md)
+- [Structured course data](course/course-v1.json) and [schema](course/course.schema.json)
+- [Phased app roadmap](docs/app-roadmap.md)
+- [Japanese TTS options](docs/tts-options.md) — research only; audio integration remains deferred.
 
 ## Status
 
-Course content v0.2: the complete 12-week, 36-lesson course system and milestone structure are drafted. Next: review Japanese with a proficient speaker and pilot the first lessons to tune pacing and thresholds. The app is not implemented yet; TTS/STT integration and automated speaking evaluation remain later work.
+The app is a working text-first MVP foundation and the course data remains a draft for proficient-speaker review and learner piloting. Learners can open lessons and move between steps in any order; marking a lesson complete is a self-attestation, not a gate or automatic check that every activity was done. Timing, Japanese phrasing, and checkpoint thresholds should be tuned from feedback. TTS, STT, recording, accounts, cloud sync, and automated speaking evaluation are not part of this implementation.
