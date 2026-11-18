@@ -64,7 +64,9 @@ export function createIrodoriMfOnnxRuntime({
         assertIrodoriMfFreeSpace(status, filesystem.bavail * filesystem.bsize)
       }
       if (controller.signal.aborted) throw controller.signal.reason
-      return downloadModelAssets(IRODORI_MF_ONNX_MODEL_ID, { cacheRoot, onProgress, signal: controller.signal })
+      await downloadModelAssets(IRODORI_MF_ONNX_MODEL_ID, { cacheRoot, onProgress, signal: controller.signal })
+      // Return the runtime-shaped status (runtimeReady etc.), not the raw cache status, so the UI enables Generate right away.
+      return getStatus()
     })()
     downloadPromise = task.finally(() => {
       downloadPromise = null

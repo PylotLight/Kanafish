@@ -50,3 +50,11 @@ describe('TTS model registry and cache', () => {
     expect(() => getTtsModelFilePath('unknown-model', 'onnx/tts.json', '/tmp/hf-cache')).toThrow()
   })
 })
+
+import { getTtsEngineReadiness } from '../src/renderer/src/tts/readiness.js'
+import { test as readinessTest, expect as readinessExpect } from 'bun:test'
+readinessTest('Irodori MF is ready as soon as its ONNX pack is installed (no separate runtime)', () => {
+  const ready = getTtsEngineReadiness('irodori-v4.1-small-mf', { irodoriMfOnnxStatus: { installed: true } })
+  readinessExpect(ready.ready).toBe(true)
+  readinessExpect(getTtsEngineReadiness('irodori-v4.1-small-mf', { irodoriMfOnnxStatus: { installed: false } }).missing).toBe('model')
+})
