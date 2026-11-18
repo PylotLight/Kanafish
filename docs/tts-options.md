@@ -4,7 +4,7 @@
 
 I could not identify a Japanese speech product named **“Phorus TTS”** from exact-name searches. The closest plausible name is **Fish Audio**: its current S2.1 model explicitly lists Japanese among its strongest languages and offers an API. “Phorus” alone mostly surfaced unrelated speaker products, so this is a likely spelling or hearing mix-up, not a confirmed identification.
 
-Six local engines now have selectable setup and synthesis paths in Kanafish: **Supertonic 3** through ONNX Runtime WebGPU/WASM, **NVIDIA Magpie Multilingual v2607** through NeMo-Speech.cpp, **Qwen3-TTS 0.6B CustomVoice** through codec.cpp, **MioTTS-0.6B** through CrispASR, **Irodori-TTS v4.1-Small** through an app-managed Python sidecar, and **Irodori-TTS v4.1-Small-MF** through ONNX. Supertonic 3 is the default and the owner's preferred voice from listening comparisons. The other engines remain opt-in; their audio quality and macOS/Metal performance are not assumed to match it. Model weights and optional runtimes are fetched only when requested and stay outside Git. Plain Irodori is the only route requiring Python; MioTTS's bundled Japanese preset output is non-commercial. The cloud-provider comparison below remains future research, not a runtime shipped by the app.
+Only **Supertonic 3** is selectable in the current Kanafish interface. It uses a fixed M1 voice preset, ONNX Runtime WebGPU/WASM, and on-demand model downloads. The other five local integrations described below are hidden and disabled after the live setup showed only Supertonic working there; their code and earlier sandbox validation notes are retained for re-testing, not presented as currently available choices. Those earlier tests do not establish that the engines work on the owner's live device. Model weights stay outside Git. The cloud-provider comparison below remains future research, not a runtime shipped by the app.
 
 ## Current local pilot
 
@@ -42,8 +42,8 @@ These are provider-published USD list prices reviewed on **17 November 2026**, b
 
 ## Recommendation
 
-1. **Keep Supertonic 3 as the current default.** It is the owner's preferred voice in listening comparisons and is the fallback-free default used throughout the course.
-2. **Keep the other five local engines optional.** Voice Lab shows their setup requirements and evidence; do not claim equal performance or macOS/Metal support without further tests.
+1. **Keep Supertonic 3 as the only currently enabled engine.** It is used throughout the course with its fixed M1 preset; normal-speed playback remains available alongside the slower lesson replay.
+2. **Keep the other five local engines disabled and hidden until live validation.** Their sandbox measurements do not establish that they work on the owner's device, and macOS/Metal performance should not be assumed.
 3. **Make model licenses and preset restrictions visible.** In particular, do not use audio generated with MioTTS's bundled Japanese presets commercially.
 4. **Keep model weights and runtimes outside Git and on-demand.** Retain non-audio alternatives so a learner can continue when no selected local engine is ready.
 5. **Keep speech recognition and automated speaking evaluation out of scope.** Validate the implemented listening flow and task-level outcomes with Japanese-speaking reviewers and beginner learners instead.

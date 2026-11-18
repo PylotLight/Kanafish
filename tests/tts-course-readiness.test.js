@@ -13,11 +13,12 @@ const readyStatuses = {
   mioStatus: { modelInstalled: true, runtimeReady: true }
 }
 
-test('lesson audio availability follows the selected engine, not Supertonic-only status', () => {
-  const ids = ['supertonic-3', 'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b']
-  for (const id of ids) expect(getTtsEngineReadiness(id, readyStatuses).ready).toBe(true)
-  expect(getTtsEngineReadiness('magpie-v2607', { magpieStatus: { modelInstalled: true, runtimeReady: false } })).toMatchObject({ ready: false, missing: 'runtime' })
-  expect(getTtsEngineReadiness('qwen3-tts-0.6b-customvoice', { qwenStatus: { modelInstalled: false, runtimeReady: true } })).toMatchObject({ ready: false, missing: 'model' })
+test('lesson audio is enabled only for Supertonic even when old alternative-engine caches are ready', () => {
+  expect(getTtsEngineReadiness('supertonic-3', readyStatuses).ready).toBe(true)
+  const pausedIds = ['magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b']
+  for (const id of pausedIds) {
+    expect(getTtsEngineReadiness(id, readyStatuses)).toMatchObject({ ready: false, missing: 'engine' })
+  }
   expect(getTtsEngineReadiness('unknown-engine', readyStatuses)).toMatchObject({ ready: false, missing: 'engine' })
 })
 

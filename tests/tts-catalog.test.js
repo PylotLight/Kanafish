@@ -1,10 +1,18 @@
 import { describe, expect, test } from 'bun:test'
-import { TTS_MODEL_CATALOG, RUNNABLE_TTS_MODEL_IDS } from '../src/renderer/src/tts/modelCatalog.js'
+import { TTS_MODEL_CATALOG, RUNNABLE_TTS_MODEL_IDS, ENABLED_TTS_MODEL_IDS } from '../src/renderer/src/tts/modelCatalog.js'
 
 describe('TTS model catalog', () => {
   test('marks only integrated Supertonic, Magpie, Qwen, Irodori and Mio adapters runnable', () => {
     expect(RUNNABLE_TTS_MODEL_IDS).toEqual(['supertonic-3', 'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b'])
     expect(TTS_MODEL_CATALOG.filter((model) => model.availableInApp).map((model) => model.id)).toEqual(RUNNABLE_TTS_MODEL_IDS)
+  })
+
+  test('enables only Supertonic 3 in the current app rollout', () => {
+    expect(ENABLED_TTS_MODEL_IDS).toEqual(['supertonic-3'])
+    expect(TTS_MODEL_CATALOG.filter((model) => model.enabledInApp).map((model) => model.id)).toEqual(['supertonic-3'])
+    expect(TTS_MODEL_CATALOG.filter((model) => model.availableInApp && !model.enabledInApp).map((model) => model.id)).toEqual([
+      'magpie-v2607', 'qwen3-tts-0.6b-customvoice', 'irodori-v4.1-small', 'irodori-v4.1-small-mf', 'miotts-0.6b'
+    ])
   })
 
   test('lists every requested candidate without marking research-only placeholders runnable', () => {

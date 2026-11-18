@@ -14,8 +14,9 @@ const ENGINE_REQUIREMENTS = Object.freeze({
 
 export function getTtsEngineReadiness(modelId, statuses = {}) {
   const requirement = ENGINE_REQUIREMENTS[modelId]
+  const model = TTS_MODEL_CATALOG.find((candidate) => candidate.id === modelId)
   const modelName = MODEL_NAMES.get(modelId) || modelId || 'Local voice'
-  if (!requirement) {
+  if (!requirement || !model?.enabledInApp) {
     return {
       modelId,
       modelName,
@@ -23,7 +24,9 @@ export function getTtsEngineReadiness(modelId, statuses = {}) {
       runtimeReady: false,
       ready: false,
       missing: 'engine',
-      message: 'This local speech engine is not available in this build.'
+      message: model?.availableInApp
+        ? `${modelName} is temporarily disabled in Kanafish.`
+        : 'This local speech engine is not available in this build.'
     }
   }
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getTtsEngineReadiness } from './readiness.js'
+import { ENABLED_TTS_MODEL_IDS } from './modelCatalog.js'
 
 export function useTts() {
   const workerRef = useRef(null)
@@ -51,7 +52,7 @@ export function useTts() {
   const [irodoriSettingUp, setIrodoriSettingUp] = useState(false)
   const [irodoriSetupError, setIrodoriSetupError] = useState('')
   const [qwenVoice, setQwenVoice] = useState('ono_anna')
-  const [activeModelId, setActiveModelId] = useState('supertonic-3')
+  const activeModelId = ENABLED_TTS_MODEL_IDS[0]
   const [backend, setBackend] = useState('')
   const [engineProgress, setEngineProgress] = useState(null)
   const [synthesisProgress, setSynthesisProgress] = useState(null)
@@ -755,7 +756,6 @@ export function useTts() {
     clearIrodoriModelCache,
     removeIrodoriPythonRuntime,
     activeModelId,
-    setActiveModelId,
     activeEngineStatus,
     backend,
     engineProgress,

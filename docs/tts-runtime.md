@@ -1,6 +1,6 @@
 # Optional local TTS runtimes
 
-Kanafish can run optional local speech engines from Voice Lab. Model weights are separate from runtime setup: they stay outside Git and are downloaded only after a separate user action. Magpie and Qwen now have explicit, app-managed source-build actions; the app does not bundle prebuilt native binaries.
+Only Supertonic 3 is currently exposed in Voice Lab. The other integrations documented below are retained in source but disabled and hidden after the live setup showed only Supertonic working; the earlier sandbox checks do not prove they work on the owner's device. The detailed setup notes below preserve that work for re-validation. Supertonic model weights stay outside Git and are downloaded only after a separate user action.
 
 ## In-app native runtime setup: Qwen and Magpie
 
