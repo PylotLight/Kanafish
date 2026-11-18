@@ -100,7 +100,7 @@ function workerChild({ version = '0.11.0', fatal = null, text = '東京駅まで
   return child
 }
 
-function streamChild({ received = [], closeOnEnd = true } = {}) {
+function streamChild({ received = [], closeOnEnd = true, failAfterSpeech = false } = {}) {
   const child = new EventEmitter()
   child.pid = 1234
   child.stdin = new PassThrough()
@@ -126,6 +126,7 @@ function streamChild({ received = [], closeOnEnd = true } = {}) {
       sawSpeech = true
       send({ type: 'input_audio_buffer.speech_started', item_id: 'item-1', audio_start_ms: 0 })
       send({ type: 'conversation.item.input_audio_transcription.delta', item_id: 'item-1', delta: 'こん' })
+      if (failAfterSpeech) send({ type: 'failed', error: { message: 'simulated live ASR failure' } })
     } else if (sawSpeech && !finalized && !audible) {
       silenceBytes += chunk.length
       if (silenceBytes >= 6_400) {
@@ -139,7 +140,7 @@ function streamChild({ received = [], closeOnEnd = true } = {}) {
   return child
 }
 
-function fakeSpawn({ version = '0.11.0', worker = {} } = {}) {
+function fakeSpawn({ version = '0.11.0', worker = {}, stream = {} } = {}) {
   const calls = []
   const received = []
   const streamReceived = []
@@ -147,7 +148,7 @@ function fakeSpawn({ version = '0.11.0', worker = {} } = {}) {
     calls.push({ executable, args, options })
     if (args[0] === '--version') return commandChild({ stdout: `speech.cpp ${version}, C API 4.2\n` })
     if (args[0] === 'worker') return workerChild({ version, received, ...worker })
-    if (args[0] === 'asr') return streamChild({ received: streamReceived })
+    if (args[0] === 'asr') return streamChild({ received: streamReceived, ...stream })
     return commandChild({ stderr: 'unexpected command', code: 2 })
   }
   return { spawnImpl, calls, received, streamReceived }
@@ -447,6 +448,23 @@ describe('Haas speech.cpp runtime', () => {
     expect((await runtime.getStatus()).streamProcessRunning).toBe(false)
     await expect(runtime.pushStreamFrame(session.sessionId, Buffer.alloc(3200, 1))).rejects.toThrow(/no longer active/)
     expect(await runtime.cancelStream(session.sessionId)).toEqual({ cancelled: false })
+    await runtime.stop()
+  })
+
+  test('falls back to buffered Haas when streaming yields only a provisional draft and an error', async () => {
+    const { runtime, spawn, streamEvents } = await makeRuntime({ spawn: { stream: { failAfterSpeech: true } } })
+    await runtime.setupRuntime()
+    await runtime.downloadModel()
+    await runtime.downloadVadModel()
+    const session = await runtime.startStream(16_000)
+    await runtime.pushStreamFrame(session.sessionId, Buffer.alloc(3_200, 1))
+    const live = await runtime.finishStream(session.sessionId)
+    expect(live).toMatchObject({ text: 'こん', final: false, needsFallback: true, error: 'simulated live ASR failure' })
+    expect(streamEvents.some((event) => event.sessionId === session.sessionId && event.kind === 'error')).toBe(true)
+    const buffered = await runtime.transcribe(encodeWav16(tone(1)))
+    expect(buffered).toMatchObject({ text: '東京駅までお願いします。', modelId: HAAS_ASR_MODEL.id })
+    expect(spawn.calls.filter((call) => call.args[0] === 'worker')).toHaveLength(1)
+    expect((await runtime.getStatus()).streamProcessRunning).toBe(false)
     await runtime.stop()
   })
 
