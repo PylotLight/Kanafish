@@ -26,6 +26,8 @@
 .tts-download-cta > span, .voice-test-hint { color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
 .native-runtime-setup { margin: 10px 0 0; align-items: center; }
 .native-runtime-setup > span { flex: 1 1 200px; }
+.runtime-install-path { display: block; margin: 5px 0; color: var(--muted); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); line-height: 1.4; overflow-wrap: anywhere; }
+.runtime-install-path code { color: var(--ink); overflow-wrap: anywhere; }
 .runtime-blockers { margin: 9px 0 0; padding: 9px 11px 9px 27px; border: 1px solid var(--line); border-radius: 8px; background: var(--cream); color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
 .runtime-blockers li + li { margin-top: 4px; }
 .tts-download-state { padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--cream); }

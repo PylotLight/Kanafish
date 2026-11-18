@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
   removeIrodoriPythonRuntime: () => ipcRenderer.invoke('kanafish:irodori-remove-python-runtime'),
   getIrodoriMfOnnxStatus: () => ipcRenderer.invoke('kanafish:irodori-mf-onnx-status'),
   downloadIrodoriMfOnnxModel: () => ipcRenderer.invoke('kanafish:irodori-mf-onnx-download-model'),
+  cancelIrodoriMfOnnxDownload: () => ipcRenderer.invoke('kanafish:irodori-mf-onnx-cancel-download'),
   removeIrodoriMfOnnxModel: () => ipcRenderer.invoke('kanafish:irodori-mf-onnx-remove-model'),
   synthesizeIrodoriMfOnnx: (request) => ipcRenderer.invoke('kanafish:irodori-mf-onnx-synthesize', request),
   onIrodoriMfOnnxProgress: (callback) => {

@@ -127,6 +127,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('kanafish:irodori-remove-python-runtime', () => irodoriRuntime.removePythonRuntime())
   ipcMain.handle('kanafish:irodori-mf-onnx-status', () => irodoriMfOnnxRuntime.getStatus())
   ipcMain.handle('kanafish:irodori-mf-onnx-download-model', () => irodoriMfOnnxRuntime.downloadModel())
+  ipcMain.handle('kanafish:irodori-mf-onnx-cancel-download', () => irodoriMfOnnxRuntime.cancelDownload())
   ipcMain.handle('kanafish:irodori-mf-onnx-remove-model', () => irodoriMfOnnxRuntime.removeModel())
   ipcMain.handle('kanafish:irodori-mf-onnx-synthesize', (_event, request = {}) => irodoriMfOnnxRuntime.synthesize(request.text))
   ipcMain.handle('kanafish:mio-status', () => mioRuntime.getStatus())

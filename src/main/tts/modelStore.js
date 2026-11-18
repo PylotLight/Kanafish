@@ -12,6 +12,8 @@ import {
 
 const inflightDownloads = new Map()
 const verifiedAssets = new Set()
+const MAX_DOWNLOAD_ATTEMPTS = 5
+const INACTIVITY_TIMEOUT_MS = 60_000
 
 async function matchesSha256(path, expected) {
   const hash = createHash('sha256')
@@ -61,59 +63,224 @@ export async function getTtsModelStatus(modelId = 'supertonic-3', cacheRoot = ge
   }
 }
 
-async function downloadModel(modelId, { cacheRoot = getHfHubCacheRoot(), fetchImpl = globalThis.fetch, onProgress = () => {} } = {}) {
-  const model = getTtsModel(modelId)
-  if (!model) throw new Error(`Unknown TTS model: ${modelId}`)
-  if (typeof fetchImpl !== 'function') throw new Error('This runtime does not support downloads')
+function checkAbort(signal) {
+  if (signal?.aborted) throw signal.reason || new DOMException('Aborted', 'AbortError')
+}
 
-  const initialStatus = await getTtsModelStatus(modelId, cacheRoot)
-  let downloadedBytes = initialStatus.downloadedBytes
-  const totalBytes = initialStatus.totalBytes
-  const statusByPath = new Map(initialStatus.files.map((file) => [file.path, file]))
-  onProgress({ modelId, file: '', downloadedBytes, totalBytes, completedFiles: initialStatus.files.filter((file) => file.downloaded).length, totalFiles: model.files.length })
+function raceWithAbort(promise, signal) {
+  if (!signal) return promise
+  checkAbort(signal)
+  let onAbort
+  const aborted = new Promise((_, rejectPromise) => {
+    onAbort = () => rejectPromise(signal.reason || new DOMException('Aborted', 'AbortError'))
+    signal.addEventListener('abort', onAbort, { once: true })
+    if (signal.aborted) onAbort()
+  })
+  return Promise.race([promise, aborted]).finally(() => signal.removeEventListener('abort', onAbort))
+}
 
-  for (const file of model.files) {
-    if (statusByPath.get(file.path)?.downloaded) continue
-    const filePath = getTtsModelFilePath(modelId, file.path, cacheRoot)
-    const partPath = `${filePath}.part`
-    await mkdir(dirname(filePath), { recursive: true })
-    let handle
-    try {
-      const url = `https://huggingface.co/${model.repoId}/resolve/${model.revision}/${file.path}`
-      const response = await fetchImpl(url, { signal: AbortSignal.timeout(300_000) })
-      if (!response.ok) throw new Error(`Hugging Face download failed (${response.status}) for ${file.path}`)
-      if (!response.body) throw new Error(`Hugging Face returned an empty file for ${file.path}`)
-      handle = await open(partPath, 'w')
-      const reader = response.body.getReader()
-      const hash = createHash('sha256')
-      let fileBytes = 0
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        await handle.write(value)
-        hash.update(value)
-        fileBytes += value.byteLength
-        onProgress({ modelId, file: file.path, downloadedBytes: downloadedBytes + fileBytes, totalBytes, fileBytes, fileSize: file.size, completedFiles: initialStatus.files.filter((item) => item.downloaded).length + model.files.indexOf(file), totalFiles: model.files.length })
-      }
-      const actualHash = hash.digest('hex')
-      await handle.sync()
-      await handle.close()
-      handle = undefined
-      const written = await stat(partPath)
-      if (written.size !== file.size) throw new Error(`Downloaded size mismatch for ${file.path}: expected ${file.size}, got ${written.size}`)
-      if (actualHash !== file.sha256) throw new Error(`SHA-256 mismatch for ${file.path}; the downloaded file did not match the pinned model revision`)
-      await rename(partPath, filePath)
-      verifiedAssets.add(filePath)
-      downloadedBytes += file.size
-      onProgress({ modelId, file: file.path, downloadedBytes, totalBytes, fileBytes: file.size, fileSize: file.size, completedFiles: model.files.indexOf(file) + 1, totalFiles: model.files.length })
-    } catch (error) {
-      await handle?.close().catch(() => {})
-      await rm(partPath, { force: true }).catch(() => {})
-      throw error
+function isTransient(error) {
+  const code = error?.code || error?.cause?.code
+  return Boolean(error?.retryable) || ['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'].includes(code)
+}
+
+function timeoutError(message) {
+  return Object.assign(new Error(message), { code: 'ETIMEDOUT', retryable: true })
+}
+
+function waitForRetry(ms, signal) {
+  checkAbort(signal)
+  return new Promise((resolvePromise, rejectPromise) => {
+    const cleanup = () => signal?.removeEventListener('abort', onAbort)
+    const timer = setTimeout(() => { cleanup(); resolvePromise() }, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      cleanup()
+      rejectPromise(signal.reason || new DOMException('Aborted', 'AbortError'))
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+    if (signal?.aborted) onAbort()
+  })
+}
+
+export async function downloadVerifiedFile({
+  url,
+  file,
+  path,
+  partPath = `${path}.part`,
+  fetchImpl = globalThis.fetch,
+  signal,
+  onProgress = () => {},
+  modelId = '',
+  totalBytes = file.size,
+  downloadedBytes = 0,
+  completedFiles = 0,
+  totalFiles = 0,
+  maxAttempts = MAX_DOWNLOAD_ATTEMPTS,
+  inactivityTimeoutMs = INACTIVITY_TIMEOUT_MS
+}) {
+  let lastReport = 0
+  let lastBytes = -1
+  const progress = (bytes, terminal = false) => {
+    const now = Date.now()
+    if (terminal || bytes === file.size || bytes - lastBytes >= 256 * 1024 || now - lastReport >= 250) {
+      try {
+        onProgress({ modelId, file: file.path, fileBytes: bytes, fileSize: file.size, downloadedBytes: downloadedBytes + bytes, totalBytes, completedFiles, totalFiles, terminal })
+      } catch {}
+      lastReport = now
+      lastBytes = bytes
     }
   }
 
-  return getTtsModelStatus(modelId, cacheRoot)
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    checkAbort(signal)
+    const partialInfo = await fileStatOrNull(partPath)
+    let offset = partialInfo?.isFile() ? partialInfo.size : 0
+    if (partialInfo && !partialInfo.isFile()) {
+      await rm(partPath, { recursive: true, force: true })
+      offset = 0
+    }
+    if (offset > file.size) {
+      await rm(partPath, { force: true })
+      offset = 0
+    }
+    if (offset === file.size) {
+      if (await matchesSha256(partPath, file.sha256)) {
+        await rename(partPath, path)
+        verifiedAssets.add(path)
+        progress(file.size, true)
+        return
+      }
+      await rm(partPath, { force: true })
+      offset = 0
+    }
+
+    const controller = new AbortController()
+    const relay = () => controller.abort(signal.reason || new DOMException('Aborted', 'AbortError'))
+    signal?.addEventListener('abort', relay, { once: true })
+    if (signal?.aborted) relay()
+    let handle
+    let reader
+    try {
+      const headers = offset ? { Range: `bytes=${offset}-` } : {}
+      let headerTimer
+      const headerTimeout = new Promise((_, rejectPromise) => {
+        headerTimer = setTimeout(() => {
+          const error = timeoutError(`Timed out waiting for Hugging Face response headers for ${file.path}`)
+          controller.abort(error)
+          rejectPromise(error)
+        }, inactivityTimeoutMs)
+      })
+      let response
+      try {
+        response = await raceWithAbort(Promise.race([fetchImpl(url, { signal: controller.signal, headers }), headerTimeout]), signal)
+      } finally {
+        clearTimeout(headerTimer)
+      }
+
+      if (response.status === 408 || response.status === 429 || response.status >= 500) {
+        await Promise.resolve(response.body?.cancel?.()).catch(() => {})
+        throw Object.assign(new Error(`Hugging Face download failed (${response.status}) for ${file.path}`), { retryable: true })
+      }
+      if (offset && response.status === 200) {
+        offset = 0
+      } else if (response.status === 206) {
+        const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers?.get?.('content-range') || '')
+        if (!range || Number(range[1]) !== offset || Number(range[3]) !== file.size || Number(range[2]) < offset || Number(range[2]) >= file.size) {
+          await Promise.resolve(response.body?.cancel?.()).catch(() => {})
+          await rm(partPath, { force: true })
+          continue
+        }
+      } else if (response.status !== 200) {
+        await Promise.resolve(response.body?.cancel?.()).catch(() => {})
+        throw new Error(`Hugging Face download failed (${response.status}) for ${file.path}`)
+      }
+      if (!response.body) throw Object.assign(new Error(`Hugging Face returned an empty file for ${file.path}`), { retryable: true })
+
+      await mkdir(dirname(partPath), { recursive: true })
+      handle = await open(partPath, offset ? 'a' : 'w')
+      const hash = createHash('sha256')
+      if (offset) for await (const chunk of createReadStream(partPath)) hash.update(chunk)
+      reader = response.body.getReader()
+      let bytes = offset
+      while (true) {
+        checkAbort(signal)
+        let timer
+        const bodyTimeout = new Promise((_, rejectPromise) => {
+          timer = setTimeout(() => {
+            const error = timeoutError(`Download body inactive for ${file.path}`)
+            controller.abort(error)
+            rejectPromise(error)
+          }, inactivityTimeoutMs)
+        })
+        const result = await raceWithAbort(Promise.race([reader.read(), bodyTimeout]), signal).finally(() => clearTimeout(timer))
+        if (result.done) break
+        const chunk = Buffer.from(result.value)
+        if (bytes + chunk.byteLength > file.size) {
+          await rm(partPath, { force: true })
+          throw new Error(`Downloaded file exceeded expected size for ${file.path}`)
+        }
+        let written = 0
+        while (written < chunk.byteLength) {
+          const writeResult = await handle.write(chunk, written, chunk.byteLength - written)
+          if (!writeResult.bytesWritten) throw Object.assign(new Error(`Could not write downloaded bytes for ${file.path}`), { code: 'EIO', retryable: true })
+          written += writeResult.bytesWritten
+        }
+        hash.update(chunk)
+        bytes += chunk.byteLength
+        progress(bytes)
+      }
+      await handle.sync()
+      await handle.close()
+      handle = null
+      if (bytes !== file.size) throw Object.assign(new Error(`Downloaded size mismatch for ${file.path}: expected ${file.size}, got ${bytes}`), { retryable: true })
+      if (hash.digest('hex') !== file.sha256) {
+        await rm(partPath, { force: true })
+        throw new Error(`SHA-256 mismatch for ${file.path}`)
+      }
+      await rename(partPath, path)
+      verifiedAssets.add(path)
+      progress(file.size, true)
+      return
+    } catch (error) {
+      await reader?.cancel?.().catch(() => {})
+      await handle?.close().catch(() => {})
+      if (signal?.aborted) {
+        progress((await fileStatOrNull(partPath))?.size || 0, true)
+        throw signal.reason || error
+      }
+      if (!isTransient(error) || attempt + 1 >= maxAttempts) {
+        progress((await fileStatOrNull(partPath))?.size || 0, true)
+        throw error
+      }
+      await waitForRetry(Math.min(8_000, 250 * 2 ** attempt), signal)
+    } finally {
+      signal?.removeEventListener('abort', relay)
+    }
+  }
+  throw new Error(`Could not download ${file.path} after ${maxAttempts} attempts.`)
+}
+async function downloadModel(modelId, { cacheRoot = getHfHubCacheRoot(), fetchImpl = globalThis.fetch, onProgress = () => {}, signal } = {}) {
+  const model = getTtsModel(modelId)
+  if (!model) throw new Error(`Unknown TTS model: ${modelId}`)
+  if (typeof fetchImpl !== 'function') throw new Error('This runtime does not support downloads')
+  const initialStatus = await getTtsModelStatus(modelId, cacheRoot)
+  let downloadedBytes = initialStatus.downloadedBytes
+  const totalBytes = initialStatus.totalBytes
+  let completedFiles = initialStatus.files.filter(file => file.downloaded).length
+  onProgress({ modelId, file: '', downloadedBytes, totalBytes, completedFiles, totalFiles: model.files.length })
+  for (const file of model.files) {
+    checkAbort(signal)
+    if (initialStatus.files.find(item => item.path === file.path)?.downloaded) continue
+    const filePath = getTtsModelFilePath(modelId,file.path,cacheRoot)
+    await mkdir(dirname(filePath),{recursive:true})
+    await rm(filePath, { force: true })
+    await downloadVerifiedFile({ url:`https://huggingface.co/${model.repoId}/resolve/${model.revision}/${file.path}`, file, path:filePath, fetchImpl, signal, onProgress, modelId, totalBytes, downloadedBytes, completedFiles, totalFiles: model.files.length })
+    downloadedBytes += file.size
+    completedFiles += 1
+    onProgress({ modelId,file:file.path,downloadedBytes,totalBytes,fileBytes:file.size,fileSize:file.size,completedFiles,totalFiles:model.files.length,terminal:true })
+  }
+  return getTtsModelStatus(modelId,cacheRoot)
 }
 
 export function downloadTtsModel(modelId = 'supertonic-3', options = {}) {
