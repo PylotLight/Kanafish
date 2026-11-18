@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('kanafish', Object.freeze({
+  platform: process.platform,
   exitApp: () => ipcRenderer.invoke('kanafish:exit-app'),
   getTtsModelStatus: () => ipcRenderer.invoke('kanafish:tts-model-status'),
   downloadTtsModel: () => ipcRenderer.invoke('kanafish:tts-download-model'),

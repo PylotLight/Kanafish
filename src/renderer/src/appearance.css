@@ -49,73 +49,18 @@
 }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
-.sidebar-utility {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 7px;
-  margin-top: 7px;
-  padding: 9px 3px 1px;
-  border-top: 1px solid var(--line);
-}
-.sidebar-dock-button {
-  width: 35px;
-  height: 34px;
-  flex: 0 0 35px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, .23);
-  color: var(--muted);
-  cursor: pointer;
-  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
-}
-.sidebar-dock-button:hover { border-color: var(--glass-edge, var(--line)); background: var(--glass-raised, var(--paper)); color: var(--teal); transform: translateY(-1px); }
-.sidebar-dock-button:focus-visible { outline-offset: 2px; }
-.sidebar-dock-button.active { border-color: color-mix(in srgb, var(--teal) 34%, var(--line)); background: var(--mint); color: var(--teal); }
-.sidebar-dock-button.exit-button:hover { color: var(--orange); }
-
-.sidebar.is-collapsed {
-  width: 76px;
-  flex: 0 0 76px;
-  padding-right: 10px;
-  padding-left: 10px;
-}
-.sidebar.is-collapsed .brand-lockup {
-  justify-content: center;
-  gap: 4px;
-  padding-right: 0;
-  padding-left: 0;
-}
-.sidebar.is-collapsed .brand-lockup > div:last-child,
-.sidebar.is-collapsed .course-chip,
+/* Collapsed rail: same footer, stacked like Surffish's rail. */
+.sidebar.is-collapsed { width: 56px; flex-basis: 56px; padding: 0 8px; }
+.sidebar.is-collapsed .brand-lockup { justify-content: center; padding-right: 0; padding-left: 0; }
+.sidebar.is-collapsed .brand-copy,
 .sidebar.is-collapsed .nav-button > span,
-.sidebar.is-collapsed .nav-button em,
-.sidebar.is-collapsed .sidebar-progress,
-.sidebar.is-collapsed .local-note,
-.sidebar.is-collapsed .export-button > span,
-.sidebar.is-collapsed .profile-row > div:not(.avatar),
-.sidebar.is-collapsed .profile-sparkle {
-  display: none;
-}
-.sidebar.is-collapsed .brand-mark { width: 30px; height: 30px; font-size: 10px; }
-.sidebar.is-collapsed .nav-button {
-  justify-content: center;
-  gap: 0;
-  padding-right: 0;
-  padding-left: 0;
-}
-.sidebar.is-collapsed .nav-button svg { width: 19px; height: 19px; }
-.sidebar.is-collapsed .export-button {
-  width: 100%;
-  justify-content: center;
-  padding: 8px 0 10px;
-}
-.sidebar.is-collapsed .profile-row { justify-content: center; padding: 12px 0 1px; }
-.sidebar.is-collapsed .sidebar-utility { flex-direction: column; justify-content: center; gap: 6px; padding-right: 0; padding-left: 0; }
-.sidebar.is-collapsed .sidebar-dock-button { width: 36px; height: 34px; }
+.sidebar.is-collapsed .sidebar-progress { display: none; }
+.sidebar.is-collapsed .nav-button { position: relative; justify-content: center; gap: 0; padding: 0; min-height: 34px; }
+.sidebar.is-collapsed .nav-button em { position: absolute; top: 2px; right: 1px; min-width: 14px; height: 13px; padding: 0 3px; font-size: 8px; }
+.sidebar.is-collapsed .sidebar-footer { flex-direction: column; gap: 2px; margin: 0 -8px; padding: 6px 0 9px; }
+.sidebar.is-collapsed .sidebar-collapse-button { margin-right: 0; order: 3; }
+.settings-export-button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--ink); font: inherit; font-size: calc(11px * var(--text-scale, 1.18)); font-weight: 600; cursor: pointer; }
+.settings-export-button:hover { border-color: color-mix(in srgb, var(--teal) 40%, var(--line)); color: var(--teal); }
 
 .settings-page { max-width: 900px; }
 .settings-section {
@@ -230,15 +175,15 @@
 .settings-local-note svg { flex: 0 0 auto; color: var(--teal); }
 
 @media (max-width: 900px) {
-  .sidebar .brand-lockup { gap: 2px; padding-right: 0; padding-left: 0; }
-  .sidebar .brand-mark { width: 28px; height: 28px; }
-  .sidebar .sidebar-utility { flex-direction: column; justify-content: center; gap: 6px; padding-right: 0; padding-left: 0; }
-  .sidebar .sidebar-dock-button { width: 36px; height: 34px; }
-  .sidebar.is-collapsed { width: 68px; flex-basis: 68px; padding: 15px 9px 11px; }
+  .sidebar { width: 56px; flex-basis: 56px; padding: 0 8px; }
+  .sidebar .brand-lockup { justify-content: center; padding-right: 0; padding-left: 0; }
+  .sidebar .brand-copy, .sidebar .nav-button > span, .sidebar .sidebar-progress { display: none; }
+  .sidebar .nav-button { position: relative; justify-content: center; gap: 0; padding: 0; min-height: 34px; }
+  .sidebar .nav-button em { position: absolute; top: 2px; right: 1px; min-width: 14px; height: 13px; padding: 0 3px; font-size: 8px; }
+  .sidebar .sidebar-footer { flex-direction: column; gap: 2px; margin: 0 -8px; padding: 6px 0 9px; }
+  .sidebar .sidebar-collapse-button { display: none; }
 }
 @media (max-width: 620px) {
-  .sidebar .brand-mark { width: 25px; height: 25px; font-size: 9px; }
-  .sidebar.is-collapsed { width: 54px; flex-basis: 54px; padding: 12px 5px; }
   .settings-section { padding: 14px; }
   .settings-choice-grid { grid-template-columns: 1fr; }
 }

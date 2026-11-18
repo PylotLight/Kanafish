@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight,
   CircleCheck, Clock3, Compass, Download, Flame, GraduationCap, Lightbulb, ListChecks,
-  LockKeyhole, LogOut, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Settings,
+  LockKeyhole, Moon, PanelLeftClose, PanelLeftOpen, Power, RotateCcw, Search, Settings,
   Sparkles, Sun, Target, Type, Volume2, X
 } from 'lucide-react'
 import { loadPreferences, savePreferences } from '../preferences.js'
@@ -109,37 +109,32 @@ function App() {
   }
 
   return (
-    <div className="app-shell" data-theme={preferences.theme} style={{ '--text-scale': preferences.textScale }}>
+    <div className="app-shell" data-platform={window.kanafish?.platform || 'web'} data-theme={preferences.theme} style={{ '--text-scale': preferences.textScale }}>
       <aside className={`sidebar ${preferences.sidebarCollapsed ? 'is-collapsed' : ''}`}>
+        <div className="sidebar-titlebar" aria-hidden="true" />
         <div className="brand-lockup">
           <div className="brand-mark"><span>か</span><span>な</span></div>
-          <div><strong>Kanafish</strong><small>Japanese, for real life</small></div>
+          <div className="brand-copy"><strong>Kanafish</strong><small>Beginner · 12 weeks</small></div>
         </div>
-        <div className="course-chip"><span className="course-chip-dot" /> BEGINNER COURSE <span>12 WEEKS</span></div>
         <nav id="primary-nav" className="primary-nav" aria-label="Main navigation">
-          <NavButton icon={<CalendarDays size={18} />} label="Today" active={view === 'today'} onClick={() => navigate('today')} />
-          <NavButton icon={<Compass size={18} />} label="Course path" active={view === 'course'} onClick={() => navigate('course')} />
-          <NavButton icon={<RotateCcw size={18} />} label="Review cards" active={view === 'review'} onClick={() => navigate('review')} badge={dueCards.length || null} />
-          <NavButton icon={<BookOpen size={18} />} label="Phrasebook" active={view === 'phrasebook'} onClick={() => navigate('phrasebook')} />
-          <NavButton icon={<Volume2 size={18} />} label="Voice Lab" active={view === 'voice-lab'} onClick={() => navigate('voice-lab')} />
-          <NavButton icon={<Target size={18} />} label="Milestones" active={view === 'milestones'} onClick={() => navigate('milestones')} />
+          <NavButton icon={<CalendarDays size={16} />} label="Today" active={view === 'today'} onClick={() => navigate('today')} />
+          <NavButton icon={<Compass size={16} />} label="Course path" active={view === 'course'} onClick={() => navigate('course')} />
+          <NavButton icon={<RotateCcw size={16} />} label="Review cards" active={view === 'review'} onClick={() => navigate('review')} badge={dueCards.length || null} />
+          <NavButton icon={<BookOpen size={16} />} label="Phrasebook" active={view === 'phrasebook'} onClick={() => navigate('phrasebook')} />
+          <NavButton icon={<Volume2 size={16} />} label="Voice Lab" active={view === 'voice-lab'} onClick={() => navigate('voice-lab')} />
+          <NavButton icon={<Target size={16} />} label="Milestones" active={view === 'milestones'} onClick={() => navigate('milestones')} />
         </nav>
-        <div className="sidebar-progress">
-          <div className="sidebar-progress-top"><span>Course progress</span><strong>{stats.percent}%</strong></div>
+        <div className="sidebar-spacer" />
+        <div className="sidebar-progress" title={`${stats.completedLessons} of ${stats.totalLessons} lessons complete`}>
+          <div className="sidebar-progress-top"><span>Progress</span><strong>{stats.completedLessons}/{stats.totalLessons}</strong></div>
           <ProgressBar value={stats.percent} />
-          <small>{stats.completedLessons} of {stats.totalLessons} lessons</small>
         </div>
-        <div className="sidebar-bottom">
-          <div className="local-note"><LockKeyhole size={15} /><span>Your progress stays on this device.</span></div>
-          <button type="button" className="quiet-button export-button" onClick={exportProgress} aria-label="Export progress" title="Export progress"><Download size={15} /><span>Export progress</span></button>
-          <div className="sidebar-utility" role="group" aria-label="App actions">
-            <button type="button" className="sidebar-dock-button" onClick={() => updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed })} aria-label={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!preferences.sidebarCollapsed} aria-controls="primary-nav" title={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-              {preferences.sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}<span className="sr-only">{preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
-            </button>
-            <button type="button" className={`sidebar-dock-button ${view === 'settings' ? 'active' : ''}`} onClick={() => navigate('settings')} aria-label="Settings" aria-current={view === 'settings' ? 'page' : undefined} title="Settings"><Settings size={17} /><span className="sr-only">Settings</span></button>
-            <button type="button" className="sidebar-dock-button exit-button" onClick={() => window.kanafish?.exitApp?.()} aria-label="Exit Kanafish" title="Exit Kanafish"><LogOut size={17} /><span className="sr-only">Exit Kanafish</span></button>
-          </div>
-          <div className="profile-row"><div className="avatar">L</div><div><strong>Learner</strong><small>Self-paced practice</small></div><Sparkles className="profile-sparkle" size={16} /></div>
+        <div className="sidebar-footer" role="group" aria-label="App actions">
+          <button type="button" className="sidebar-footer-icon-button sidebar-collapse-button" onClick={() => updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed })} aria-label={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!preferences.sidebarCollapsed} aria-controls="primary-nav" title={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            {preferences.sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+          <button type="button" className={`sidebar-footer-icon-button ${view === 'settings' ? 'is-current' : ''}`} onClick={() => navigate('settings')} aria-label="Settings" aria-current={view === 'settings' ? 'page' : undefined} title="Settings"><Settings size={16} /></button>
+          <button type="button" className="sidebar-footer-icon-button sidebar-quit-button" onClick={() => window.kanafish?.exitApp?.()} aria-label="Quit Kanafish" title="Quit Kanafish"><Power size={16} /></button>
         </div>
       </aside>
 
@@ -161,7 +156,7 @@ function App() {
           {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} />}
           {view === 'voice-lab' && <VoiceLabPage tts={tts} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
-          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} />}
+          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} onExport={exportProgress} />}
         </div>
       </main>
     </div>
@@ -457,7 +452,7 @@ function MilestonesPage({ weeks, progress, onSave }) {
   </div>
 }
 
-function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange }) {
+function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange, onExport }) {
   const themeOptions = [
     { value: 'light', label: 'Light', detail: 'Soft paper and green glass.', icon: <Sun size={19} /> },
     { value: 'dark', label: 'Dark', detail: 'A calm, low-light palette.', icon: <Moon size={19} /> },
@@ -487,7 +482,10 @@ function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange }) {
         </button>)}
       </div>
     </section>
-    <div className="settings-local-note"><LockKeyhole size={16} /><span>These settings and your learning progress are stored locally on this device.</span></div>
+    <section className="settings-section" aria-labelledby="data-heading">
+      <div className="settings-section-heading"><div className="settings-section-icon"><LockKeyhole size={18} /></div><div><h2 id="data-heading">Your data</h2><p>Settings and learning progress stay on this device. Export a copy any time.</p></div></div>
+      <button type="button" className="settings-export-button" onClick={onExport}><Download size={15} /><span>Export progress</span></button>
+    </section>
   </div>
 }
 
