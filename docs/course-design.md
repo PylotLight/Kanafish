@@ -43,6 +43,6 @@ Progress should make practice visible: lesson status, revisited activities, and 
 
 Assess what a learner can do in a short exchange and what they can understand from clear, beginner-level spoken Japanese. Prefer observable checks—successful requests, key details understood, follow-up questions and repair strategies—over abstract claims of fluency. The checkpoints in the [12-week outline](12-week-plan.md) are provisional and should be adjusted after piloting.
 
-## Deferred technical work
+## Speech tools and assessment boundaries
 
-TTS/STT and automated speaking evaluation are intentionally out of scope for the MVP. Speaking and listening checks can initially use a tutor, partner, visible prompt, or learner-led routine and a simple rubric. A later technical phase can be designed after the lesson format and human-readable assessment rubric have been tested.
+The course includes optional local TTS for listen-first dialogue practice and Japanese course material, with slower replay and kana/meaning reveal. Keep a tutor, partner or learner-led read-aloud available as an alternative; audio must not gate lesson progress. Supertonic 3 is the current default, and the learner's selected local engine is used without silent fallback. Speech recording, speech recognition and automated pronunciation assessment remain out of scope. Speaking and listening checks use task-level explanations and learner-entered evidence rather than machine-assigned proficiency scores.

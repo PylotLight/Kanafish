@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getTtsEngineReadiness } from './readiness.js'
 
 export function useTts() {
   const workerRef = useRef(null)
   const requestIdRef = useRef(0)
   const pendingRef = useRef(new Map())
   const activeAudioRef = useRef(null)
+  const playbackRequestRef = useRef(0)
+  const mountedRef = useRef(false)
   const [modelStatus, setModelStatus] = useState(null)
   const [magpieStatus, setMagpieStatus] = useState(null)
   const [qwenStatus, setQwenStatus] = useState(null)
@@ -53,6 +56,8 @@ export function useTts() {
   const [engineProgress, setEngineProgress] = useState(null)
   const [synthesisProgress, setSynthesisProgress] = useState(null)
   const [busyCount, setBusyCount] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playingText, setPlayingText] = useState('')
   const [error, setError] = useState('')
 
   const refreshModelStatus = useCallback(async () => {
@@ -128,6 +133,7 @@ export function useTts() {
 
   useEffect(() => {
     let active = true
+    mountedRef.current = true
     const stopSupertonicProgress = window.kanafish?.onTtsDownloadProgress?.((progress) => {
       if (active) setDownloadProgress(progress)
     })
@@ -154,6 +160,8 @@ export function useTts() {
     void refreshModelStatus()
     return () => {
       active = false
+      mountedRef.current = false
+      playbackRequestRef.current += 1
       stopSupertonicProgress?.()
       stopMagpieProgress?.()
       stopQwenProgress?.()
@@ -166,9 +174,11 @@ export function useTts() {
       for (const item of pendingRef.current.values()) item.reject(new Error('TTS session closed'))
       pendingRef.current.clear()
       if (activeAudioRef.current) {
-        activeAudioRef.current.audio.pause()
-        URL.revokeObjectURL(activeAudioRef.current.url)
+        const playback = activeAudioRef.current
         activeAudioRef.current = null
+        playback.audio.pause()
+        URL.revokeObjectURL(playback.url)
+        playback.finish?.(null)
       }
     }
   }, [refreshModelStatus])
@@ -568,33 +578,114 @@ export function useTts() {
     })
   }, [activeModelId, ensureWorker, irodoriMfOnnxStatus?.installed, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, mioStatus?.modelInstalled, mioStatus?.runtimeReady, mioVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
 
-  const playText = useCallback(async (text, options = {}) => {
-    const result = await synthesize(text, options)
-    if (activeAudioRef.current) {
-      activeAudioRef.current.audio.pause()
-      activeAudioRef.current.audio.currentTime = 0
-      URL.revokeObjectURL(activeAudioRef.current.url)
-      activeAudioRef.current = null
+  const stopCurrentAudio = useCallback(() => {
+    const playback = activeAudioRef.current
+    if (!playback) return false
+    activeAudioRef.current = null
+    playback.audio.pause()
+    try { playback.audio.currentTime = 0 } catch {}
+    playback.finish?.(null)
+    if (mountedRef.current) {
+      setIsPlaying(false)
+      setPlayingText('')
     }
+    return true
+  }, [])
+
+  const stopPlayback = useCallback(() => {
+    playbackRequestRef.current += 1
+    stopCurrentAudio()
+    if (mountedRef.current) {
+      setIsPlaying(false)
+      setPlayingText('')
+    }
+  }, [stopCurrentAudio])
+
+  const playAudioResult = useCallback((result, playbackRate, requestId, text) => {
+    if (requestId !== playbackRequestRef.current) return Promise.resolve(null)
     const url = URL.createObjectURL(new Blob([result.audioBuffer], { type: 'audio/wav' }))
     const audio = new Audio(url)
-    activeAudioRef.current = { audio, url }
-    audio.addEventListener('ended', () => {
-      if (activeAudioRef.current?.audio === audio) activeAudioRef.current = null
-      URL.revokeObjectURL(url)
-    }, { once: true })
+    const rate = Number.isFinite(playbackRate) ? playbackRate : 1
+    audio.playbackRate = Math.max(0.75, Math.min(1.25, rate))
+
+    return new Promise((resolve, reject) => {
+      let finished = false
+      const finish = (value, failure) => {
+        if (finished) return
+        finished = true
+        if (activeAudioRef.current?.audio === audio) activeAudioRef.current = null
+        URL.revokeObjectURL(url)
+        if (mountedRef.current && requestId === playbackRequestRef.current) {
+          setIsPlaying(false)
+          setPlayingText('')
+        }
+        if (failure) reject(failure)
+        else resolve(value)
+      }
+      activeAudioRef.current = { audio, url, finish }
+      if (mountedRef.current) {
+        setIsPlaying(true)
+        setPlayingText(text)
+      }
+      audio.addEventListener('ended', () => finish(result), { once: true })
+      audio.addEventListener('error', () => finish(null, new Error('Could not play the generated speech on this device.')), { once: true })
+      audio.play().catch((playFailure) => finish(null, playFailure))
+    })
+  }, [])
+
+  const playText = useCallback(async (text, options = {}) => {
+    const requestId = ++playbackRequestRef.current
+    stopCurrentAudio()
+    setError('')
+    const { rate = 1, ...synthesisOptions } = options
     try {
-      await audio.play()
-      return result
+      const result = await synthesize(text, synthesisOptions)
+      if (requestId !== playbackRequestRef.current) return { cancelled: true }
+      const playback = await playAudioResult(result, rate, requestId, text)
+      return playback === null ? { cancelled: true } : result
     } catch (playFailure) {
-      URL.revokeObjectURL(url)
-      activeAudioRef.current = null
-      setError(playFailure?.message || 'Could not play the generated speech on this device.')
+      if (requestId === playbackRequestRef.current) setError(playFailure?.message || 'Could not play the generated speech on this device.')
       throw playFailure
     }
-  }, [synthesize])
+  }, [playAudioResult, stopCurrentAudio, synthesize])
+
+  const playDialogue = useCallback(async (lines, options = {}) => {
+    const dialogue = (Array.isArray(lines) ? lines : []).filter((line) => typeof line?.ja === 'string' && line.ja.trim())
+    if (!dialogue.length) throw new Error('This lesson does not contain Japanese dialogue to play.')
+    const requestId = ++playbackRequestRef.current
+    stopCurrentAudio()
+    setError('')
+    const { rate = 1, ...synthesisOptions } = options
+    const results = []
+    try {
+      for (const [index, line] of dialogue.entries()) {
+        if (requestId !== playbackRequestRef.current) return { cancelled: true, results }
+        const result = await synthesize(line.ja, synthesisOptions)
+        if (requestId !== playbackRequestRef.current) return { cancelled: true, results }
+        const playback = await playAudioResult(result, rate, requestId, line.ja)
+        if (playback === null || requestId !== playbackRequestRef.current) return { cancelled: true, results }
+        results.push(result)
+        if (index < dialogue.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 240))
+        }
+      }
+      return { cancelled: false, results }
+    } catch (playFailure) {
+      if (requestId === playbackRequestRef.current) setError(playFailure?.message || 'Could not play the lesson dialogue.')
+      throw playFailure
+    }
+  }, [playAudioResult, stopCurrentAudio, synthesize])
 
   const clearError = useCallback(() => setError(''), [])
+
+  const activeEngineStatus = getTtsEngineReadiness(activeModelId, {
+    modelStatus,
+    magpieStatus,
+    qwenStatus,
+    irodoriStatus,
+    irodoriMfOnnxStatus,
+    mioStatus
+  })
 
   return {
     modelStatus,
@@ -665,13 +756,18 @@ export function useTts() {
     removeIrodoriPythonRuntime,
     activeModelId,
     setActiveModelId,
+    activeEngineStatus,
     backend,
     engineProgress,
     synthesisProgress,
     busy: busyCount > 0,
+    isPlaying,
+    playingText,
+    stopPlayback,
     error,
     clearError,
     synthesize,
-    playText
+    playText,
+    playDialogue
   }
 }

@@ -20,9 +20,9 @@ Use this template to author a short, interactive lesson. Keep the learner’s co
 - **Who is speaking, what do they need, and what response would fit?**
 - **Gist check:**
 - **Key-detail check(s):**
-- **Partner/tutor prompt, if a spoken version is used:**
+- **Local TTS or partner/tutor read-aloud prompt:**
 
-For the MVP, the app can show readable prompts for a partner or tutor to say, or guide a learner-led practice routine. Do not require generated audio or speech recognition.
+The app can optionally read the existing Japanese dialogue aloud with the learner's selected local voice. Plan for a listen-first attempt with kana and English hidden, then optional slower replay and text reveal. Keep a partner/tutor read-aloud or learner-led routine as an alternative. Do not require generated audio, speech recording, or speech recognition.
 
 ## 2. Useful language
 
@@ -46,6 +46,7 @@ Use feedback to explain the communicative choice, not to claim overall proficien
 ## 4. Say it together
 
 - Practise the exchange in short turns.
+- Use local TTS to hear the dialogue or an individual Japanese line; keep a normal-speed example available and make slower replay optional.
 - Notice pronunciation, rhythm and where a phrase is naturally used.
 - Provide kana support beside the spoken material; do not make reading a prerequisite for taking a turn.
 - **Partner/tutor or learner-led prompt:**
@@ -77,7 +78,7 @@ Use feedback to explain the communicative choice, not to claim overall proficien
   - Uses clarification or repair language if needed.
 - **Checkpoint evidence or rubric note:**
 
-Checks can be completed with a partner, tutor or learner-led routine. Record learner-entered evidence; automated speech assessment is not part of the MVP.
+Checks can use local TTS, a partner, a tutor or a learner-led routine. Record learner-entered evidence; the app does not record speech or automate speech assessment.
 
 ## 8. Review and progress
 
