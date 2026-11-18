@@ -67,6 +67,7 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
   cancelAsrRuntimeSetup: () => ipcRenderer.invoke('kanafish:asr-cancel-runtime-setup'),
   downloadAsrModel: () => ipcRenderer.invoke('kanafish:asr-download-model'),
   cancelAsrModelDownload: () => ipcRenderer.invoke('kanafish:asr-cancel-model-download'),
+  warmAsr: () => ipcRenderer.invoke('kanafish:asr-warm'),
   transcribeAsr: (request) => ipcRenderer.invoke('kanafish:asr-transcribe', request),
   cancelAsrTranscription: () => ipcRenderer.invoke('kanafish:asr-cancel-transcription'),
   removeAsrModel: () => ipcRenderer.invoke('kanafish:asr-remove-model'),

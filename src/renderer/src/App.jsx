@@ -8,9 +8,11 @@ import {
 import { loadPreferences, savePreferences } from '../preferences.js'
 import course from '../../../course/course-v1.json'
 import {
-  createInitialProgress, getCourseStats, getDueCards, getFlashcards, getLessons,
-  getRetrievalPrompt, markLessonComplete, normalizeProgress, rateCard, saveLessonSession, saveMilestone
+  createInitialProgress, getCourseStats, getDueCards, getFlashcards, getLessons, getRatingIntervals,
+  getRetrievalPrompt, markLessonComplete, normalizeProgress, rateCard, saveLessonSession, saveMilestone, shouldShowRomaji
 } from '../learning.js'
+import { kanaToRomaji } from '../romaji.js'
+import LessonSpeakingPractice from './asr/LessonSpeakingPractice.jsx'
 import { useTts } from './tts/useTts.js'
 import VoiceLabPage from './tts/VoiceLabPage.jsx'
 import { getLessonSpeechTargets, getTtsEngineReadiness, isJapanesePracticeText } from './tts/readiness.js'
@@ -66,6 +68,11 @@ function App() {
     if (view !== 'lesson') tts.stopPlayback()
   }, [view, tts.stopPlayback])
 
+  useEffect(() => {
+    if (!['course', 'review', 'phrasebook'].includes(view) || !tts.activeEngineStatus?.ready) return
+    void tts.prewarm?.().catch(() => {})
+  }, [view, tts.activeEngineStatus?.ready, tts.prewarm])
+
   function updateProgress(next) {
     const resolved = typeof next === 'function' ? next(progressRef.current) : next
     progressRef.current = resolved
@@ -98,7 +105,7 @@ function App() {
   }
 
   function exportProgress() {
-    const blob = new Blob([JSON.stringify({ app: 'Kanafish', version: 1, exportedAt: new Date().toISOString(), progress: progressRef.current }, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify({ app: 'Kanafish', version: 2, exportedAt: new Date().toISOString(), progress: progressRef.current }, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
@@ -153,17 +160,17 @@ function App() {
         {(tts.busy || tts.isPlaying) && <div className="tts-audio-active" role="status"><span><Volume2 size={14} /> {tts.isPlaying ? 'Playing local Japanese audio…' : 'Preparing local Japanese speech…'}</span><button type="button" onClick={tts.stopPlayback}>Stop audio</button></div>}
         <div className="page-content">
           {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} />}
-          {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} romajiMode={preferences.romajiMode} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} tts={tts} onPatch={patchLesson} onComplete={() => {
             updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO()))
             setView('today')
             setSelectedLessonId(null)
-          }} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
-          {view === 'review' && <ReviewPage cards={dueCards} onRate={(cardId, rating) => updateProgress((state) => rateCard(state, cardId, rating, todayISO()))} onPhrasebook={() => navigate('phrasebook')} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
-          {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          }} onRateCard={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} romajiMode={preferences.romajiMode} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'review' && <ReviewPage cards={dueCards} progress={progress} romajiMode={preferences.romajiMode} onRate={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} onPhrasebook={() => navigate('phrasebook')} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} progress={progress} romajiMode={preferences.romajiMode} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'voice-lab' && <VoiceLabPage tts={tts} voiceSettings={preferences.supertonicVoice} onVoiceSettingsChange={(supertonicVoice) => updatePreferences({ supertonicVoice })} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
-          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} onExport={exportProgress} />}
+          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} romajiMode={preferences.romajiMode} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} onRomajiModeChange={(romajiMode) => updatePreferences({ romajiMode })} onExport={exportProgress} />}
         </div>
       </main>
     </div>
@@ -184,6 +191,12 @@ function SpeechButton({ text, tts, label, className = '', compact = false, rate 
   return <button type="button" className={`speech-button ${compact ? 'speech-button-compact' : ''} ${className}`.trim()} onClick={() => void tts.playText(text, { rate, ...voiceContext }).catch(() => {})} disabled={disabled} aria-label={accessibleLabel} title={title}>
     <Volume2 size={14} />{!compact && <span>Listen</span>}
   </button>
+}
+
+function RomajiText({ text, progress, mode = 'adaptive' }) {
+  const romaji = kanaToRomaji(text)
+  if (!romaji || !shouldShowRomaji(text, progress, mode)) return null
+  return <small className="romaji-line" lang="ja-Latn">{romaji}</small>
 }
 
 function SpeechSetupNote({ tts, onOpenVoiceLab }) {
@@ -247,7 +260,7 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
   )
 }
 
-function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLesson, tts, onOpenVoiceLab }) {
+function CoursePage({ weeks, progress, romajiMode, expandedWeeks, setExpandedWeeks, onOpenLesson, tts, onOpenVoiceLab }) {
   const completed = progress.completedLessonIds || []
   const toggle = (week) => setExpandedWeeks((current) => {
     const next = new Set(current)
@@ -281,7 +294,7 @@ function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLe
                   <span className={`lesson-row-icon ${isDone ? 'lesson-row-icon-done' : ''}`}>{isDone ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span><span className="lesson-row-main"><strong>{lesson.title}</strong><small>{lesson.stage.replace('-', ' ')} <span>·</span> {lesson.scene}</small></span><span className={`status-pill ${isDone ? 'status-done' : started ? 'status-started' : ''}`}>{isDone ? 'Practised' : started ? 'In progress' : 'Start'}</span><ArrowRight size={15} className="lesson-row-arrow" />
                 </button>
               })}</div>
-              <div className="week-support"><div><BookOpen size={15} /><strong>Kana focus</strong></div><div className="week-kana-audio">{week.kanaFocus.filter(isJapanesePracticeText).map((group) => <div className="week-kana-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={{ weekNumber: week.week, lessonNumber: firstLessonNumber }} /></div>)}</div>{week.kanjiCards.length > 0 && <div className="kanji-focus"><span>Useful kanji</span>{week.kanjiCards.map((item) => <span key={item.kanji} className="kanji-chip">{item.kanji} <small>{item.reading}</small></span>)}</div>}
+              <div className="week-support"><div><BookOpen size={15} /><strong>Kana focus</strong></div><div className="week-kana-audio">{week.kanaFocus.filter(isJapanesePracticeText).map((group) => <div className="week-kana-chip" key={group}><span lang="ja">{group}</span><RomajiText text={group} progress={progress} mode={romajiMode} /><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={{ weekNumber: week.week, lessonNumber: firstLessonNumber }} /></div>)}</div>{week.kanjiCards.length > 0 && <div className="kanji-focus"><span>Useful kanji</span>{week.kanjiCards.map((item) => <span key={item.kanji} className="kanji-chip"><span lang="ja">{item.kanji}</span> <small lang="ja">{item.reading}</small><RomajiText text={item.reading} progress={progress} mode={romajiMode} /></span>)}</div>}
                 {week.milestone && <div className="milestone-mini"><Target size={15} /><span>{week.milestone.title}</span>{milestoneDone ? <span className="milestone-mini-done"><Check size={13} /> saved</span> : <span className="milestone-mini-tag">CHECKPOINT</span>}</div>}
               </div>
             </div>}
@@ -292,7 +305,7 @@ function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLe
   )
 }
 
-function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, onBack, onOpenVoiceLab }) {
+function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, onComplete, onRateCard, onBack, onOpenVoiceLab }) {
   const session = progress.lessonSessions?.[lesson.id] || {}
   const lessonNumber = course.weeks.flatMap((item) => item.lessons).findIndex((item) => item.id === lesson.id) + 1
   const voiceContext = { weekNumber: week.week, lessonNumber }
@@ -311,6 +324,10 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
   const [triedAdaptation, setTriedAdaptation] = useState(!!session.triedAdaptation)
   const steps = ['Recall', 'Read the scene', 'Check meaning', 'Choose a reply', 'Make it yours']
   const speechTargets = getLessonSpeechTargets(week, lesson)
+  const speakingTargets = [
+    ...speechTargets.dialogue.map((line, index) => ({ id: `${lesson.id}-line-${index + 1}`, text: line.ja, meaning: line.en, label: `${labelSpeaker(line.speaker)} · ${line.en}`, detail: lesson.title, type: 'dialogue' })),
+    ...speechTargets.phrases.map((phrase, index) => ({ id: `w${week.week}-phrase-${index + 1}`, text: phrase.ja, meaning: phrase.en, label: `Useful phrase · ${phrase.en}`, detail: phrase.use, type: 'phrase' })),
+  ]
   const warmupPrompt = getRetrievalPrompt(course, progress, lesson.id)
   const recallCard = warmupPrompt?.phrase
   const priorFunctionWeek = week.milestone ? course.weeks.find((item) => item.week === week.week - 1) || course.weeks[0] : null
@@ -320,6 +337,9 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
   const isOpenEndedResponse = lesson.responsePractice.answer == null && lesson.responsePractice.choices.length === 0
 
   useEffect(() => () => tts.stopPlayback(), [lesson.id, tts.stopPlayback])
+  useEffect(() => {
+    if (step === 1 && tts.activeEngineStatus?.ready) void tts.prewarm?.(voiceContext).catch(() => {})
+  }, [step, tts.activeEngineStatus?.ready, tts.prewarm, week.week, lessonNumber])
 
   function goStep(value) {
     const bounded = Math.max(0, Math.min(steps.length - 1, value))
@@ -335,10 +355,15 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
   function submitCheck(kind) {
     if (kind === 'listen') {
       setShowListenFeedback(true)
-      onPatch({ listenChoice, listenSubmitted: true })
+      onPatch({ listenChoice, listenSubmitted: true, listenAttempts: (session.listenAttempts || 0) + 1, listenMisses: (session.listenMisses || 0) + (listenCorrect ? 0 : 1) })
     } else {
       setShowResponseFeedback(true)
-      onPatch({ responseChoice, responseSubmitted: true })
+      const correctText = lesson.responsePractice.choices[lesson.responsePractice.answer]
+      const correctPhraseIndex = week.phraseBank.findIndex((phrase) => phrase.ja === correctText)
+      const weakCardIds = new Set(session.weakCardIds || [])
+      if (!responseCorrect && correctPhraseIndex >= 0) weakCardIds.add(`w${week.week}-phrase-${correctPhraseIndex + 1}`)
+      if (responseCorrect && correctPhraseIndex >= 0) weakCardIds.delete(`w${week.week}-phrase-${correctPhraseIndex + 1}`)
+      onPatch({ responseChoice, responseSubmitted: true, responseAttempts: (session.responseAttempts || 0) + 1, responseMisses: (session.responseMisses || 0) + (responseCorrect ? 0 : 1), weakCardIds: [...weakCardIds] })
     }
   }
   function updateAdaptation(value) {
@@ -380,9 +405,9 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
           </div><div className="listen-playback-status" role="status">{tts.isPlaying ? 'Playing the conversation…' : tts.busy ? 'Preparing local speech…' : 'Natural-speed audio stays available; slow replay is optional.'}</div></div>
           <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
           <div className="text-first-notice"><span className="notice-dot" /> Listen, then reveal <span>You can show kana at any time; English meanings are optional.</span></div>
-          <div className="dialogue-list">{speechTargets.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{showDialogueText ? line.ja : <span className="dialogue-hidden-text">Japanese hidden · listen to this turn</span>}</strong>{showMeaning && showDialogueText && <span className="dialogue-meaning">{line.en}</span>}<SpeechButton text={line.ja} tts={tts} label={`Play ${labelSpeaker(line.speaker)} line in Japanese`} compact className="dialogue-play-button" voiceContext={voiceContext} /></div></div>)}</div>
+          <div className="dialogue-list">{speechTargets.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{showDialogueText ? line.ja : <span className="dialogue-hidden-text">Japanese hidden · listen to this turn</span>}</strong>{showDialogueText && <RomajiText text={line.ja} progress={progress} mode={romajiMode} />}{showMeaning && showDialogueText && <span className="dialogue-meaning">{line.en}</span>}<SpeechButton text={line.ja} tts={tts} label={`Play ${labelSpeaker(line.speaker)} line in Japanese`} compact className="dialogue-play-button" voiceContext={voiceContext} /></div></div>)}</div>
           <div className="lesson-tools"><button type="button" className={`outline-button ${showDialogueText ? 'tool-on' : ''}`} onClick={() => { setShowDialogueText((visible) => !visible); if (showDialogueText) setShowMeaning(false) }}>{showDialogueText ? <X size={15} /> : <BookOpen size={15} />}{showDialogueText ? 'Hide kana' : 'Reveal kana'}</button>{showDialogueText && <button type="button" className={`outline-button ${showMeaning ? 'tool-on' : ''}`} onClick={() => setShowMeaning(!showMeaning)}>{showMeaning ? <X size={15} /> : <BookOpen size={15} />}{showMeaning ? 'Hide meanings' : 'Reveal English meanings'}</button>}<button type="button" className={`outline-button ${showPhrases ? 'tool-on' : ''}`} onClick={() => setShowPhrases(!showPhrases)}>{showPhrases ? <X size={15} /> : <Lightbulb size={15} />}{showPhrases ? 'Hide phrase bank' : 'Open phrase bank'}</button></div>
-          {showPhrases && <div className="phrase-bank-inline">{speechTargets.phrases.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><strong lang="ja">{item.ja}</strong><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact voiceContext={voiceContext} /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
+          {showPhrases && <div className="phrase-bank-inline">{speechTargets.phrases.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><div><strong lang="ja">{item.ja}</strong><RomajiText text={item.ja} progress={progress} mode={romajiMode} /></div><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact voiceContext={voiceContext} /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
           <div className="practice-footer"><span className="muted-caption">Audio is optional; reveal kana whenever you want.</span><button className="primary-button" onClick={() => goStep(2)}>Check what you understood <ArrowRight size={15} /></button></div>
         </section>}
         {step === 2 && <QuestionCard number="03" label="GIST & KEY DETAIL" title="Check what you understood." prompt={lesson.listenCheck.question} choices={lesson.listenCheck.choices} value={listenChoice} setValue={(value) => { setListenChoice(value); setShowListenFeedback(false); onPatch({ listenChoice: value, listenSubmitted: false }) }} submitted={showListenFeedback} correct={listenCorrect} answer={lesson.listenCheck.answer} feedback={listenCorrect ? 'That matches the key detail in the scene.' : `Try again. Look for the detail that answers the question.`} onSubmit={() => submitCheck('listen')} onNext={() => goStep(3)} voiceContext={voiceContext} />}
@@ -392,9 +417,10 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
           <StepLabel number="05" label="ADAPT & WRAP UP" /><h2>Make the exchange yours.</h2><p className="practice-intro">Change one detail or add a follow-up. Try it aloud, with a partner, or as a short written response — no recording or automated scoring.</p>
           <div className="adapt-prompt"><span className="adapt-prompt-icon"><Sparkles size={17} /></span><div><span>YOUR ADAPTATION</span><strong>{lesson.adaptation}</strong></div></div>
           <div className="say-task"><div className="say-task-head"><ListChecks size={16} /><strong>Try the conversation</strong><span>Partner, tutor, or self-led</span></div><p>{lesson.sayTask}</p><button className={`outline-button ${triedAdaptation ? 'tool-on' : ''}`} onClick={markTried}>{triedAdaptation ? <Check size={15} /> : <CircleCheck size={15} />}{triedAdaptation ? 'Attempt noted' : 'I tried the task'}</button></div>
+          <LessonSpeakingPractice targets={speakingTargets} tts={tts} voiceContext={voiceContext} progress={progress} romajiMode={romajiMode} onRate={onRateCard} onOpenVoiceLab={onOpenVoiceLab} />
           <label className="field-label" htmlFor="adaptation-note">What did you change? <span>optional reflection</span></label><textarea id="adaptation-note" className="reflection-input" rows="3" placeholder="A new place, item, time, or follow-up…" value={adaptation} onChange={(event) => updateAdaptation(event.target.value)} />
           {priorFunctionWeek && <div className="checkpoint-revisit"><div className="checkpoint-revisit-icon"><Target size={15} /></div><div><span>Checkpoint revisit · Week {String(priorFunctionWeek.week).padStart(2, '0')}</span><strong>Mix in this earlier function: {priorFunctionWeek.canDo}</strong></div></div>}
-          <div className="context-learning"><div className="context-head"><BookOpen size={16} /><strong>Notice the writing</strong></div><div className="kana-groups">{speechTargets.kanaFocus.map((group) => <span className="kana-audio-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={voiceContext} /></span>)}</div>{speechTargets.kanjiReadings.length > 0 && <div className="kanji-card-row">{speechTargets.kanjiReadings.map((item) => <div className="mini-kanji-card" key={item.kanji}><strong lang="ja">{item.kanji}</strong><span lang="ja">{item.reading} · {item.meaning}</span><SpeechButton text={item.reading} tts={tts} label={`Listen to the reading ${item.reading}`} compact voiceContext={voiceContext} /><small>{item.whyHere}</small></div>)}</div>}</div>
+          <div className="context-learning"><div className="context-head"><BookOpen size={16} /><strong>Notice the writing</strong></div><div className="kana-groups">{speechTargets.kanaFocus.map((group) => <span className="kana-audio-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={voiceContext} /></span>)}</div>{speechTargets.kanjiReadings.length > 0 && <div className="kanji-card-row">{speechTargets.kanjiReadings.map((item) => <div className="mini-kanji-card" key={item.kanji}><strong lang="ja">{item.kanji}</strong><span lang="ja">{item.reading} · {item.meaning}</span><SpeechButton text={item.reading} tts={tts} label={`Listen to the reading ${item.reading}`} compact voiceContext={voiceContext} /><RomajiText text={item.reading} progress={progress} mode={romajiMode} /><small>{item.whyHere}</small></div>)}</div>}</div>
           <div className="success-checks"><span className="eyebrow">WHAT THIS PRACTICE INVITED YOU TO TRY</span>{lesson.successChecks.map((item, index) => <div key={`${index}-${item}`}><CircleCheck size={14} /><span>{item}</span></div>)}</div>
           <div className="practice-footer complete-footer"><span className="muted-caption">Self-recorded after practice — not a proficiency score.</span><button className="primary-button" onClick={complete}>{isComplete ? 'Back to today' : 'Mark my practice complete'} <Check size={15} /></button></div>
         </section>}
@@ -427,16 +453,19 @@ function QuestionCard({ number, label, title, prompt, choices, value, setValue, 
   </section>
 }
 
-function ReviewPage({ cards, onRate, onPhrasebook, tts, onOpenVoiceLab }) {
+function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, onOpenVoiceLab }) {
   const [queueIds] = useState(() => new Set(cards.map((card) => card.id)))
   const [reviewedIds, setReviewedIds] = useState(() => new Set())
   const [flipped, setFlipped] = useState(false)
+  const [direction, setDirection] = useState('recognize')
   const current = cards.find((card) => queueIds.has(card.id) && !reviewedIds.has(card.id))
   const queueSize = queueIds.size
   const reviewedCount = reviewedIds.size
+  const useProductionPrompt = direction === 'produce' && ['phrase', 'dialogue'].includes(current?.type)
+  const ratingIntervals = current ? getRatingIntervals(progress, current.id, todayISO()) : {}
   function rate(rating) {
     if (!current) return
-    onRate(current.id, rating)
+    onRate(current, rating)
     setFlipped(false)
     setReviewedIds((known) => new Set([...known, current.id]))
   }
@@ -444,22 +473,23 @@ function ReviewPage({ cards, onRate, onPhrasebook, tts, onOpenVoiceLab }) {
   return <div className="content-page review-page page-enter">
     <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> SHORT, SPACED PRACTICE</div><h1>Review cards<span className="title-period">.</span></h1><p>Try to recall first, flip for the meaning, then choose how easily it came back.</p></div>
     <div className="review-summary"><div className="summary-icon"><RotateCcw size={19} /></div><div><strong>{queueSize ? `${queueSize} cards in today’s short session` : 'All caught up for today'}</strong><span>Cards come from your unlocked course phrases, kana focus, and practical kanji.</span></div><span className="review-progress-text">{queueSize ? `${reviewedCount} / ${queueSize} reviewed` : 'Queue complete'}</span></div>
+    <div className="review-direction" role="group" aria-label="Choose recall direction"><span>Practice direction</span><button type="button" className={direction === 'recognize' ? 'is-selected' : ''} aria-pressed={direction === 'recognize'} onClick={() => setDirection('recognize')}>Japanese → meaning</button><button type="button" className={direction === 'produce' ? 'is-selected' : ''} aria-pressed={direction === 'produce'} onClick={() => setDirection('produce')}>Meaning → Japanese</button><small>Reverse recall applies to phrase and dialogue cards; kana and kanji stay recognition-first.</small></div>
     <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
     {!current ? <div className="empty-review panel"><div className="empty-icon"><Sparkles size={21} /></div><h2>Nice work. You’re done for now.</h2><p>{queueSize ? 'You have finished today’s selected cards. More come back as they become due.' : 'Start a lesson to add useful phrases to your spaced-retrieval deck.'}</p><button className="primary-button" onClick={onPhrasebook}>Browse phrasebook <ArrowRight size={15} /></button></div> : <div className="flashcard-wrap">
       <div className="flashcard-meta"><span className={`type-pill type-${current.type}`}>{current.type}</span><span>Week {String(current.week).padStart(2, '0')}</span><span className="flashcard-index">CARD {String(reviewedCount + 1).padStart(2, '0')}</span></div>
-      <div className="flashcard-listen"><SpeechButton text={current.front} tts={tts} label={`Listen to ${current.type} review prompt`} />{tts.isPlaying && <span role="status">Playing prompt…</span>}</div>
+      {(!useProductionPrompt || flipped) && <div className="flashcard-listen"><SpeechButton text={current.front} tts={tts} label={useProductionPrompt ? 'Listen to the Japanese answer' : `Listen to ${current.type} review prompt`} />{tts.isPlaying && <span role="status">Playing prompt…</span>}</div>}
       <button className={`flashcard ${flipped ? 'flashcard-flipped' : ''}`} onClick={() => setFlipped((value) => !value)} aria-label={flipped ? 'Show card front' : 'Reveal answer'}>
-        <span className="flashcard-corner">{flipped ? 'ANSWER' : 'RECALL'}</span>{flipped ? <><span className="flashcard-main" lang="ja">{current.back}</span>{current.detail && <span className="flashcard-detail">{current.detail}</span>}</> : <><span className="flashcard-main" lang="ja">{current.front}</span><span className="flashcard-hint">Think of the meaning, then tap to reveal.</span></>}
+          <span className="flashcard-corner">{flipped ? 'ANSWER' : 'RECALL'}</span>{flipped ? <><span className="flashcard-main" lang={useProductionPrompt ? 'ja' : undefined}>{useProductionPrompt ? current.front : current.back}</span>{current.type === 'kanji' ? <RomajiText text={current.reading} progress={progress} mode={romajiMode} /> : (useProductionPrompt || current.type !== 'kanji') && <RomajiText text={current.front} progress={progress} mode={romajiMode} />}{current.detail && <span className="flashcard-detail">{current.detail}</span>}</> : <><span className="flashcard-main" lang={useProductionPrompt ? undefined : 'ja'}>{useProductionPrompt ? current.back : current.front}</span>{!useProductionPrompt && <RomajiText text={current.front} progress={progress} mode={romajiMode} />}<span className="flashcard-hint">{useProductionPrompt ? 'Recall the Japanese line, then tap to reveal.' : 'Think of the meaning, then tap to reveal.'}</span></>}
         <span className="flashcard-flip">{flipped ? 'Tap to see prompt' : 'Tap to reveal'} <RotateCcw size={13} /></span>
       </button>
-      {flipped ? <div className="rating-row"><span>How easy was that?</span><div><button className="rating-button rating-again" onClick={() => rate('again')}>Again<small>1 day</small></button><button className="rating-button rating-hard" onClick={() => rate('hard')}>Hard<small>short interval</small></button><button className="rating-button rating-good" onClick={() => rate('good')}>Good<small>steady interval</small></button><button className="rating-button rating-easy" onClick={() => rate('easy')}>Easy<small>longer interval</small></button></div></div> : <div className="flip-instruction"><RotateCcw size={14} /> Reveal the meaning when you’ve had a try</div>}
-      <div className="review-footer"><span>Scheduled locally · no memory score</span><button className="text-link" onClick={onPhrasebook}>Open phrasebook <ArrowRight size={14} /></button></div>
+      {flipped ? <div className="rating-row"><span>How easy was that?</span><div>{[['again', 'Again'], ['hard', 'Hard'], ['good', 'Good'], ['easy', 'Easy']].map(([rating, label]) => <button key={rating} className={`rating-button rating-${rating}`} onClick={() => rate(rating)}>{label}<small>{ratingIntervals[rating]} day{ratingIntervals[rating] === 1 ? '' : 's'}</small></button>)}</div></div> : <div className="flip-instruction"><RotateCcw size={14} /> Reveal the {useProductionPrompt ? 'Japanese line' : 'meaning'} when you’ve had a try</div>}
+      <div className="review-footer"><span>Up to 8 cards · difficult items return sooner</span><button className="text-link" onClick={onPhrasebook}>Open phrasebook <ArrowRight size={14} /></button></div>
     </div>}
     <div className="review-footnote"><Lightbulb size={15} /><span>Missed a phrase? It returns sooner. Recalled it easily? It will wait longer before the next review.</span></div>
   </div>
 }
 
-function PhrasebookPage({ cards, search, setSearch, tts, onOpenVoiceLab }) {
+function PhrasebookPage({ cards, search, setSearch, progress, romajiMode, tts, onOpenVoiceLab }) {
   const [filter, setFilter] = useState('all')
   const [revealed, setRevealed] = useState(new Set())
   const filtered = cards.filter((card) => {
@@ -473,11 +503,11 @@ function PhrasebookPage({ cards, search, setSearch, tts, onOpenVoiceLab }) {
   return <div className="content-page page-enter">
     <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> COURSE LANGUAGE, ALL IN ONE PLACE</div><h1>Phrasebook<span className="title-period">.</span></h1><p>Useful expressions and script support, organised from the lessons you’re learning.</p></div>
     <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
-    <div className="phrase-tools"><label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Japanese, meaning, or use…" /></label><div className="filter-tabs">{[['all', 'All'], ['phrase', 'Phrases'], ['kana', 'Kana'], ['kanji', 'Kanji']].map(([key, label]) => <button key={key} className={filter === key ? 'filter-active' : ''} onClick={() => setFilter(key)}>{label}</button>)}</div></div>
+    <div className="phrase-tools"><label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Japanese, meaning, or use…" /></label><div className="filter-tabs">{[['all', 'All'], ['phrase', 'Phrases'], ['dialogue', 'Speech lines'], ['kana', 'Kana'], ['kanji', 'Kanji']].map(([key, label]) => <button key={key} className={filter === key ? 'filter-active' : ''} onClick={() => setFilter(key)}>{label}</button>)}</div></div>
     <div className="phrase-count">{filtered.length} {filter === 'all' ? 'learning cards' : `${filter} cards`}</div>
     <div className="phrase-grid">{filtered.map((card) => {
       const isOpen = revealed.has(card.id)
-      return <article className={`phrase-card phrase-${card.type}`} key={card.id}><div className="phrase-card-top"><span className={`type-pill type-${card.type}`}>{card.type}</span><span>W{String(card.week).padStart(2, '0')}</span><SpeechButton text={card.front} tts={tts} label={`Listen to ${card.type} card ${card.front}`} compact /></div><strong className="phrase-front" lang="ja">{card.front}</strong><div className={`phrase-back ${isOpen ? 'phrase-back-open' : ''}`}><span>{card.back}</span>{card.detail && <small>{card.detail}</small>}</div><button type="button" className="phrase-card-foot" onClick={() => toggle(card.id)} aria-expanded={isOpen}>{isOpen ? 'Hide meaning' : 'Reveal meaning'} <ChevronDown size={14} /></button></article>
+      return <article className={`phrase-card phrase-${card.type}`} key={card.id}><div className="phrase-card-top"><span className={`type-pill type-${card.type}`}>{card.type}</span><span>W{String(card.week).padStart(2, '0')}</span><SpeechButton text={card.front} tts={tts} label={`Listen to ${card.type} card ${card.front}`} compact /></div><strong className="phrase-front" lang="ja">{card.front}</strong><RomajiText text={card.type === 'kanji' ? card.reading : card.front} progress={progress} mode={romajiMode} /><div className={`phrase-back ${isOpen ? 'phrase-back-open' : ''}`}><span>{card.back}</span>{card.detail && <small>{card.detail}</small>}</div><button type="button" className="phrase-card-foot" onClick={() => toggle(card.id)} aria-expanded={isOpen}>{isOpen ? 'Hide meaning' : 'Reveal meaning'} <ChevronDown size={14} /></button></article>
     })}</div>
     {filtered.length === 0 && <div className="empty-results"><Search size={19} /><strong>No matching cards</strong><span>Try another word or choose a different category.</span></div>}
   </div>
@@ -502,7 +532,7 @@ function MilestonesPage({ weeks, progress, onSave }) {
   </div>
 }
 
-function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange, onExport }) {
+function SettingsPage({ theme, textScale, romajiMode, onThemeChange, onTextScaleChange, onRomajiModeChange, onExport }) {
   const themeOptions = [
     { value: 'light', label: 'Light', detail: 'Soft paper and green glass.', icon: <Sun size={19} /> },
     { value: 'dark', label: 'Dark', detail: 'A calm, low-light palette.', icon: <Moon size={19} /> },
@@ -512,6 +542,11 @@ function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange, onEx
     { value: 1, label: 'Standard', detail: '100% · compact' },
     { value: 1.18, label: 'Comfortable', detail: '118% · recommended' },
     { value: 1.32, label: 'Large', detail: '132% · extra readable' }
+  ]
+  const romajiOptions = [
+    { value: 'adaptive', label: 'Fade out as kana sticks', detail: 'Shown until the kana cards are recalled comfortably on two different days.' },
+    { value: 'always', label: 'Always show romaji', detail: 'Keep the pronunciation scaffold visible under kana.' },
+    { value: 'hidden', label: 'Hide romaji', detail: 'Use Japanese script without a romanized cue.' }
   ]
 
   return <div className="content-page settings-page page-enter">
@@ -528,6 +563,14 @@ function SettingsPage({ theme, textScale, onThemeChange, onTextScaleChange, onEx
       <div className="settings-section-heading"><div className="settings-section-icon"><Type size={18} /></div><div><h2 id="readability-heading">Text size</h2><p>Course explanations, labels, and controls scale together.</p></div></div>
       <div className="settings-choice-grid settings-size-grid" role="group" aria-labelledby="readability-heading">
         {sizeOptions.map((option) => <button type="button" aria-pressed={textScale === option.value} className={`settings-choice settings-size-choice ${textScale === option.value ? 'is-selected' : ''}`} key={option.value} onClick={() => onTextScaleChange(option.value)}>
+          <span className="settings-choice-copy"><strong>{option.label}</strong><small>{option.detail}</small></span><span className="settings-radio-mark" aria-hidden="true" />
+        </button>)}
+      </div>
+    </section>
+    <section className="settings-section" aria-labelledby="romaji-heading">
+      <div className="settings-section-heading"><div className="settings-section-icon"><BookOpen size={18} /></div><div><h2 id="romaji-heading">Romaji scaffold</h2><p>Kana stays primary; romanization is a temporary support, not a course requirement.</p></div></div>
+      <div className="settings-choice-grid" role="group" aria-labelledby="romaji-heading">
+        {romajiOptions.map((option) => <button type="button" aria-pressed={romajiMode === option.value} className={`settings-choice ${romajiMode === option.value ? 'is-selected' : ''}`} key={option.value} onClick={() => onRomajiModeChange(option.value)}>
           <span className="settings-choice-copy"><strong>{option.label}</strong><small>{option.detail}</small></span><span className="settings-radio-mark" aria-hidden="true" />
         </button>)}
       </div>

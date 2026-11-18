@@ -43,6 +43,7 @@ export function useAsr() {
   const [recording, setRecording] = useState(false)
   const [recordSeconds, setRecordSeconds] = useState(0)
   const [transcribing, setTranscribing] = useState(false)
+  const [warming, setWarming] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
@@ -136,6 +137,21 @@ export function useAsr() {
 
   const cancelSetup = useCallback(() => window.kanafish?.cancelAsrRuntimeSetup?.(), [])
   const cancelDownload = useCallback(() => window.kanafish?.cancelAsrModelDownload?.(), [])
+
+  const warmWorker = useCallback(async () => {
+    if (!window.kanafish?.warmAsr) throw new Error('Fast local recognition is available in the Kanafish desktop app.')
+    setError('')
+    setWarming(true)
+    setProgress({ kind: 'worker', state: 'loading', message: 'Warming the cached Japanese speech model…' })
+    try {
+      return await window.kanafish.warmAsr()
+    } catch (failure) {
+      if (mountedRef.current) setError(failure?.message || 'Could not warm local speech recognition.')
+      throw failure
+    } finally {
+      if (mountedRef.current) setWarming(false)
+    }
+  }, [])
 
   const removeModel = useCallback(async () => {
     const next = await window.kanafish.removeAsrModel()
@@ -296,6 +312,7 @@ export function useAsr() {
     recording,
     recordSeconds,
     transcribing,
+    warming,
     cancelling,
     result,
     error,
@@ -304,6 +321,7 @@ export function useAsr() {
     cancelSetup,
     downloadModel,
     cancelDownload,
+    warmWorker,
     removeModel,
     removeRuntime,
     startRecording,

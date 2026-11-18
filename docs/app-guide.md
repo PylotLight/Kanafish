@@ -1,40 +1,43 @@
 # Using Kanafish
 
-Kanafish is designed for short, practical Japanese sessions. Begin from **Today**, continue the next lesson in the course, or do a small set of review cards first. The app offers up to eight due cards in one short review session and only draws cards from weeks unlocked by course progress.
+Kanafish is designed for short, practical Japanese sessions. Begin from **Today**, continue the next lesson in the course, or do a small set of review cards first. The app offers up to eight due cards in one short session and only draws cards from weeks unlocked by course progress.
 
 ## Work through a lesson
 
-Lessons move through five steps: recall a useful phrase, listen to or read a scene, check what you understood, choose an appropriate reply (or write an open-ended reply in the final mission), then adapt the exchange. The lesson opens with kana and English hidden for a listen-first attempt; reveal either when you want support. Play the full dialogue in turn order, replay it more slowly, or hear a single line. Local speech buttons are also available for Japanese recall cues, phrase-bank entries, response choices, kana and kanji readings, review cards, and phrasebook cards. A learner can also read the dialogue independently or ask a partner or tutor. Kanafish does not record speech or score pronunciation.
+Lessons move through five steps: recall a useful phrase, listen to or read a scene, check what you understood, choose an appropriate reply (or write an open-ended reply in the final mission), then adapt the exchange. The scene opens with kana and English hidden for a listen-first attempt; reveal kana and meaning separately whenever you want support. Play the whole dialogue in turn order, replay more slowly at 0.85×, or hear a single line. Local speech buttons also read Japanese recall cues, phrase-bank entries, response choices, kana groups, kanji readings, review cards, and phrasebook cards.
 
-Comprehension and response choices give task-level explanations and can be retried. The final mission accepts a written Japanese reply without a fixed answer key, then reveals guidance and the phrase bank after an attempt. The final step displays the lesson's change-the-detail prompt, a partner/self-led conversation task, kana focus, and any practical kanji cards. Lessons and steps remain freely navigable; marking a lesson complete is a learner self-attestation, not a check that every activity was finished or a proficiency score.
+The final lesson step has optional speaking practice. Pick a course phrase or dialogue line, listen to a model voice, try it aloud, and rate how easily you recalled it. You can self-rate without recording. If the local recognizer is installed, you may choose to record a short attempt and see the transcript. Kanafish does not save or upload the audio or transcript. Any character-overlap display compares the written transcript with the sample; it is not a pronunciation, accent, or fluency grade. Audio, recording, recognition, and lesson completion are never required to continue.
 
-## Voice Lab
+Comprehension and response choices give task-level explanations and can be retried. The final mission accepts a written Japanese reply without a fixed answer key, then reveals guidance and the phrase bank after an attempt. The final step also displays the lesson's change-the-detail prompt, a partner/self-led conversation task, kana focus, and any practical kanji cards. Lessons and steps remain freely navigable; marking a lesson complete is a learner self-attestation, not a proficiency score.
 
-Open **Voice Lab** from the sidebar to download Supertonic 3 and test a supplied or custom Japanese line. It is the only engine currently enabled; the other integrated engines are hidden and disabled pending live re-validation. Choose from its ten built-in voices and set the course pattern to keep one voice, rotate each week, rotate each lesson, or shuffle each listen. Lesson/week rotation is repeatable, and a full dialogue keeps the same voice throughout. The selected voice is previewed directly in Voice Lab; preferences stay on this device.
+## Voice Lab and local speech
 
-Supertonic model weights and all ten voice styles are fetched only after setup is requested and are kept outside Git; the full model is about **401 MB**. It uses ONNX Runtime WebGPU when available, with a WebAssembly CPU fallback. The lesson dialogue can be played at normal speed or replayed at **0.85×**; single-line listening buttons use normal speed. The app does not record speech or score pronunciation.
+Open **Voice Lab** from the sidebar to set up local speech. Supertonic 3 is the enabled text-to-speech engine, with ten built-in voices and course options to keep one voice, rotate each week, rotate each lesson, or shuffle each listen. Lesson/week rotation is repeatable, and a full dialogue keeps the same voice throughout. The selected voice is previewed directly in Voice Lab; preferences stay on this device.
 
-Sandbox CPU timings and smoke-test results are summarized in the [runtime notes](tts-runtime.md); they show whether a pipeline generated audio, not how natural or accurate it sounds. The owner’s Mac and its Metal/MPS paths have not been tested. Do not treat performance on this sandbox as a prediction for a Mac.
+Haas-ja-v1.0 is the optional Japanese speech recognizer. Voice Lab can install its speech.cpp runtime and download its model on request; model weights are about **656 MB** and runtime files are cached in the app's private data. TTS model weights are about **401 MB**. Neither model downloads automatically when a lesson is opened. TTS keeps its ONNX engine and the current voice style ready for reuse during the app session; it prewarms when the learner opens course browsing, review, phrasebook, or a lesson scene. The ASR worker prewarms for lesson speaking practice and stops after five minutes without work to release memory. Verified model files remain cached for later sessions.
+
+TTS uses ONNX Runtime WebGPU when available, with a WebAssembly CPU fallback. First load can take longer; the app shows setup, warm-up, and recognition states. A learner can always practise aloud with a partner, tutor, or independently when speech setup is unavailable.
+
+Sandbox CPU timings and smoke-test results are summarized in the [runtime notes](tts-runtime.md); they show whether a pipeline generated audio, not how natural or accurate it sounds. The owner's Mac and its Metal/MPS paths have not been tested. Do not treat performance on this sandbox as a prediction for a Mac.
+
+## Romaji and script support
+
+Kana stays primary, with useful kanji taught as recognition cards alongside readings. In **Settings → Romaji scaffold**, choose adaptive, always show, or hide. Adaptive mode shows romaji beneath kana and kana readings until each kana in a learning item has been recalled comfortably on two different days. It then hides the cue; a difficult kana review brings it back. This setting applies across lessons, course kana/kanji readings, review, and phrasebook, without using kanji romanization guesses.
 
 ## Daily recall and spaced review
 
-At the start of a lesson, try a quick recall before opening a cue. A missed item can reappear in the next lesson; after a self-reported easy recall, the next prompt uses another useful phrase rather than repeating that same one immediately.
+At the start of a lesson, try a quick recall before opening a cue. A phrase missed during a lesson can reappear in later retrieval. After a comfortable recall, the app selects another useful phrase rather than repeating the same one immediately.
 
-The course's review cadence is represented in the app:
+The review deck contains phrases and dialogue lines, kana groups, and useful kanji. Flip only after trying to recall, then select **Again / Hard / Good / Easy**. The first intervals are 1, 2, 3, and 5 days; later timing adapts to review history. Missed or difficult items receive extra priority when due, and a successful review clears that boost. The **Meaning → Japanese** direction applies to phrase and dialogue cards; kana and kanji remain recognition-first. These are scheduling choices, not test scores.
 
-- The first lesson of each week brings back a phrase from the previous week's phrase bank and places it in the new scene.
-- The third lesson from week 4 onward revisits an item from 2–4 weeks earlier, preferring items rated **Again** or **Hard** when available.
-- A two-week checkpoint includes a reminder to bring an earlier conversation function into the milestone task.
-- Phrase, kana, and kanji cards use learner-selected **Again / Hard / Good / Easy** ratings to set the next review date. These are scheduling choices, not test scores.
-
-The phrasebook includes material across the course, while the daily review queue follows the learner's unlocked week.
+The course's interleaving cadence is also represented in the app: the first lesson of each week revisits a phrase from the prior week in a new scene; lesson three from week 4 onward revisits material from 2–4 weeks earlier, prioritizing unresolved difficult items; and two-week checkpoints prompt the learner to reuse an earlier conversation function. The phrasebook includes material across the course, while the daily review queue follows the learner's unlocked week.
 
 ## Checkpoints and personal data
 
-The six checkpoints keep their original stable IDs and task/evidence intent. Add notes for what you attempted and understood, what support helped, and what you want to practise next. A checkpoint is marked recorded only when the learner chooses to save it; Kanafish does not infer mastery from text fields or lesson completion.
+The six checkpoints keep their original stable IDs and task/evidence intent. Add notes about what you attempted and understood, what support helped, and what you want to practise next. A checkpoint is recorded only when the learner chooses to save it; Kanafish does not infer mastery from text fields or lesson completion.
 
-Lesson status, review schedules, and milestone notes are saved in versioned local browser storage on this device. Use **Export progress** in the sidebar to save a JSON copy. If device storage rejects a change, Kanafish shows a warning and an export action; the unsaved change remains only for the current open session, so export before closing. There is no account or cloud sync. Model and optional runtime files are fetched remotely only after a setup action; lesson text and generated speech stay on this device.
+Lesson status, review schedules, kana mastery, and milestone notes are saved in versioned local app storage on this device. Use **Export progress** in Settings to save a JSON copy. If device storage rejects a change, Kanafish shows a warning and an export action; the unsaved change remains only for the current open session, so export before closing. There is no account or cloud sync. Model and optional runtime files are fetched remotely only after a setup action; synthesis and recognition run on this device.
 
 ## Development checks
 
-- `bun run check` — course/learning/TTS registry tests and electron-vite production build after Bun dependencies are installed.
+- `bun run check` — course/learning/speech runtime and TTS tests plus the electron-vite production build after Bun dependencies are installed.

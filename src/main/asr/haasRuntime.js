@@ -149,6 +149,7 @@ export function createHaasAsrRuntime({
   let modelTask = null
   let modelController = null
   let worker = null
+  let workerStartTask = null
   let idleTimer = null
   let activeTranscription = null
   let activeTranscriptionState = null
@@ -387,6 +388,7 @@ export function createHaasAsrRuntime({
 
   async function ensureWorker() {
     if (worker?.running) return worker
+    if (workerStartTask) return workerStartTask
     const current = workerFactory({
       spawnImpl,
       executable: binaryPath,
@@ -398,18 +400,39 @@ export function createHaasAsrRuntime({
       onExit: () => { if (worker === current) worker = null }
     })
     worker = current
-    onProgress({ kind: 'worker', state: 'loading', message: 'Loading Haas-ja-v1.0 into the local speech worker…' })
-    const started = performance.now()
+    const task = (async () => {
+      onProgress({ kind: 'worker', state: 'loading', message: 'Loading Haas-ja-v1.0 into the local speech worker…' })
+      const started = performance.now()
+      try {
+        await current.start()
+      } catch (error) {
+        if (worker === current) worker = null
+        await current.stop().catch(() => {})
+        throw error
+      }
+      lastLoadSeconds = (performance.now() - started) / 1000
+      onProgress({ kind: 'worker', state: 'ready', message: `Speech worker ready in ${lastLoadSeconds.toFixed(1)} s.` })
+      return current
+    })()
+    workerStartTask = task
     try {
-      await current.start()
-    } catch (error) {
-      if (worker === current) worker = null
-      await current.stop().catch(() => {})
-      throw error
+      return await task
+    } finally {
+      if (workerStartTask === task) workerStartTask = null
     }
-    lastLoadSeconds = (performance.now() - started) / 1000
-    onProgress({ kind: 'worker', state: 'ready', message: `Speech worker ready in ${lastLoadSeconds.toFixed(1)} s.` })
-    return current
+  }
+
+  async function warmWorker() {
+    if (activeTranscription) return { ready: Boolean(worker?.running), alreadyInUse: true, loadSeconds: 0 }
+    clearTimeout(idleTimer)
+    const runtime = await inspectRuntime()
+    if (!runtime.runtimeReady) throw new Error(runtime.runtimeError || 'Install the speech.cpp runtime in Voice Lab first.')
+    if (!(await modelMatches())) throw new Error('Download the Haas-ja-v1.0 model in Voice Lab first.')
+    const wasRunning = Boolean(worker?.running)
+    const started = performance.now()
+    await ensureWorker()
+    scheduleIdleStop()
+    return { ready: true, alreadyWarm: wasRunning, loadSeconds: wasRunning ? 0 : (performance.now() - started) / 1000 }
   }
 
   async function transcribe(audio, { timestamps = true } = {}) {
@@ -478,6 +501,7 @@ export function createHaasAsrRuntime({
 
   async function stopWorker() {
     clearTimeout(idleTimer)
+    if (workerStartTask) await workerStartTask.catch(() => {})
     const current = worker
     worker = null
     if (current) await current.stop().catch(() => {})
@@ -509,5 +533,5 @@ export function createHaasAsrRuntime({
     await stopWorker()
   }
 
-  return Object.freeze({ getStatus, setupRuntime, cancelRuntimeSetup, downloadModel, cancelModelDownload, transcribe, cancelTranscription, removeModelCache, removeRuntime, stopWorker, stop })
+  return Object.freeze({ getStatus, setupRuntime, cancelRuntimeSetup, downloadModel, cancelModelDownload, warmWorker, transcribe, cancelTranscription, removeModelCache, removeRuntime, stopWorker, stop })
 }

@@ -9,6 +9,7 @@ describe('appearance, sidebar, and voice preferences', () => {
       theme: 'light',
       textScale: 1.18,
       sidebarCollapsed: false,
+      romajiMode: 'adaptive',
       supertonicVoice: { preset: 'M1', mode: 'lesson' }
     })
     expect(normalizePreferences(null)).toEqual(DEFAULT_PREFERENCES)
@@ -19,17 +20,20 @@ describe('appearance, sidebar, and voice preferences', () => {
       theme: 'amoled',
       textScale: 1.32,
       sidebarCollapsed: true,
+      romajiMode: 'hidden',
       supertonicVoice: { preset: 'F4', mode: 'week' }
     })).toEqual({
       theme: 'amoled',
       textScale: 1.32,
       sidebarCollapsed: true,
+      romajiMode: 'hidden',
       supertonicVoice: { preset: 'F4', mode: 'week' }
     })
     expect(normalizePreferences({
       theme: 'ultraviolet',
       textScale: 4,
       sidebarCollapsed: 'yes',
+      romajiMode: 'random',
       supertonicVoice: { preset: 'X9', mode: 'surprise' }
     })).toEqual(DEFAULT_PREFERENCES)
   })
@@ -39,6 +43,7 @@ describe('appearance, sidebar, and voice preferences', () => {
       theme: 'dark',
       textScale: 1,
       sidebarCollapsed: true,
+      romajiMode: 'adaptive',
       supertonicVoice: { preset: 'M1', mode: 'lesson' }
     })
   })
@@ -56,6 +61,7 @@ describe('appearance, sidebar, and voice preferences', () => {
       supertonicVoice: { preset: 'F2', mode: 'shuffle' }
     })
     expect(next.supertonicVoice).toEqual({ preset: 'F2', mode: 'shuffle' })
+    expect(next.romajiMode).toBe('adaptive')
     expect(saved.has(PREFERENCES_KEY)).toBe(true)
     expect(loadPreferences(storage)).toEqual(next)
   })
@@ -72,6 +78,7 @@ describe('appearance, sidebar, and voice preferences', () => {
       theme: 'amoled',
       textScale: 1.18,
       sidebarCollapsed: false,
+      romajiMode: 'adaptive',
       supertonicVoice: { preset: 'M1', mode: 'lesson' }
     })
   })
