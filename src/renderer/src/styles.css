@@ -72,6 +72,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .topbar-right { display: flex; align-items: center; gap: 18px; }
 .offline-pill { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 99px; background: light-dark(#ecf1eb, #161c15); color: light-dark(#698076, #c9d1ce); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
 .offline-pill span { width: 5px; height: 5px; border-radius: 50%; background: light-dark(#6b9b78, #28372c); }
+.offline-pill span.playing { background: none; border-radius: 0; border: 1.5px solid light-dark(#6b9b78, #28372c); border-top-color: transparent; animation: pill-spin 0.8s linear infinite; transform-origin: center; }
+@keyframes pill-spin { to { transform: rotate(360deg); } }
 .topbar-date { color: light-dark(#8a9690, #c8ccca); font-size: calc(10px * var(--text-scale, 1.18)); }
 .page-content { min-height: 0; flex: 1; overflow: auto; padding: 28px 42px 40px; scrollbar-color: #ccd6cf transparent; scrollbar-width: thin; }
 .page-enter { animation: enter .28s ease both; }
