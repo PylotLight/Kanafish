@@ -158,7 +158,7 @@ function App() {
         {persistenceError && <div className="save-warning" role="alert"><span>{persistenceError}</span><button onClick={exportProgress}><Download size={14} /> Export progress</button></div>}
         {tts.error && <div className="tts-app-error" role="alert"><span>Local speech: {tts.error}</span><button type="button" onClick={tts.clearError}>Dismiss</button></div>}
         {(tts.busy || tts.isPlaying) && <div className="tts-audio-active" role="status"><span><Volume2 size={14} /> {tts.isPlaying ? 'Playing local Japanese audio…' : 'Preparing local Japanese speech…'}</span><button type="button" onClick={tts.stopPlayback}>Stop audio</button></div>}
-        <div className="page-content">
+        <div className={`page-content ${view === 'lesson' ? 'page-content-lesson' : ''}`}>
           {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} />}
           {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} romajiMode={preferences.romajiMode} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} tts={tts} onPatch={patchLesson} onComplete={() => {
