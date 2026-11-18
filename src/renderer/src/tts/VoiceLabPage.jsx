@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Activity, AlertCircle, Check, Cpu, Download, ExternalLink, HardDrive, LockKeyhole, RefreshCw, Sparkles, Trash2, Volume2, X } from 'lucide-react'
 import { TTS_MODEL_CATALOG } from './modelCatalog.js'
+import { getTtsEngineReadiness } from './readiness.js'
 
 const SAMPLE_LINES = [
   'こんにちは。',
@@ -61,8 +62,16 @@ export default function VoiceLabPage({ tts }) {
   const isIrodori = activeModel.id === 'irodori-v4.1-small'
   const isSupertonic = activeModel.id === 'supertonic-3'
   const isMio = activeModel.id === 'miotts-0.6b'
-  const isInstalled = isMagpie ? Boolean(magpie?.modelInstalled) : isQwen ? Boolean(qwen?.modelInstalled) : isIrodoriMf ? Boolean(irodoriMf?.installed) : isIrodori ? Boolean(irodori?.modelInstalled) : isMio ? Boolean(mio?.modelInstalled) : Boolean(supertonic?.installed)
-  const canGenerate = isMagpie ? Boolean(magpie?.runtimeReady && magpie?.modelInstalled) : isQwen ? Boolean(qwen?.runtimeReady && qwen?.modelInstalled) : isIrodoriMf ? Boolean(irodoriMf?.runtimeReady && irodoriMf?.installed) : isIrodori ? Boolean(irodori?.runtimeReady && irodori?.modelInstalled) : isMio ? Boolean(mio?.runtimeReady && mio?.modelInstalled) : Boolean(supertonic?.installed)
+  const readiness = tts.activeEngineStatus || getTtsEngineReadiness(tts.activeModelId, {
+    modelStatus: supertonic,
+    magpieStatus: magpie,
+    qwenStatus: qwen,
+    irodoriStatus: irodori,
+    irodoriMfOnnxStatus: irodoriMf,
+    mioStatus: mio
+  })
+  const isInstalled = readiness.modelInstalled
+  const canGenerate = readiness.ready
   const unsupportedModels = TTS_MODEL_CATALOG.filter((candidate) => !candidate.availableInApp)
 
   async function runSample(sample = text) {

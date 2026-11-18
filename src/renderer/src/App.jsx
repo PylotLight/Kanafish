@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight,
   CircleCheck, Clock3, Compass, Download, Flame, GraduationCap, Lightbulb, ListChecks,
@@ -13,6 +13,7 @@ import {
 } from '../learning.js'
 import { useTts } from './tts/useTts.js'
 import VoiceLabPage from './tts/VoiceLabPage.jsx'
+import { getLessonSpeechTargets, getTtsEngineReadiness, isJapanesePracticeText } from './tts/readiness.js'
 
 const STORAGE_KEY = 'kanafish-progress-v1'
 const todayISO = () => {
@@ -60,6 +61,10 @@ function App() {
     .filter((card) => card.week <= availableWeek).slice(0, 8), [cards, progress, availableWeek])
   const selected = lessons.find(({ lesson }) => lesson.id === selectedLessonId)
   const selectedWeek = selected ? course.weeks.find((week) => week.week === selected.week) : null
+
+  useEffect(() => {
+    if (view !== 'lesson') tts.stopPlayback()
+  }, [view, tts.stopPlayback])
 
   function updateProgress(next) {
     const resolved = typeof next === 'function' ? next(progressRef.current) : next
@@ -141,19 +146,21 @@ function App() {
       <main className="main-area">
         <header className="topbar">
           <div className="breadcrumb"><span>Japanese travel course</span><ChevronRight size={14} /><strong>{viewTitle(view, selected?.lesson)}</strong></div>
-          <div className="topbar-right"><span className="offline-pill"><span /> Text-first practice</span><span className="topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())}</span></div>
+          <div className="topbar-right"><span className="offline-pill"><span /> On-device speech · optional</span><span className="topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())}</span></div>
         </header>
         {persistenceError && <div className="save-warning" role="alert"><span>{persistenceError}</span><button onClick={exportProgress}><Download size={14} /> Export progress</button></div>}
+        {tts.error && <div className="tts-app-error" role="alert"><span>Local speech: {tts.error}</span><button type="button" onClick={tts.clearError}>Dismiss</button></div>}
+        {(tts.busy || tts.isPlaying) && <div className="tts-audio-active" role="status"><span><Volume2 size={14} /> {tts.isPlaying ? 'Playing local Japanese audio…' : 'Preparing local Japanese speech…'}</span><button type="button" onClick={tts.stopPlayback}>Stop audio</button></div>}
         <div className="page-content">
           {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} />}
-          {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} />}
+          {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} tts={tts} onPatch={patchLesson} onComplete={() => {
             updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO()))
             setView('today')
             setSelectedLessonId(null)
-          }} onBack={() => navigate('course')} />}
-          {view === 'review' && <ReviewPage cards={dueCards} onRate={(cardId, rating) => updateProgress((state) => rateCard(state, cardId, rating, todayISO()))} onPhrasebook={() => navigate('phrasebook')} />}
-          {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} />}
+          }} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'review' && <ReviewPage cards={dueCards} onRate={(cardId, rating) => updateProgress((state) => rateCard(state, cardId, rating, todayISO()))} onPhrasebook={() => navigate('phrasebook')} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'voice-lab' && <VoiceLabPage tts={tts} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
           {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} onExport={exportProgress} />}
@@ -165,6 +172,27 @@ function App() {
 
 function NavButton({ icon, label, active, onClick, badge }) {
   return <button type="button" className={`nav-button ${active ? 'active' : ''}`} onClick={onClick} aria-label={label} aria-current={active ? 'page' : undefined} title={label}>{icon}<span>{label}</span>{badge ? <em>{badge}</em> : null}</button>
+}
+
+function SpeechButton({ text, tts, label, className = '', compact = false, rate = 1 }) {
+  const readiness = tts?.activeEngineStatus || getTtsEngineReadiness(tts?.activeModelId)
+  const disabled = !text?.trim() || !readiness?.ready || tts?.busy
+  const accessibleLabel = label || `Listen to ${text}`
+  const title = readiness?.ready
+    ? `${readiness.modelName} · ${rate < 1 ? `${rate}× slower` : 'normal speed'}`
+    : readiness?.message || 'Check local speech setup in Voice Lab.'
+  return <button type="button" className={`speech-button ${compact ? 'speech-button-compact' : ''} ${className}`.trim()} onClick={() => void tts.playText(text, { rate }).catch(() => {})} disabled={disabled} aria-label={accessibleLabel} title={title}>
+    <Volume2 size={14} />{!compact && <span>Listen</span>}
+  </button>
+}
+
+function SpeechSetupNote({ tts, onOpenVoiceLab }) {
+  const readiness = tts?.activeEngineStatus
+  if (readiness?.ready) return null
+  return <div className="speech-setup-note" role="status">
+    <span><Volume2 size={15} /> {readiness?.message || 'Checking the selected local Japanese voice…'}</span>
+    <button type="button" className="text-link" onClick={onOpenVoiceLab}>Open Voice Lab <ArrowRight size={13} /></button>
+  </div>
 }
 
 function ProgressBar({ value }) {
@@ -219,7 +247,7 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
   )
 }
 
-function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLesson }) {
+function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLesson, tts, onOpenVoiceLab }) {
   const completed = progress.completedLessonIds || []
   const toggle = (week) => setExpandedWeeks((current) => {
     const next = new Set(current)
@@ -232,6 +260,7 @@ function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLe
     <div className="content-page page-enter">
       <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> THE 12-WEEK ROUTE</div><h1>Course path<span className="title-period">.</span></h1><p>Thirty-six short lessons, moving from useful phrases to more flexible travel conversations.</p></div>
       <div className="course-overview"><div className="course-overview-mark"><GraduationCap size={23} /></div><div className="course-overview-copy"><strong>Japanese Travel & Conversation</strong><span>Beginner · 12 weeks · 3 lessons per week</span></div><div className="course-overview-progress"><strong>{done}<span>/{total}</span></strong><small>lessons practised</small></div><div className="course-overview-meter"><ProgressBar value={total ? (done / total) * 100 : 0} /></div></div>
+      <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
       <div className="week-list">
         {weeks.map((week) => {
           const completeCount = week.lessons.filter((lesson) => completed.includes(lesson.id)).length
@@ -251,7 +280,7 @@ function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLe
                   <span className={`lesson-row-icon ${isDone ? 'lesson-row-icon-done' : ''}`}>{isDone ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span><span className="lesson-row-main"><strong>{lesson.title}</strong><small>{lesson.stage.replace('-', ' ')} <span>·</span> {lesson.scene}</small></span><span className={`status-pill ${isDone ? 'status-done' : started ? 'status-started' : ''}`}>{isDone ? 'Practised' : started ? 'In progress' : 'Start'}</span><ArrowRight size={15} className="lesson-row-arrow" />
                 </button>
               })}</div>
-              <div className="week-support"><div><BookOpen size={15} /><strong>Kana focus</strong></div><p>{week.kanaFocus.join('　')}</p>{week.kanjiCards.length > 0 && <div className="kanji-focus"><span>Useful kanji</span>{week.kanjiCards.map((item) => <span key={item.kanji} className="kanji-chip">{item.kanji} <small>{item.reading}</small></span>)}</div>}
+              <div className="week-support"><div><BookOpen size={15} /><strong>Kana focus</strong></div><div className="week-kana-audio">{week.kanaFocus.filter(isJapanesePracticeText).map((group) => <div className="week-kana-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact /></div>)}</div>{week.kanjiCards.length > 0 && <div className="kanji-focus"><span>Useful kanji</span>{week.kanjiCards.map((item) => <span key={item.kanji} className="kanji-chip">{item.kanji} <small>{item.reading}</small></span>)}</div>}
                 {week.milestone && <div className="milestone-mini"><Target size={15} /><span>{week.milestone.title}</span>{milestoneDone ? <span className="milestone-mini-done"><Check size={13} /> saved</span> : <span className="milestone-mini-tag">CHECKPOINT</span>}</div>}
               </div>
             </div>}
@@ -262,9 +291,10 @@ function CoursePage({ weeks, progress, expandedWeeks, setExpandedWeeks, onOpenLe
   )
 }
 
-function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, onBack }) {
+function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, onBack, onOpenVoiceLab }) {
   const session = progress.lessonSessions?.[lesson.id] || {}
   const [step, setStep] = useState(session.step || 0)
+  const [showDialogueText, setShowDialogueText] = useState(false)
   const [showMeaning, setShowMeaning] = useState(false)
   const [showPhrases, setShowPhrases] = useState(false)
   const [listenChoice, setListenChoice] = useState(session.listenChoice ?? null)
@@ -277,6 +307,7 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
   const [warmupCue, setWarmupCue] = useState(!!session.warmupCue)
   const [triedAdaptation, setTriedAdaptation] = useState(!!session.triedAdaptation)
   const steps = ['Recall', 'Read the scene', 'Check meaning', 'Choose a reply', 'Make it yours']
+  const speechTargets = getLessonSpeechTargets(week, lesson)
   const warmupPrompt = getRetrievalPrompt(course, progress, lesson.id)
   const recallCard = warmupPrompt?.phrase
   const priorFunctionWeek = week.milestone ? course.weeks.find((item) => item.week === week.week - 1) || course.weeks[0] : null
@@ -285,8 +316,11 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
   const responseCorrect = lesson.responsePractice.answer == null || responseChoice === lesson.responsePractice.answer
   const isOpenEndedResponse = lesson.responsePractice.answer == null && lesson.responsePractice.choices.length === 0
 
+  useEffect(() => () => tts.stopPlayback(), [lesson.id, tts.stopPlayback])
+
   function goStep(value) {
     const bounded = Math.max(0, Math.min(steps.length - 1, value))
+    if (bounded !== 1) tts.stopPlayback()
     setStep(bounded)
     onPatch({ step: bounded })
   }
@@ -315,6 +349,10 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
   function complete() {
     onComplete()
   }
+  function playDialogue(rate = 1) {
+    tts.clearError()
+    void tts.playDialogue(speechTargets.dialogue, { rate }).catch(() => {})
+  }
 
   return <div className="lesson-page page-enter">
     <button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Course path</button>
@@ -326,28 +364,34 @@ function LessonPage({ week, lesson, course, progress, tts, onPatch, onComplete, 
           <StepLabel number="01" label="QUICK RECALL" /><h2>What can you remember?</h2><p className="practice-intro">Before you see today’s phrases, take a moment to recall one useful expression from your last lesson. This is practice, not a test.</p>
           <div className="recall-prompt"><div className="recall-icon"><RotateCcw size={17} /></div><div><span>{warmupPrompt?.label || 'Quick recall'}</span><strong>{recallCard?.use || warmupPrompt?.prompt}</strong></div></div>
           {warmupPrompt?.context && <p className="recall-context">{warmupPrompt.context}</p>}
-          {warmupCue && <div className="cue-reveal"><span>Small cue</span><strong>{recallCard?.ja || 'こんにちは。'}</strong><small>{recallCard?.en || 'Hello / good afternoon.'}</small></div>}
+          {warmupCue && <div className="cue-reveal"><span>Small cue</span><strong lang="ja">{recallCard?.ja || 'こんにちは。'}</strong><SpeechButton text={recallCard?.ja || 'こんにちは。'} tts={tts} label="Listen to the recall cue" compact /><small>{recallCard?.en || 'Hello / good afternoon.'}</small></div>}
           <div className="recall-actions"><button className={`choice-pill ${warmup === 'remembered' ? 'choice-pill-selected' : ''}`} onClick={() => saveWarmup('remembered')}>I recalled something</button><button className={`choice-pill ${warmup === 'cue' ? 'choice-pill-selected' : ''}`} onClick={() => { saveWarmup('cue', true); setWarmupCue(true) }}>Show me a cue</button><button className={`choice-pill ${warmup === 'skipped' ? 'choice-pill-selected' : ''}`} onClick={() => saveWarmup('skipped')}>Skip for now</button></div>
           <div className="practice-footer"><span className="muted-caption">Your response is private and unscored.</span><button className="primary-button" onClick={() => goStep(1)}>Continue to the scene <ArrowRight size={15} /></button></div>
         </section>}
         {step === 1 && <section className="practice-card">
-          <StepLabel number="02" label="SCENE & DIALOGUE" /><h2>Picture the moment.</h2><div className="scene-banner"><Compass size={18} /><span>{lesson.scene}</span></div><div className="text-first-notice"><span className="notice-dot" /> Text-first scene <span>Partner/tutor option: read the lines once at a natural pace with meanings hidden.</span></div>
-          <div className="dialogue-list">{lesson.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{line.ja}</strong>{showMeaning && <span className="dialogue-meaning">{line.en}</span>}<button type="button" className="dialogue-play-button" onClick={() => void tts.playText(line.ja).catch(() => {})} disabled={!tts.modelStatus?.installed || tts.busy} aria-label={`Play ${labelSpeaker(line.speaker)} line in Japanese`} title={tts.modelStatus?.installed ? 'Play with the local voice model' : 'Download the local voice model in Voice Lab'}><Volume2 size={14} /></button></div></div>)}</div>
-          {tts.error && <div className="tts-inline-error" role="alert"><span>Local speech: {tts.error}</span></div>}
-          <div className="lesson-tools"><button className={`outline-button ${showMeaning ? 'tool-on' : ''}`} onClick={() => setShowMeaning(!showMeaning)}>{showMeaning ? <X size={15} /> : <BookOpen size={15} />}{showMeaning ? 'Hide meanings' : 'Reveal English meanings'}</button><button className={`outline-button ${showPhrases ? 'tool-on' : ''}`} onClick={() => setShowPhrases(!showPhrases)}>{showPhrases ? <X size={15} /> : <Lightbulb size={15} />}{showPhrases ? 'Hide phrase bank' : 'Open phrase bank'}</button></div>
-          {showPhrases && <div className="phrase-bank-inline">{week.phraseBank.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><strong lang="ja">{item.ja}</strong><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
-          <div className="practice-footer"><span className="muted-caption">Kana stays visible throughout.</span><button className="primary-button" onClick={() => goStep(2)}>Check what you understood <ArrowRight size={15} /></button></div>
+          <StepLabel number="02" label="SCENE & DIALOGUE" /><h2>Picture the moment.</h2><div className="scene-banner"><Compass size={18} /><span>{lesson.scene}</span></div>
+          <div className="listen-first-panel"><div className="listen-first-copy"><strong>Listen first</strong><span>One selected local voice reads each turn with a short pause. Kana and English stay hidden until you reveal them.</span><small>{tts.activeEngineStatus?.modelName || 'Selected local voice'} · audio is generated on this device</small></div><div className="listen-first-actions">
+            <button type="button" className="primary-button" onClick={() => playDialogue(1)} disabled={!tts.activeEngineStatus?.ready || tts.busy} aria-label="Listen to the whole dialogue at normal speed"><Volume2 size={15} /> Listen · normal speed</button>
+            <button type="button" className="outline-button" onClick={() => playDialogue(0.85)} disabled={!tts.activeEngineStatus?.ready || tts.busy} aria-label="Replay the whole dialogue at 0.85 times speed">Replay slowly · 0.85×</button>
+            {(tts.isPlaying || tts.busy) && <button type="button" className="outline-button" onClick={tts.stopPlayback}><X size={14} /> Stop</button>}
+          </div><div className="listen-playback-status" role="status">{tts.isPlaying ? 'Playing the conversation…' : tts.busy ? 'Preparing local speech…' : 'Natural-speed audio stays available; slow replay is optional.'}</div></div>
+          <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
+          <div className="text-first-notice"><span className="notice-dot" /> Listen, then reveal <span>You can show kana at any time; English meanings are optional.</span></div>
+          <div className="dialogue-list">{speechTargets.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{showDialogueText ? line.ja : <span className="dialogue-hidden-text">Japanese hidden · listen to this turn</span>}</strong>{showMeaning && showDialogueText && <span className="dialogue-meaning">{line.en}</span>}<SpeechButton text={line.ja} tts={tts} label={`Play ${labelSpeaker(line.speaker)} line in Japanese`} compact className="dialogue-play-button" /></div></div>)}</div>
+          <div className="lesson-tools"><button type="button" className={`outline-button ${showDialogueText ? 'tool-on' : ''}`} onClick={() => { setShowDialogueText((visible) => !visible); if (showDialogueText) setShowMeaning(false) }}>{showDialogueText ? <X size={15} /> : <BookOpen size={15} />}{showDialogueText ? 'Hide kana' : 'Reveal kana'}</button>{showDialogueText && <button type="button" className={`outline-button ${showMeaning ? 'tool-on' : ''}`} onClick={() => setShowMeaning(!showMeaning)}>{showMeaning ? <X size={15} /> : <BookOpen size={15} />}{showMeaning ? 'Hide meanings' : 'Reveal English meanings'}</button>}<button type="button" className={`outline-button ${showPhrases ? 'tool-on' : ''}`} onClick={() => setShowPhrases(!showPhrases)}>{showPhrases ? <X size={15} /> : <Lightbulb size={15} />}{showPhrases ? 'Hide phrase bank' : 'Open phrase bank'}</button></div>
+          {showPhrases && <div className="phrase-bank-inline">{speechTargets.phrases.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><strong lang="ja">{item.ja}</strong><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
+          <div className="practice-footer"><span className="muted-caption">Audio is optional; reveal kana whenever you want.</span><button className="primary-button" onClick={() => goStep(2)}>Check what you understood <ArrowRight size={15} /></button></div>
         </section>}
         {step === 2 && <QuestionCard number="03" label="GIST & KEY DETAIL" title="Check what you understood." prompt={lesson.listenCheck.question} choices={lesson.listenCheck.choices} value={listenChoice} setValue={(value) => { setListenChoice(value); setShowListenFeedback(false); onPatch({ listenChoice: value, listenSubmitted: false }) }} submitted={showListenFeedback} correct={listenCorrect} answer={lesson.listenCheck.answer} feedback={listenCorrect ? 'That matches the key detail in the scene.' : `Try again. Look for the detail that answers the question.`} onSubmit={() => submitCheck('listen')} onNext={() => goStep(3)} />}
-        {step === 3 && isOpenEndedResponse && <OpenResponseCard prompt={lesson.responsePractice.prompt} guidance={lesson.responsePractice.why} phraseBank={week.phraseBank} value={openResponse} submitted={showResponseFeedback} setValue={(value) => { setOpenResponse(value); setShowResponseFeedback(false); onPatch({ openResponse: value, responseSubmitted: false }) }} onSubmit={() => { setShowResponseFeedback(true); onPatch({ openResponse, responseSubmitted: true }) }} onNext={() => goStep(4)} />}
-        {step === 3 && !isOpenEndedResponse && <QuestionCard number="04" label="RESPOND WITH SUPPORT" title="Choose a natural reply." prompt={lesson.responsePractice.prompt} choices={lesson.responsePractice.choices} value={responseChoice} setValue={(value) => { setResponseChoice(value); setShowResponseFeedback(false); onPatch({ responseChoice: value, responseSubmitted: false }) }} submitted={showResponseFeedback} correct={responseCorrect} answer={lesson.responsePractice.answer} feedback={responseCorrect ? lesson.responsePractice.why : 'Not quite in this situation. Try another option, then read why the best fit works.'} onSubmit={() => submitCheck('response')} onNext={() => goStep(4)} why={lesson.responsePractice.why} />}
+        {step === 3 && isOpenEndedResponse && <OpenResponseCard prompt={lesson.responsePractice.prompt} guidance={lesson.responsePractice.why} phraseBank={speechTargets.phrases} tts={tts} value={openResponse} submitted={showResponseFeedback} setValue={(value) => { setOpenResponse(value); setShowResponseFeedback(false); onPatch({ openResponse: value, responseSubmitted: false }) }} onSubmit={() => { setShowResponseFeedback(true); onPatch({ openResponse, responseSubmitted: true }) }} onNext={() => goStep(4)} />}
+        {step === 3 && !isOpenEndedResponse && <QuestionCard number="04" label="RESPOND WITH SUPPORT" title="Choose a natural reply." prompt={lesson.responsePractice.prompt} choices={lesson.responsePractice.choices} value={responseChoice} setValue={(value) => { setResponseChoice(value); setShowResponseFeedback(false); onPatch({ responseChoice: value, responseSubmitted: false }) }} submitted={showResponseFeedback} correct={responseCorrect} answer={lesson.responsePractice.answer} feedback={responseCorrect ? lesson.responsePractice.why : 'Not quite in this situation. Try another option, then read why the best fit works.'} onSubmit={() => submitCheck('response')} onNext={() => goStep(4)} why={lesson.responsePractice.why} tts={tts} />}
         {step === 4 && <section className="practice-card">
           <StepLabel number="05" label="ADAPT & WRAP UP" /><h2>Make the exchange yours.</h2><p className="practice-intro">Change one detail or add a follow-up. Try it aloud, with a partner, or as a short written response — no recording or automated scoring.</p>
           <div className="adapt-prompt"><span className="adapt-prompt-icon"><Sparkles size={17} /></span><div><span>YOUR ADAPTATION</span><strong>{lesson.adaptation}</strong></div></div>
           <div className="say-task"><div className="say-task-head"><ListChecks size={16} /><strong>Try the conversation</strong><span>Partner, tutor, or self-led</span></div><p>{lesson.sayTask}</p><button className={`outline-button ${triedAdaptation ? 'tool-on' : ''}`} onClick={markTried}>{triedAdaptation ? <Check size={15} /> : <CircleCheck size={15} />}{triedAdaptation ? 'Attempt noted' : 'I tried the task'}</button></div>
           <label className="field-label" htmlFor="adaptation-note">What did you change? <span>optional reflection</span></label><textarea id="adaptation-note" className="reflection-input" rows="3" placeholder="A new place, item, time, or follow-up…" value={adaptation} onChange={(event) => updateAdaptation(event.target.value)} />
           {priorFunctionWeek && <div className="checkpoint-revisit"><div className="checkpoint-revisit-icon"><Target size={15} /></div><div><span>Checkpoint revisit · Week {String(priorFunctionWeek.week).padStart(2, '0')}</span><strong>Mix in this earlier function: {priorFunctionWeek.canDo}</strong></div></div>}
-          <div className="context-learning"><div className="context-head"><BookOpen size={16} /><strong>Notice the writing</strong></div><div className="kana-groups">{week.kanaFocus.map((group) => <span key={group}>{group}</span>)}</div>{week.kanjiCards.length > 0 && <div className="kanji-card-row">{week.kanjiCards.map((item) => <div className="mini-kanji-card" key={item.kanji}><strong lang="ja">{item.kanji}</strong><span>{item.reading} · {item.meaning}</span><small>{item.whyHere}</small></div>)}</div>}</div>
+          <div className="context-learning"><div className="context-head"><BookOpen size={16} /><strong>Notice the writing</strong></div><div className="kana-groups">{speechTargets.kanaFocus.map((group) => <span className="kana-audio-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact /></span>)}</div>{speechTargets.kanjiReadings.length > 0 && <div className="kanji-card-row">{speechTargets.kanjiReadings.map((item) => <div className="mini-kanji-card" key={item.kanji}><strong lang="ja">{item.kanji}</strong><span lang="ja">{item.reading} · {item.meaning}</span><SpeechButton text={item.reading} tts={tts} label={`Listen to the reading ${item.reading}`} compact /><small>{item.whyHere}</small></div>)}</div>}</div>
           <div className="success-checks"><span className="eyebrow">WHAT THIS PRACTICE INVITED YOU TO TRY</span>{lesson.successChecks.map((item, index) => <div key={`${index}-${item}`}><CircleCheck size={14} /><span>{item}</span></div>)}</div>
           <div className="practice-footer complete-footer"><span className="muted-caption">Self-recorded after practice — not a proficiency score.</span><button className="primary-button" onClick={complete}>{isComplete ? 'Back to today' : 'Mark my practice complete'} <Check size={15} /></button></div>
         </section>}
@@ -361,26 +405,26 @@ function StepLabel({ number, label }) {
   return <div className="step-label"><span>{number}</span>{label}</div>
 }
 
-function OpenResponseCard({ prompt, guidance, phraseBank, value, submitted, setValue, onSubmit, onNext }) {
+function OpenResponseCard({ prompt, guidance, phraseBank, tts, value, submitted, setValue, onSubmit, onNext }) {
   return <section className="practice-card question-card">
     <StepLabel number="04" label="OPEN-ENDED RESPONSE" /><h2>Make a flexible reply.</h2><p className="question-prompt">{prompt}</p>
     <label className="field-label" htmlFor="open-response">Try your reply in Japanese <span>not scored</span></label>
     <textarea id="open-response" lang="ja" className="reflection-input open-response-input" rows="4" placeholder="Write a phrase or a few lines you would try…" value={value} onChange={(event) => setValue(event.target.value)} />
     {submitted && <div className="open-response-guidance" role="status"><strong>No single answer key</strong><p>{guidance}</p></div>}
-    {submitted && phraseBank?.length > 0 && <div className="phrase-bank-inline">{phraseBank.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><strong lang="ja">{item.ja}</strong><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
+    {submitted && phraseBank?.length > 0 && <div className="phrase-bank-inline">{phraseBank.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><strong lang="ja">{item.ja}</strong><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
     <div className="practice-footer"><span className="muted-caption">Try first; then compare with the guidance and phrase bank.</span>{submitted ? <button className="primary-button" onClick={onNext}>Continue <ArrowRight size={15} /></button> : <button className="primary-button" onClick={onSubmit} disabled={!value.trim()}>Compare my reply <ArrowRight size={15} /></button>}</div>
   </section>
 }
 
-function QuestionCard({ number, label, title, prompt, choices, value, setValue, submitted, correct, answer, feedback, onSubmit, onNext, why }) {
+function QuestionCard({ number, label, title, prompt, choices, value, setValue, submitted, correct, answer, feedback, onSubmit, onNext, why, tts }) {
   const hasAnswer = value !== null && value !== undefined
-  return <section className="practice-card question-card"><StepLabel number={number} label={label} /><h2>{title}</h2><p className="question-prompt">{prompt}</p><div className="answer-options">{choices.map((choice, index) => <button key={`${index}-${choice}`} className={`answer-option ${value === index ? 'answer-option-selected' : ''} ${submitted && value === index && correct ? 'answer-option-correct' : ''} ${submitted && value === index && !correct ? 'answer-option-wrong' : ''}`} onClick={() => setValue(index)}><span className="answer-letter">{String.fromCharCode(65 + index)}</span><span lang="ja">{choice}</span>{submitted && value === index && correct && <Check size={16} />}</button>)}</div>
+  return <section className="practice-card question-card"><StepLabel number={number} label={label} /><h2>{title}</h2><p className="question-prompt">{prompt}</p><div className="answer-options">{choices.map((choice, index) => <div className="answer-option-row" key={`${index}-${choice}`}><button className={`answer-option ${value === index ? 'answer-option-selected' : ''} ${submitted && value === index && correct ? 'answer-option-correct' : ''} ${submitted && value === index && !correct ? 'answer-option-wrong' : ''}`} onClick={() => setValue(index)}><span className="answer-letter">{String.fromCharCode(65 + index)}</span><span lang="ja">{choice}</span>{submitted && value === index && correct && <Check size={16} />}</button>{tts && isJapanesePracticeText(choice) && <SpeechButton text={choice} tts={tts} label={`Listen to reply ${choice}`} compact className="answer-option-speech" />}</div>)}</div>
     {submitted && <div className={`feedback-box ${correct ? 'feedback-good' : 'feedback-retry'}`}><span>{correct ? <Check size={16} /> : <RotateCcw size={16} />}</span><div><strong>{correct ? 'Good catch' : 'Keep exploring'}</strong><p>{feedback}{why && correct ? ` ${why}` : ''}</p></div></div>}
     <div className="practice-footer"><span className="muted-caption">A task-level check — not a proficiency score.</span>{submitted && correct ? <button className="primary-button" onClick={onNext}>Continue <ArrowRight size={15} /></button> : <button className="primary-button" onClick={submitted && !correct ? () => { setValue(null) } : onSubmit} disabled={!hasAnswer}>{submitted && !correct ? 'Try another answer' : 'Check my answer'} <ArrowRight size={15} /></button>}</div>
   </section>
 }
 
-function ReviewPage({ cards, onRate, onPhrasebook }) {
+function ReviewPage({ cards, onRate, onPhrasebook, tts, onOpenVoiceLab }) {
   const [queueIds] = useState(() => new Set(cards.map((card) => card.id)))
   const [reviewedIds, setReviewedIds] = useState(() => new Set())
   const [flipped, setFlipped] = useState(false)
@@ -397,8 +441,10 @@ function ReviewPage({ cards, onRate, onPhrasebook }) {
   return <div className="content-page review-page page-enter">
     <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> SHORT, SPACED PRACTICE</div><h1>Review cards<span className="title-period">.</span></h1><p>Try to recall first, flip for the meaning, then choose how easily it came back.</p></div>
     <div className="review-summary"><div className="summary-icon"><RotateCcw size={19} /></div><div><strong>{queueSize ? `${queueSize} cards in today’s short session` : 'All caught up for today'}</strong><span>Cards come from your unlocked course phrases, kana focus, and practical kanji.</span></div><span className="review-progress-text">{queueSize ? `${reviewedCount} / ${queueSize} reviewed` : 'Queue complete'}</span></div>
+    <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
     {!current ? <div className="empty-review panel"><div className="empty-icon"><Sparkles size={21} /></div><h2>Nice work. You’re done for now.</h2><p>{queueSize ? 'You have finished today’s selected cards. More come back as they become due.' : 'Start a lesson to add useful phrases to your spaced-retrieval deck.'}</p><button className="primary-button" onClick={onPhrasebook}>Browse phrasebook <ArrowRight size={15} /></button></div> : <div className="flashcard-wrap">
       <div className="flashcard-meta"><span className={`type-pill type-${current.type}`}>{current.type}</span><span>Week {String(current.week).padStart(2, '0')}</span><span className="flashcard-index">CARD {String(reviewedCount + 1).padStart(2, '0')}</span></div>
+      <div className="flashcard-listen"><SpeechButton text={current.front} tts={tts} label={`Listen to ${current.type} review prompt`} />{tts.isPlaying && <span role="status">Playing prompt…</span>}</div>
       <button className={`flashcard ${flipped ? 'flashcard-flipped' : ''}`} onClick={() => setFlipped((value) => !value)} aria-label={flipped ? 'Show card front' : 'Reveal answer'}>
         <span className="flashcard-corner">{flipped ? 'ANSWER' : 'RECALL'}</span>{flipped ? <><span className="flashcard-main" lang="ja">{current.back}</span>{current.detail && <span className="flashcard-detail">{current.detail}</span>}</> : <><span className="flashcard-main" lang="ja">{current.front}</span><span className="flashcard-hint">Think of the meaning, then tap to reveal.</span></>}
         <span className="flashcard-flip">{flipped ? 'Tap to see prompt' : 'Tap to reveal'} <RotateCcw size={13} /></span>
@@ -410,7 +456,7 @@ function ReviewPage({ cards, onRate, onPhrasebook }) {
   </div>
 }
 
-function PhrasebookPage({ cards, search, setSearch }) {
+function PhrasebookPage({ cards, search, setSearch, tts, onOpenVoiceLab }) {
   const [filter, setFilter] = useState('all')
   const [revealed, setRevealed] = useState(new Set())
   const filtered = cards.filter((card) => {
@@ -423,11 +469,12 @@ function PhrasebookPage({ cards, search, setSearch }) {
   }
   return <div className="content-page page-enter">
     <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> COURSE LANGUAGE, ALL IN ONE PLACE</div><h1>Phrasebook<span className="title-period">.</span></h1><p>Useful expressions and script support, organised from the lessons you’re learning.</p></div>
+    <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
     <div className="phrase-tools"><label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Japanese, meaning, or use…" /></label><div className="filter-tabs">{[['all', 'All'], ['phrase', 'Phrases'], ['kana', 'Kana'], ['kanji', 'Kanji']].map(([key, label]) => <button key={key} className={filter === key ? 'filter-active' : ''} onClick={() => setFilter(key)}>{label}</button>)}</div></div>
     <div className="phrase-count">{filtered.length} {filter === 'all' ? 'learning cards' : `${filter} cards`}</div>
     <div className="phrase-grid">{filtered.map((card) => {
       const isOpen = revealed.has(card.id)
-      return <button className={`phrase-card phrase-${card.type}`} key={card.id} onClick={() => toggle(card.id)}><div className="phrase-card-top"><span className={`type-pill type-${card.type}`}>{card.type}</span><span>W{String(card.week).padStart(2, '0')}</span></div><strong className="phrase-front" lang="ja">{card.front}</strong><div className={`phrase-back ${isOpen ? 'phrase-back-open' : ''}`}><span>{card.back}</span>{card.detail && <small>{card.detail}</small>}</div><div className="phrase-card-foot">{isOpen ? 'Tap to close' : 'Tap to reveal meaning'} <ChevronDown size={14} /></div></button>
+      return <article className={`phrase-card phrase-${card.type}`} key={card.id}><div className="phrase-card-top"><span className={`type-pill type-${card.type}`}>{card.type}</span><span>W{String(card.week).padStart(2, '0')}</span><SpeechButton text={card.front} tts={tts} label={`Listen to ${card.type} card ${card.front}`} compact /></div><strong className="phrase-front" lang="ja">{card.front}</strong><div className={`phrase-back ${isOpen ? 'phrase-back-open' : ''}`}><span>{card.back}</span>{card.detail && <small>{card.detail}</small>}</div><button type="button" className="phrase-card-foot" onClick={() => toggle(card.id)} aria-expanded={isOpen}>{isOpen ? 'Hide meaning' : 'Reveal meaning'} <ChevronDown size={14} /></button></article>
     })}</div>
     {filtered.length === 0 && <div className="empty-results"><Search size={19} /><strong>No matching cards</strong><span>Try another word or choose a different category.</span></div>}
   </div>

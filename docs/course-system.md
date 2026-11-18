@@ -50,11 +50,13 @@ The six checkpoints sit at the ends of weeks 2, 4, 6, 8, 10, and 12. Each is a t
 
 For app progress, keep lesson state separate from milestone evidence. A completed lesson means the learner worked through its practice; it does not mean their Japanese has been automatically assessed. Do not infer pronunciation quality or overall proficiency from clicks or self-reported completion.
 
-## Listening before speech automation
+## Listen-first practice with local TTS
 
-The course can be used now with a tutor, conversation partner, or learner-led routine. A partner can read the scene once at a natural pace, ask the gist question, repeat it, then reveal the kana and English. The learner can rehearse each turn and record a self-note. This tests the lesson design without requiring TTS, STT, recording, or automated scoring.
+Every lesson can play its existing Japanese dialogue locally, one turn at a time, using the learner's selected voice. The default is Supertonic 3; the learner may choose another supported engine in Voice Lab. Model weights and optional runtimes stay outside the repository and are fetched only after the learner chooses a setup action. The selected engine's license, size, runtime requirements, and test evidence are shown in Voice Lab; MioTTS's bundled Japanese presets have an upstream non-commercial output restriction.
 
-When audio is added later, use a listen-first path: one natural-speed listen with text hidden, a gist check, an optional replay at a learner-selected slower speed, then kana and meaning. Keep normal-speed audio available throughout. The [TTS options note](tts-options.md) compares current providers, control features, costs, licensing caveats, and a proposed audition plan; it does not select or integrate a provider yet.
+The lesson opens with kana and English hidden so learners can listen at normal speed first. They can replay the dialogue at a slower playback rate, hear an individual turn or phrase, reveal kana, and then optionally reveal English. The same selected local voice is available for Japanese reply choices, recall cues, phrase-bank entries, kana groups, kanji readings, review cards, and the course phrasebook. A tutor, partner, or learner-led read-aloud remains an option when audio is unavailable. TTS is optional: it does not gate lesson navigation or completion. Kanafish does not record speech or score pronunciation, and listening results are not treated as proficiency evidence.
+
+Supertonic 3 is the current default and the owner's preferred voice in listening comparisons. Other engines remain opt-in; their performance and audio quality are not assumed to match it. The owner’s Mac/Metal paths are not verified. See the [TTS options note](tts-options.md) for runtime evidence and licensing details.
 
 ## Content validation and pilot
 
