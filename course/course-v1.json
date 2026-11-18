@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "courseId": "kanafish-ja-travel-a1",
   "title": "Japanese Travel & Conversation — Beginner Course",
   "language": "ja-JP",
@@ -8,21 +8,68 @@
   "sessionsPerWeek": 3,
   "lessonLengthMinutes": "12-20",
   "designPrinciples": [
+    "Begin with an explicit learner goal and a short, familiar scene; assume no prior lesson or Japanese knowledge.",
     "Conversation and listening are the goal; scripts and kanji support communication rather than delay it.",
-    "Dialogue and phrase text use kana-first Japanese. Do not require romaji; pilot an optional temporary pronunciation scaffold only if the learner needs it.",
-    "Each week's lesson arc is recognize intent, respond with support, then adapt the exchange with less scripting.",
-    "Listening can be completed with a tutor, partner, or learner-read prompt until a pluggable TTS layer is selected.",
-    "Completion records observable evidence and a next practice target, never a claim of fluency or automated speech accuracy."
+    "Dialogue and phrase text use kana-first Japanese. Do not require romaji; keep it as an optional temporary scaffold.",
+    "The three weekly lessons build from noticing meaning, to supported replies, to adapting a conversation.",
+    "Local speech, reading, a partner, or self-led practice are alternatives; speech setup never gates a lesson.",
+    "Completion records practice and observable evidence, never a claim of fluency or automated speech accuracy."
   ],
   "lessonArc": ["recognize", "supported-response", "adapt"],
   "reviewCadence": {
-    "sessionWarmup": "At the start of each lesson, before showing the phrase bank, invite a 60–90 second recall of one useful phrase or key detail from the previous completed lesson. Let the learner try without text, then offer one cue and a retry.",
-    "weeklyInterleave": "In lesson 1 of each week, revisit one high-value item from the previous week in a changed mini-scenario.",
-    "longerSpacing": "In lesson 3 of each week, mix in one item first practised 2–4 weeks earlier, prioritizing learner-recorded weak or not-yet-easy items and changing the scene.",
-    "milestoneRevisit": "At each two-week can-do checkpoint, include one earlier conversation function alongside the current milestone task.",
-    "adaptation": "If recall is missed, reveal a short cue and bring the item back in the next lesson. If recalled without help, move it to a later spaced review rather than drilling it every session. Review is practice, not a score or fluency claim."
+    "sessionWarmup": "Offer a low-pressure revisit only when an earlier lesson is marked practised. If there is no completed lesson, begin with the current goal and new material; never refer to a previous lesson that did not happen.",
+    "weeklyInterleave": "At the start of a later week, choose a phrase or line that appeared in a completed lesson from the previous week; if none was practised, teach the current scene instead.",
+    "longerSpacing": "Mix in an item from two to four weeks earlier only when a lesson from that week was completed and the item appeared in that lesson. Prefer learner-marked difficult items and change the scene.",
+    "milestoneRevisit": "At a checkpoint, invite one earlier conversation function only when it has been practised; keep the main checkpoint on the current milestone.",
+    "adaptation": "Introduce review cards after a lesson is completed or after the learner explicitly self-rates an item. First scheduled review is the following day; a missed item returns sooner, while an easy recall waits longer. Review stays optional and unscored."
   },
-  "kanaPolicy": "Every Japanese dialogue line and phrase is written in kana. Topic-specific kanji are shown separately with a kana reading and practical recognition goal. Kana should stay visible alongside listening and speaking tasks.",
+  "learningPath": [
+    {
+      "id": "first-conversations",
+      "title": "Find your first words",
+      "level": "Start here",
+      "weeks": [
+        1,
+        2,
+        3
+      ],
+      "outcome": "Greet someone, introduce yourself, ask simple what/where questions, and request repetition when you miss something."
+    },
+    {
+      "id": "everyday-needs",
+      "title": "Handle everyday needs",
+      "level": "Beginner",
+      "weeks": [
+        4,
+        5,
+        6
+      ],
+      "outcome": "Make a café or shop request, handle a simple transaction, and share preferences or food needs."
+    },
+    {
+      "id": "get-around",
+      "title": "Get around",
+      "level": "Beginner",
+      "weeks": [
+        7,
+        8
+      ],
+      "outcome": "Ask for directions, follow a short route, make a simple plan, and confirm time and place."
+    },
+    {
+      "id": "keep-conversations-going",
+      "title": "Keep the conversation moving",
+      "level": "More independent practice",
+      "weeks": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "outcome": "Tell a short travel story, ask for help, handle a changed detail, and combine familiar exchanges with less scripting."
+    }
+  ],
+  "kanaPolicy": "Every Japanese dialogue line and phrase is written in kana. Topic-specific kanji are shown separately with a kana reading and practical recognition goal. Script practice appears in the scene that uses it and never gates speaking or course progress.",
   "weeks": [
     {
       "week": 1,
@@ -42,22 +89,24 @@
           "id": "W01-L1",
           "title": "A polite first hello",
           "stage": "recognize",
-          "scene": "You enter a small hotel and the receptionist greets you.",
+          "goal": "Return a simple greeting and use すみません to begin a polite request.",
+          "scene": "You enter a small hotel. The receptionist welcomes you and asks a longer reservation question; today, focus on greeting them back and opening politely. You do not need to understand every word yet.",
           "dialogue": [
             {"speaker": "staff", "ja": "こんにちは。いらっしゃいませ。", "en": "Hello. Welcome."},
             {"speaker": "traveller", "ja": "こんにちは。", "en": "Hello."},
             {"speaker": "staff", "ja": "ごよやくのおなまえをおねがいします。", "en": "May I have the name on the reservation?"}
           ],
-          "listenCheck": {"question": "What does the staff member ask for?", "choices": ["The traveller's reservation name", "The traveller's room number", "The traveller's departure time"], "answer": 0},
+          "listenCheck": {"question": "Which greeting can you use to answer the receptionist?", "choices": ["こんにちは。", "さようなら。", "おやすみなさい。"], "answer": 0},
           "responsePractice": {"prompt": "The staff member says こんにちは. Choose a suitable reply.", "choices": ["こんにちは。", "さようなら。", "おやすみなさい。"], "answer": 0, "why": "A daytime greeting can be returned with the same greeting."},
           "sayTask": "Say a greeting, then say すみません to get the receptionist's attention.",
-          "adaptation": "Change the place from a hotel to a shop. Greet the person and ask for their attention.",
+          "adaptation": "Change the hotel to a shop or station. Return the greeting, then use すみません to get the person’s attention.",
           "successChecks": ["Recognizes a greeting", "Chooses a polite greeting in return", "Uses すみません to open a request"]
         },
         {
           "id": "W01-L2",
           "title": "Thank and respond",
           "stage": "supported-response",
+          "goal": "Ask where a useful place is, understand a short reply, and thank the helper.",
           "scene": "Someone at a station points you toward the ticket machines.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。きっぷうりばはどこですか。", "en": "Excuse me. Where is the ticket counter?"},
@@ -74,6 +123,7 @@
           "id": "W01-L3",
           "title": "A small exchange, your way",
           "stage": "adapt",
+          "goal": "Respond to an offer and adapt your answer when the situation changes.",
           "scene": "A shop worker hands you a bag and checks whether you need anything else.",
           "dialogue": [
             {"speaker": "staff", "ja": "ふくろをどうぞ。", "en": "Here's your bag."},
@@ -111,6 +161,7 @@
           "id": "W02-L1",
           "title": "Hear a first introduction",
           "stage": "recognize",
+          "goal": "Introduce yourself with your name and a polite first-meeting closing.",
           "scene": "You meet another traveller at a guesthouse.",
           "dialogue": [
             {"speaker": "travellerA", "ja": "はじめまして。あきです。", "en": "Nice to meet you. I'm Aki."},
@@ -127,6 +178,7 @@
           "id": "W02-L2",
           "title": "Where are you from?",
           "stage": "supported-response",
+          "goal": "Say where you are from and ask the same question back.",
           "scene": "A fellow guest asks where you came from.",
           "dialogue": [
             {"speaker": "guest", "ja": "どちらからきましたか。", "en": "Where are you from?"},
@@ -143,6 +195,7 @@
           "id": "W02-L3",
           "title": "Three simple questions",
           "stage": "adapt",
+          "goal": "Answer familiar personal questions and keep the exchange going with a follow-up.",
           "scene": "A host asks a visitor their name, country, and whether it is their first visit.",
           "dialogue": [
             {"speaker": "host", "ja": "おなまえはなんですか。", "en": "What's your name?"},
@@ -178,6 +231,7 @@
           "id": "W03-L1",
           "title": "Ask what something is",
           "stage": "recognize",
+          "goal": "Ask what an unfamiliar item is and respond to the answer.",
           "scene": "You point to a small item on a café counter.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。これはなんですか。", "en": "Excuse me. What is this?"},
@@ -194,6 +248,7 @@
           "id": "W03-L2",
           "title": "Ask where a place is",
           "stage": "supported-response",
+          "goal": "Ask where a place is and understand a short location reply.",
           "scene": "You need to find the nearest restroom in a station.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。おてあらいはどこですか。", "en": "Excuse me. Where is the restroom?"},
@@ -210,6 +265,7 @@
           "id": "W03-L3",
           "title": "Ask for another listen",
           "stage": "adapt",
+          "goal": "Ask someone to repeat or slow down, then catch the key place or detail.",
           "scene": "A station announcement or helpful passer-by speaks too quickly.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。もういちどおねがいします。", "en": "Excuse me. One more time, please."},
@@ -245,6 +301,7 @@
           "id": "W04-L1",
           "title": "Catch the order",
           "stage": "recognize",
+          "goal": "Order a familiar drink or item and answer a simple choice question.",
           "scene": "A café worker asks what you would like.",
           "dialogue": [
             {"speaker": "staff", "ja": "ごちゅうもんは。", "en": "What would you like?"},
@@ -261,6 +318,7 @@
           "id": "W04-L2",
           "title": "Eat here or take away",
           "stage": "supported-response",
+          "goal": "Say whether you want to eat here or take your order away.",
           "scene": "The cashier asks whether the food is for here or to go.",
           "dialogue": [
             {"speaker": "staff", "ja": "こちらでおめしあがりですか。", "en": "Will you eat here?"},
@@ -277,6 +335,7 @@
           "id": "W04-L3",
           "title": "Confirm the price",
           "stage": "adapt",
+          "goal": "Understand a displayed or spoken price and make a choice.",
           "scene": "You are checking a menu before ordering at a counter.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。これはいくらですか。", "en": "Excuse me. How much is this?"},
@@ -311,6 +370,7 @@
           "id": "W05-L1",
           "title": "Ask for an item",
           "stage": "recognize",
+          "goal": "Ask for a specific item and communicate a simple quantity.",
           "scene": "You need a bottle of water at a convenience store.",
           "dialogue": [
             {"speaker": "traveller", "ja": "みずをひとつください。", "en": "One water, please."},
@@ -327,6 +387,7 @@
           "id": "W05-L2",
           "title": "Answer a checkout question",
           "stage": "supported-response",
+          "goal": "Understand a bag question and accept or decline politely.",
           "scene": "At checkout, the worker asks if you need a bag.",
           "dialogue": [
             {"speaker": "staff", "ja": "ふくろはいりますか。", "en": "Do you need a bag?"},
@@ -343,6 +404,7 @@
           "id": "W05-L3",
           "title": "Pay and finish the purchase",
           "stage": "adapt",
+          "goal": "Pay for a small purchase and recover when a checkout detail changes.",
           "scene": "You have chosen two snacks and want to pay by card.",
           "dialogue": [
             {"speaker": "staff", "ja": "おしはらいはどうしますか。", "en": "How would you like to pay?"},
@@ -378,6 +440,7 @@
           "id": "W06-L1",
           "title": "Ask for a recommendation",
           "stage": "recognize",
+          "goal": "Ask what is recommended and add a relevant follow-up question.",
           "scene": "You are looking at a menu and ask the server what is popular.",
           "dialogue": [
             {"speaker": "traveller", "ja": "おすすめはなんですか。", "en": "What do you recommend?"},
@@ -394,6 +457,7 @@
           "id": "W06-L2",
           "title": "Say what you like",
           "stage": "supported-response",
+          "goal": "Say which option you like and respond to a suggestion.",
           "scene": "A travelling companion asks which dessert you prefer.",
           "dialogue": [
             {"speaker": "companion", "ja": "あまいものはすきですか。", "en": "Do you like sweet things?"},
@@ -410,6 +474,7 @@
           "id": "W06-L3",
           "title": "Handle a food limitation",
           "stage": "adapt",
+          "goal": "Explain one food limitation and ask for or accept an alternative.",
           "scene": "You ask what is in a dish and explain that you cannot eat one ingredient.",
           "dialogue": [
             {"speaker": "traveller", "ja": "これはなんですか。", "en": "What is this?"},
@@ -445,6 +510,7 @@
           "id": "W07-L1",
           "title": "Ask for the station",
           "stage": "recognize",
+          "goal": "Ask for the nearest station and recognize 駅 on a sign.",
           "scene": "You are outside and need to find the nearest station.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。えきはどこですか。", "en": "Excuse me. Where is the station?"},
@@ -461,6 +527,7 @@
           "id": "W07-L2",
           "title": "Follow two directions",
           "stage": "supported-response",
+          "goal": "Follow two short direction steps and confirm their order.",
           "scene": "A passer-by gives a short route to a convenience store.",
           "dialogue": [
             {"speaker": "local", "ja": "まっすぐいってください。", "en": "Please go straight."},
@@ -477,6 +544,7 @@
           "id": "W07-L3",
           "title": "Clarify the destination",
           "stage": "adapt",
+          "goal": "Distinguish an entrance from an exit and clarify which way to go.",
           "scene": "You see both an entrance and an exit and need to know which way to go.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。いりぐちはどこですか。", "en": "Excuse me. Where is the entrance?"},
@@ -513,6 +581,7 @@
           "id": "W08-L1",
           "title": "Catch the meeting time",
           "stage": "recognize",
+          "goal": "Suggest a meeting time and confirm the day and time you heard.",
           "scene": "A friend suggests meeting before a museum visit.",
           "dialogue": [
             {"speaker": "friend", "ja": "あした、なんじにあいましょうか。", "en": "What time shall we meet tomorrow?"},
@@ -529,6 +598,7 @@
           "id": "W08-L2",
           "title": "Ask how long it takes",
           "stage": "supported-response",
+          "goal": "Ask how long a trip takes and confirm the duration.",
           "scene": "At a station, you ask how long the train ride will take.",
           "dialogue": [
             {"speaker": "traveller", "ja": "とうきょうまで、どのくらいかかりますか。", "en": "How long does it take to Tokyo?"},
@@ -545,6 +615,7 @@
           "id": "W08-L3",
           "title": "Reconfirm a plan",
           "stage": "adapt",
+          "goal": "Confirm a meeting place and time, asking for repetition instead of guessing.",
           "scene": "You are checking a meeting point and time before leaving the hotel.",
           "dialogue": [
             {"speaker": "traveller", "ja": "あしたのさんじに、えきでいいですか。", "en": "Is the station okay at three tomorrow?"},
@@ -580,6 +651,7 @@
           "id": "W09-L1",
           "title": "Understand a simple plan",
           "stage": "recognize",
+          "goal": "Say what you plan to do today and ask one relevant follow-up.",
           "scene": "A host asks what you plan to do today.",
           "dialogue": [
             {"speaker": "host", "ja": "きょう、どこにいきますか。", "en": "Where are you going today?"},
@@ -596,6 +668,7 @@
           "id": "W09-L2",
           "title": "Tell what happened first",
           "stage": "supported-response",
+          "goal": "Tell someone one thing you did and respond to their reaction.",
           "scene": "You tell a friend about the first thing you did yesterday.",
           "dialogue": [
             {"speaker": "friend", "ja": "きのう、なにをしましたか。", "en": "What did you do yesterday?"},
@@ -612,6 +685,7 @@
           "id": "W09-L3",
           "title": "Put two events in order",
           "stage": "adapt",
+          "goal": "Put two travel events in order and answer a follow-up question.",
           "scene": "You tell a travel companion about a day out.",
           "dialogue": [
             {"speaker": "travellerA", "ja": "きのう、まちをあるきました。", "en": "Yesterday, I walked around town."},
@@ -648,6 +722,7 @@
           "id": "W10-L1",
           "title": "Ask for help at a station",
           "stage": "recognize",
+          "goal": "Ask station staff for help and explain the main problem.",
           "scene": "You cannot find your platform and ask station staff for help.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。たすけてください。", "en": "Excuse me. Please help me."},
@@ -664,6 +739,7 @@
           "id": "W10-L2",
           "title": "Explain what is missing",
           "stage": "supported-response",
+          "goal": "Report a missing item and handle one next-step question.",
           "scene": "You report a lost wallet at a police box.",
           "dialogue": [
             {"speaker": "officer", "ja": "どうしましたか。", "en": "What's the matter?"},
@@ -680,6 +756,7 @@
           "id": "W10-L3",
           "title": "Repair and continue",
           "stage": "adapt",
+          "goal": "Ask someone to repeat an instruction, then confirm what to do next.",
           "scene": "A helpful person gives an instruction you did not catch.",
           "dialogue": [
             {"speaker": "helper", "ja": "こうさてんをひだりにまがってください。", "en": "Please turn left at the intersection."},
@@ -713,6 +790,7 @@
           "id": "W11-L1",
           "title": "A café order changes",
           "stage": "recognize",
+          "goal": "Handle an unavailable menu choice and politely choose an alternative.",
           "scene": "The café has run out of your first choice and offers another drink.",
           "dialogue": [
             {"speaker": "staff", "ja": "すみません。コーヒーはありません。", "en": "I'm sorry. We don't have coffee."},
@@ -729,6 +807,7 @@
           "id": "W11-L2",
           "title": "A meeting place changes",
           "stage": "supported-response",
+          "goal": "Adjust a meeting plan and repeat the new place and time back.",
           "scene": "A companion changes the meeting point from the station to the hotel entrance.",
           "dialogue": [
             {"speaker": "companion", "ja": "あしたは、ホテルのいりぐちであいましょう。", "en": "Let's meet at the hotel entrance tomorrow."},
@@ -745,6 +824,7 @@
           "id": "W11-L3",
           "title": "Connect a request and a follow-up",
           "stage": "adapt",
+          "goal": "Connect a practical request with a follow-up about platform or travel time.",
           "scene": "At a station, you ask for a ticket, confirm the platform, and check the travel time.",
           "dialogue": [
             {"speaker": "traveller", "ja": "きょうとまでのおとなのきっぷをください。", "en": "One adult ticket to Kyoto, please."},
@@ -779,6 +859,7 @@
           "id": "W12-L1",
           "title": "Check the Kyoto platform and departure time",
           "stage": "recognize",
+          "goal": "Ask for a platform and departure time, then choose a useful follow-up.",
           "scene": "At a station, ask which platform the Kyoto train leaves from and check its departure time.",
           "dialogue": [
             {"speaker": "traveller", "ja": "すみません。きょうといきのでんしゃは、どのホームですか。", "en": "Excuse me. Which platform is the train to Kyoto on?"},
@@ -796,6 +877,7 @@
           "id": "W12-L2",
           "title": "Rehearse a full travel exchange",
           "stage": "supported-response",
+          "goal": "Complete a café order and ask a passer-by for station directions.",
           "scene": "Order a drink at a café; after the transaction, ask a passer-by where the station is. Use phrase cards only when needed.",
           "dialogue": [
             {"speaker": "traveller", "ja": "コーヒーをひとつください。", "en": "One coffee, please."},
@@ -815,6 +897,7 @@
           "id": "W12-L3",
           "title": "Final can-do travel mission",
           "stage": "adapt",
+          "goal": "Combine familiar travel exchanges, ask follow-ups, and repair one missed detail.",
           "scene": "Three-minute role-play: meet a local, ask directions, order a drink, confirm the time, and recover from one missed detail.",
           "dialogue": [
             {"speaker": "local", "ja": "えきのいりぐちで、さんじにあいましょう。", "en": "Let's meet at the station entrance at three."},

@@ -4,21 +4,25 @@ Kanafish's first complete course is a practical, beginner-to-intermediate Japane
 
 The app-ready course content lives in [`course/course-v1.json`](../course/course-v1.json), with its structure in [`course/course.schema.json`](../course/course.schema.json). The existing [12-week outline](12-week-plan.md) remains the high-level sequence and milestone reference.
 
+## The learner's route
+
+The path is grouped into four connected phases: **Find your first words** (weeks 1–3), **Handle everyday needs** (weeks 4–6), **Get around** (weeks 7–8), and **Keep the conversation moving** (weeks 9–12). The route starts from zero and builds toward familiar travel exchanges with less scripting. It is a beginner-to-intermediate travel course; advanced Japanese is intentionally reserved for a later course. The 12-week pace is a suggestion, not a deadline.
+
 ## The learning loop
 
-Each weekly topic is practised in three short sessions:
+Each weekly topic is practised in three short lessons:
 
 1. **Recognize:** listen to or read a brief scene, identify what each person needs, and catch one key detail.
 2. **Respond with support:** choose an appropriate phrase, use a small phrase bank, then try the reply aloud.
 3. **Adapt:** change a person, item, place, time, or preference; add a follow-up; and try again with less scripting.
 
-A typical lesson introduces one scene, plays or reads its dialogue, checks gist and a detail, offers a supported response, and ends with a changed-detail attempt. Listening is optional, as are recording and recognition. Replaying and using a cue are ordinary learning actions, not failures. The learner can try once before opening a hint, then revisit the exchange with different details.
+A brand-new learner starts with a short orientation and the lesson's stated goal, never a pretend recall task. Later lessons offer a brief revisit only when its source lesson is marked practised; the learner can skip it. With no eligible revisit, the lesson goes straight to new material. A typical lesson introduces a scene, keeps the Japanese text visible and readable, offers English meanings on request, checks gist and one detail, guides a reply, and ends with a changed-detail attempt. Local listening, recording, and recognition are optional; speech setup never blocks progress. Replaying and using a cue are ordinary learning actions, not failures.
 
 ## Spaced retrieval and adaptation
 
-Short, low-pressure recall keeps older language active without turning the course into a vocabulary grind. Each lesson starts with a quick attempt to recall a useful phrase from a prior lesson; a cue is available when needed. The first lesson of a new week revisits language from the previous week in a changed scene, and lesson three interleaves material first learned two to four weeks earlier. A checkpoint also reuses an earlier conversation function.
+Short, low-pressure recall keeps studied language active without turning the course into a vocabulary grind. Retrieval considers only phrases that occur in a lesson the learner completed. A new week's first lesson may revisit the previous week in a changed scene; lesson three may interleave material from two to four weeks earlier. If no source lesson in that range was completed, no prompt is fabricated. Checkpoints invite an earlier conversation function only when it was practised.
 
-The local review deck adds course phrases and dialogue lines alongside kana and practical kanji. Learners flip a card only after trying to recall it, then choose Again, Hard, Good, or Easy. The first review intervals are one, two, three, and five days respectively. Later intervals adapt to the card's history and ease factor. Again and Hard items get extra priority when due; a successful review removes that extra weak-item boost. The daily session is capped at eight cards, and the course's stable card IDs keep schedules attached to the same learning items.
+The local review deck adds course phrases and dialogue lines alongside kana and practical kanji. A card becomes eligible only after its lesson is completed (or the learner explicitly self-rates it); untouched course material is not due. Completion introduces eligible cards with the first review scheduled for the following day. Learners try to recall a card, then choose Again, Hard, Good, or Easy. The first rating intervals are one, two, three, and five days respectively. Later intervals adapt to the card's history and ease factor. Again and Hard items get extra priority when due; a successful review removes that extra weak-item boost. The daily session is capped at eight cards, and stable card IDs keep schedules attached to the same learning items.
 
 Lesson misses and learner ratings guide what to revisit, not a pronunciation score. A failed response can be offered again as a recall prompt; a comfortable recall moves to a later spaced interval rather than being repeated every session. These rules are gentle scaffolds: learners can move between lesson steps freely and are never blocked by a review result.
 
@@ -47,7 +51,7 @@ The script targets are a lightweight path, not an exam prerequisite. Lessons rev
 
 Structured lesson records have a stable ID, scene, conversation stage, short Japanese dialogue, English meaning, listening check, response practice, speaking task, adaptation prompt, and observable success checks. Week metadata groups the phrase bank, kana focus, practical kanji cards, and any checkpoint. This keeps content separate from interface code and lets a phrase be revised without changing lesson identity.
 
-At the scene step, Supertonic 3 can read the existing dialogue with one selected voice for the entire exchange. Normal-speed playback is primary; a slower 0.85× replay is available. Individual turns, phrases, kana groups, reply choices, and kanji readings also have local playback. The learner may reveal kana first and English meaning separately. Model downloads are initiated by the learner in Voice Lab and stay in the local app cache, outside the repository.
+At the scene step, Supertonic 3 can read the existing dialogue with one selected voice for the entire exchange. Normal-speed playback is primary; a slower 0.85× replay is available. The Japanese dialogue is visible immediately, while English meanings can be shown or hidden. Individual turns, phrases, kana groups, reply choices, and kanji readings also have local playback. Model downloads are initiated by the learner in Voice Lab and stay in the local app cache, outside the repository.
 
 The lesson's optional speaking activity lets learners choose a course phrase or dialogue line, listen to a model voice, reveal kana and the adaptive romaji cue, and try the line aloud. They may self-rate recall without recording. If they choose to record, Haas-ja-v1.0 transcribes a clip on the same device. Audio and transcript are not saved in progress or uploaded. The recognizer's character-level overlap with a sample is only a written-text comparison; it is not a pronunciation, accent, or fluency grade. It can miss correctly spoken words and may accept imperfect ones. Kanafish does not use this comparison to set review timing: the learner's own rating does that.
 
@@ -61,7 +65,7 @@ TTS and STT are optional. Learners can practise with a partner, tutor, or self-l
 
 The six checkpoints sit at the ends of weeks 2, 4, 6, 8, 10, and 12. Each is a task with evidence: what the learner attempted, what information they understood, what support they used, and what they want to practise next. The final checkpoint asks for a familiar three-minute role-play across several functions and comprehension of a clear 45–60 second beginner dialogue. These are pilot targets, not promises of independent fluency.
 
-Lesson state, spaced-review schedules, kana mastery, and milestone evidence are stored separately in versioned local progress. The app migrates older progress while preserving lesson, milestone, and flashcard IDs; progress can be exported as JSON. A completed lesson means the learner chose to record that they practised. It does not mean their Japanese has been automatically assessed. Do not infer pronunciation quality or overall proficiency from clicks, transcripts, or self-reported completion.
+Lesson state, spaced-review schedules, kana mastery, and milestone evidence are stored separately in version-three local progress. The app migrates earlier progress without losing lesson sessions, milestone evidence, review schedules, or stable lesson, milestone, and flashcard IDs; progress can be exported as JSON. A completed lesson means the learner chose to record that they practised. It does not mean their Japanese has been automatically assessed. Do not infer pronunciation quality or overall proficiency from clicks, transcripts, or self-reported completion.
 
 ## Content validation and pilot
 

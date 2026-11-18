@@ -1,10 +1,10 @@
 # Using Kanafish
 
-Kanafish is designed for short, practical Japanese sessions. Begin from **Today**, continue the next lesson in the course, or do a small set of review cards first. The app offers up to eight due cards in one short session and only draws cards from weeks unlocked by course progress.
+Kanafish is designed for short, practical Japanese sessions. Begin from **Today**, continue the next lesson in the course, or do a small set of due review cards first. The app offers up to eight cards in one short session, and review includes only material connected to a completed lesson or an item the learner has already rated.
 
 ## Work through a lesson
 
-Lessons move through five steps: recall a useful phrase, listen to or read a scene, check what you understood, choose an appropriate reply (or write an open-ended reply in the final mission), then adapt the exchange. The scene opens with kana and English hidden for a listen-first attempt; reveal kana and meaning separately whenever you want support. Play the whole dialogue in turn order, replay more slowly at 0.85×, or hear a single line. Local speech buttons also read Japanese recall cues, phrase-bank entries, response choices, kana groups, kanji readings, review cards, and phrasebook cards.
+Lessons move through five steps: get a clear goal (or take an optional revisit from a completed lesson), meet the scene, check what you noticed, choose an appropriate reply (or write an open-ended reply in the final mission), then adapt the exchange. The Japanese scene is visible from the start, and English meanings can be shown when you want support. Listen if local audio is ready, replay more slowly at 0.85×, or read at your own pace; audio setup is never needed to continue. Local speech buttons also read Japanese cues, phrase-bank entries, response choices, kana groups, kanji readings, review cards, and phrasebook cards.
 
 The final lesson step has optional speaking practice. Pick a course phrase or dialogue line, listen to a model voice, try it aloud, and rate how easily you recalled it. You can self-rate without recording. If the local recognizer is installed, you may choose to record a short attempt and see the transcript. Kanafish does not save or upload the audio or transcript. Any character-overlap display compares the written transcript with the sample; it is not a pronunciation, accent, or fluency grade. Audio, recording, recognition, and lesson completion are never required to continue.
 
@@ -24,13 +24,13 @@ Sandbox CPU timings and smoke-test results are summarized in the [runtime notes]
 
 Kana stays primary, with useful kanji taught as recognition cards alongside readings. In **Settings → Romaji scaffold**, choose adaptive, always show, or hide. Adaptive mode shows romaji beneath kana and kana readings until each kana in a learning item has been recalled comfortably on two different days. It then hides the cue; a difficult kana review brings it back. This setting applies across lessons, course kana/kanji readings, review, and phrasebook, without using kanji romanization guesses.
 
-## Daily recall and spaced review
+## History-based review and spaced practice
 
-At the start of a lesson, try a quick recall before opening a cue. A phrase missed during a lesson can reappear in later retrieval. After a comfortable recall, the app selects another useful phrase rather than repeating the same one immediately.
+When a useful phrase from an earlier completed lesson is eligible, the learner can try it from memory, ask for a hint, or skip the revisit. A brand-new learner—and anyone with no eligible revisit—starts with the current lesson's goal and new material. A phrase missed during practice can return in later retrieval; after comfortable recall, the app selects another phrase rather than repeating the same one immediately.
 
 The review deck contains phrases and dialogue lines, kana groups, and useful kanji. Flip only after trying to recall, then select **Again / Hard / Good / Easy**. The first intervals are 1, 2, 3, and 5 days; later timing adapts to review history. Missed or difficult items receive extra priority when due, and a successful review clears that boost. The **Meaning → Japanese** direction applies to phrase and dialogue cards; kana and kanji remain recognition-first. These are scheduling choices, not test scores.
 
-The course's interleaving cadence is also represented in the app: the first lesson of each week revisits a phrase from the prior week in a new scene; lesson three from week 4 onward revisits material from 2–4 weeks earlier, prioritizing unresolved difficult items; and two-week checkpoints prompt the learner to reuse an earlier conversation function. The phrasebook includes material across the course, while the daily review queue follows the learner's unlocked week.
+The course may revisit a phrase from the previous week in a new scene, or interleave material from two to four weeks earlier in lesson three, prioritizing unresolved difficult items. Those prompts are drawn only from lessons the learner completed and phrases that appeared there; if no suitable item exists, the lesson proceeds with new content. Checkpoints invite an earlier conversation function only when it has been practised. The phrasebook shows material across the course, while the due-review queue reflects the learner's own study history.
 
 ## Checkpoints and personal data
 
