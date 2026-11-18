@@ -58,9 +58,7 @@ function App() {
   const lessons = useMemo(() => getLessons(course), [])
   const cards = useMemo(() => getFlashcards(course), [])
   const stats = useMemo(() => getCourseStats(course, progress), [progress])
-  const availableWeek = stats.nextLesson?.week ?? course.durationWeeks
-  const dueCards = useMemo(() => getDueCards(cards, progress, todayISO(), 500)
-    .filter((card) => card.week <= availableWeek).slice(0, 8), [cards, progress, availableWeek])
+  const dueCards = useMemo(() => getDueCards(cards, progress, todayISO(), 8), [cards, progress])
   const selected = lessons.find(({ lesson }) => lesson.id === selectedLessonId)
   const selectedWeek = selected ? course.weeks.find((week) => week.week === selected.week) : null
 
@@ -105,7 +103,7 @@ function App() {
   }
 
   function exportProgress() {
-    const blob = new Blob([JSON.stringify({ app: 'Kanafish', version: 2, exportedAt: new Date().toISOString(), progress: progressRef.current }, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify({ app: 'Kanafish', version: 3, exportedAt: new Date().toISOString(), progress: progressRef.current }, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
@@ -160,9 +158,9 @@ function App() {
         {(tts.busy || tts.isPlaying) && <div className="tts-audio-active" role="status"><span><Volume2 size={14} /> {tts.isPlaying ? 'Playing local Japanese audio…' : 'Preparing local Japanese speech…'}</span><button type="button" onClick={tts.stopPlayback}>Stop audio</button></div>}
         <div className={`page-content ${view === 'lesson' ? 'page-content-lesson' : ''}`}>
           {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} />}
-          {view === 'course' && <CoursePage weeks={course.weeks} progress={progress} romajiMode={preferences.romajiMode} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'course' && <CoursePage course={course} progress={progress} romajiMode={preferences.romajiMode} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} tts={tts} onPatch={patchLesson} onComplete={() => {
-            updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO()))
+            updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO(), cards))
             setView('today')
             setSelectedLessonId(null)
           }} onRateCard={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} romajiMode={preferences.romajiMode} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
@@ -222,85 +220,99 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
   const nextLessonId = next?.lesson?.id
   const week = next ? course.weeks.find((item) => item.week === next.week) : null
   const completed = stats.completedLessons === stats.totalLessons
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const startedCount = Object.keys(progress.lessonSessions || {}).length
+  const firstSession = !stats.completedLessons && !startedCount
   const milestone = stats.milestones.find((item) => !item.completed)
+  const currentPhase = next && course.learningPath.find((phase) => phase.weeks.includes(next.week))
   return (
     <div className="today-page page-enter">
       <div className="welcome-row">
-        <div><div className="eyebrow"><span className="eyebrow-line" /> YOUR DAILY PRACTICE</div><h1>{greeting}, learner<span className="title-period">.</span></h1><p className="welcome-subtitle">A small conversation today makes the next one easier.</p></div>
-        <div className="streak-card"><div className="streak-icon"><Flame size={19} /></div><div><strong>{progress.lastStudyDate === todayISO() ? 'Practised today' : 'A good day to start'}</strong><small>{startedCount ? `${startedCount} lesson${startedCount === 1 ? '' : 's'} opened so far` : 'Your first session is ready'}</small></div></div>
+        <div><div className="eyebrow"><span className="eyebrow-line" /> {firstSession ? 'YOUR FIRST JAPANESE LESSON' : 'YOUR JAPANESE PATH'}</div><h1>{firstSession ? 'Let’s start with a hello' : completed ? 'A journey worth revisiting' : 'Welcome back'}<span className="title-period">.</span></h1><p className="welcome-subtitle">{firstSession ? 'No previous Japanese needed. Learn one useful conversation at a time, at your own pace.' : 'Short, connected conversations help you build confidence step by step.'}</p></div>
+        <div className="streak-card"><div className="streak-icon"><Flame size={19} /></div><div><strong>{progress.lastStudyDate === todayISO() ? 'Practised today' : firstSession ? 'A fresh start' : 'Pick up where you left off'}</strong><small>{firstSession ? 'Listen, read, or practise without audio' : `${stats.completedLessons} of ${stats.totalLessons} lessons practised`}</small></div></div>
       </div>
       <div className="today-grid">
         <section className="feature-card lesson-feature">
-          <div className="feature-topline"><span className="badge badge-dark"><Sparkles size={13} /> NEXT IN YOUR COURSE</span><span className="duration"><Clock3 size={14} /> 12–20 min</span></div>
+          <div className="feature-topline"><span className="badge badge-dark"><Sparkles size={13} /> {firstSession ? 'BEGIN HERE · NO EXPERIENCE NEEDED' : 'NEXT IN YOUR COURSE'}</span><span className="duration"><Clock3 size={14} /> 12–20 min</span></div>
           {completed ? <>
             <div className="lesson-number">COURSE COMPLETE</div><h2>You’ve worked through all 36 lessons.</h2><p>Return to review cards or revisit any scene when you want to keep practising.</p><button className="primary-button" onClick={onReview}>Review useful phrases <ArrowRight size={16} /></button>
           </> : <>
-            <div className="lesson-number">WEEK {String(week.week).padStart(2, '0')} <span>·</span> LESSON {next.lesson.id.split('-L')[1]}</div><h2>{next.lesson.title}</h2><p>{week.canDo}</p>
+            <div className="lesson-number">WEEK {String(week.week).padStart(2, '0')} <span>·</span> LESSON {next.lesson.id.split('-L')[1]}{currentPhase ? <><span>·</span> {currentPhase.title}</> : null}</div><h2>{next.lesson.title}</h2><p className="today-lesson-goal"><strong>Today you’ll be able to:</strong> {next.lesson.goal}</p>
             <div className="lesson-scene"><span className="scene-icon"><Compass size={17} /></span><span>{next.lesson.scene}</span></div>
-            <button className="primary-button" onClick={() => onOpenLesson(nextLessonId)}>{progress.lessonSessions[nextLessonId]?.startedAt ? 'Continue lesson' : 'Start today’s lesson'} <ArrowRight size={16} /></button>
+            <button className="primary-button" onClick={() => onOpenLesson(nextLessonId)}>{progress.lessonSessions[nextLessonId]?.startedAt ? 'Continue lesson' : firstSession ? 'Start with the scene' : 'Start next lesson'} <ArrowRight size={16} /></button>
           </>}
           <div className="feature-decoration"><span>あ</span><span>話</span></div>
         </section>
         <section className="daily-stack">
-          <button className="review-card" onClick={onReview}>
-            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">SPACED RETRIEVAL</span><strong>{dueCount ? `${dueCount} cards in a short review` : 'Your review queue is clear'}</strong><small>{dueCount ? 'A small daily set, drawn from lessons you have unlocked.' : 'Start a lesson to build your personal review deck.'}</small></div><ArrowRight size={17} className="review-arrow" />
-          </button>
-          <div className="weekly-card"><div className="section-heading compact-heading"><div><span className="eyebrow">YOUR JOURNEY</span><h3>Steady progress</h3></div><span className="weekly-ring">{stats.percent}%</span></div><ProgressBar value={stats.percent} /><div className="weekly-stats"><div><strong>{stats.completedLessons}<span>/{stats.totalLessons}</span></strong><small>lessons</small></div><div><strong>{stats.completedWeeks}<span>/{stats.totalWeeks}</span></strong><small>weeks</small></div><div><strong>{stats.milestones.filter((item) => item.completed).length}<span>/{stats.milestones.length}</span></strong><small>checkpoints</small></div></div><button className="text-link" onClick={onCourse}>View your course path <ArrowRight size={14} /></button></div>
+          {dueCount ? <button className="review-card" onClick={onReview}>
+            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">READY WHEN YOU ARE</span><strong>{`${dueCount} practised items to revisit`}</strong><small>Only phrases and lines from lessons you’ve completed.</small></div><ArrowRight size={17} className="review-arrow" />
+          </button> : <div className="review-card review-card-clear" role="status">
+            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">SPACED REVIEW</span><strong>{stats.completedLessons ? 'Nothing due right now' : 'Nothing to review yet'}</strong><small>{stats.completedLessons ? 'Your practised phrases return on a gentle schedule.' : 'Review begins only after you’ve practised something.'}</small></div>
+          </div>}
+          <div className="weekly-card"><div className="section-heading compact-heading"><div><span className="eyebrow">YOUR JOURNEY</span><h3>{currentPhase?.title || 'Four connected stages'}</h3></div><span className="weekly-ring">{stats.percent}%</span></div><ProgressBar value={stats.percent} /><div className="weekly-stats"><div><strong>{stats.completedLessons}<span>/{stats.totalLessons}</span></strong><small>lessons</small></div><div><strong>{stats.completedWeeks}<span>/{stats.totalWeeks}</span></strong><small>weeks</small></div><div><strong>{stats.milestones.filter((item) => item.completed).length}<span>/{stats.milestones.length}</span></strong><small>checkpoints</small></div></div><button className="text-link" onClick={onCourse}>See the four-stage path <ArrowRight size={14} /></button></div>
         </section>
       </div>
       <div className="lower-grid">
-        <section className="panel next-step-panel"><div className="section-heading"><div><span className="eyebrow">UP NEXT</span><h3>{milestone ? milestone.title : 'The whole course is yours to revisit'}</h3></div><span className="round-icon"><Target size={17} /></span></div><p>{milestone ? milestone.task : 'Review any scene, revisit your phrasebook, or practise a milestone at your own pace.'}</p><div className="panel-foot"><span className="soft-tag"><CircleCheck size={14} /> Learner-recorded evidence</span><span className="muted-caption">No automatic fluency score</span></div></section>
-        <section className="panel daily-note-panel"><div className="note-ornament"><Lightbulb size={18} /></div><div><span className="eyebrow">A GOOD HABIT</span><h3>Try before you peek.</h3><p>Recall a phrase first. Then use the cue, phrase bank, or meaning reveal whenever it helps.</p></div></section>
+        <section className="panel next-step-panel"><div className="section-heading"><div><span className="eyebrow">{firstSession ? 'THE COURSE IN FOUR PARTS' : 'UP NEXT'}</span><h3>{firstSession ? 'A path that builds naturally' : milestone ? milestone.title : 'The whole course is yours to revisit'}</h3></div><span className="round-icon"><Target size={17} /></span></div><p>{firstSession ? course.learningPath.map((phase) => phase.title).join('  →  ') : milestone ? milestone.task : 'Revisit a scene, browse your phrasebook, or practise a checkpoint at your own pace.'}</p><div className="panel-foot"><span className="soft-tag"><CircleCheck size={14} /> {firstSession ? 'Short lessons · no fixed schedule' : 'Learner-recorded evidence'}</span><span className="muted-caption">No automatic fluency score</span></div></section>
+        <section className="panel daily-note-panel"><div className="note-ornament"><Lightbulb size={18} /></div><div><span className="eyebrow">A CALM WAY TO LEARN</span><h3>You choose your support.</h3><p>Listen, read, ask for a hint, or try the line with a partner. Audio is optional, and mistakes are part of practice.</p></div></section>
       </div>
-      <div className="today-footer"><span>Text-first by design</span><span className="footer-dot" /> Kana, meanings, and partner prompts — no audio required.</div>
+      <div className="today-footer"><span>Go at your own pace</span><span className="footer-dot" /> Beginner foundations first; more independent travel conversations later.</div>
     </div>
   )
 }
 
-function CoursePage({ weeks, progress, romajiMode, expandedWeeks, setExpandedWeeks, onOpenLesson, tts, onOpenVoiceLab }) {
-  const completed = progress.completedLessonIds || []
+function CoursePage({ course, progress, romajiMode, expandedWeeks, setExpandedWeeks, onOpenLesson, tts, onOpenVoiceLab }) {
+  const { weeks, learningPath } = course
+  const completed = new Set(progress.completedLessonIds || [])
   const toggle = (week) => setExpandedWeeks((current) => {
     const next = new Set(current)
     if (next.has(week)) next.delete(week); else next.add(week)
     return next
   })
   const total = weeks.reduce((sum, week) => sum + week.lessons.length, 0)
-  const done = completed.length
+  const done = weeks.reduce((sum, week) => sum + week.lessons.filter((lesson) => completed.has(lesson.id)).length, 0)
+  const weekPosition = new Map(weeks.map((week, index) => [week.week, index]))
+  const renderWeek = (week) => {
+    const weekIndex = weekPosition.get(week.week)
+    const firstLessonNumber = weeks.slice(0, weekIndex).reduce((count, previousWeek) => count + previousWeek.lessons.length, 0) + 1
+    const completeCount = week.lessons.filter((lesson) => completed.has(lesson.id)).length
+    const isOpen = expandedWeeks.has(week.week)
+    const milestoneDone = week.milestone && progress.milestones?.[week.milestone.id]?.completed
+    return <section className={`week-row ${isOpen ? 'week-open' : ''}`} key={week.week}>
+      <button className="week-header" onClick={() => toggle(week.week)} aria-expanded={isOpen}>
+        <div className={`week-index ${completeCount === week.lessons.length ? 'week-index-done' : ''}`}>{completeCount === week.lessons.length ? <Check size={16} /> : String(week.week).padStart(2, '0')}</div>
+        <div className="week-title-block"><span>WEEK {String(week.week).padStart(2, '0')}</span><strong>{week.title}</strong><small>{week.canDo}</small></div>
+        <div className="week-status"><span>{completeCount}/{week.lessons.length}</span><ChevronDown size={17} className={isOpen ? 'chevron-rotated' : ''} /></div>
+      </button>
+      {isOpen && <div className="week-body">
+        <div className="week-lessons">{week.lessons.map((lesson, index) => {
+          const isDone = completed.has(lesson.id)
+          const started = !!progress.lessonSessions?.[lesson.id]?.startedAt
+          const stageLabel = ({ recognize: 'Notice', 'supported-response': 'Practise with support', adapt: 'Adapt' })[lesson.stage]
+          return <button className={`lesson-row ${isDone ? 'lesson-row-done' : ''}`} key={lesson.id} onClick={() => onOpenLesson(lesson.id)}>
+            <span className={`lesson-row-icon ${isDone ? 'lesson-row-icon-done' : ''}`}>{isDone ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span><span className="lesson-row-main"><strong>{lesson.title}</strong><small><b>{stageLabel}</b><span>·</span>{lesson.goal}</small></span><span className={`status-pill ${isDone ? 'status-done' : started ? 'status-started' : ''}`}>{isDone ? 'Practised' : started ? 'In progress' : 'Start'}</span><ArrowRight size={15} className="lesson-row-arrow" />
+          </button>
+        })}</div>
+        <div className="week-support"><div><BookOpen size={15} /><strong>Kana focus</strong></div><div className="week-kana-audio">{week.kanaFocus.filter(isJapanesePracticeText).map((group) => <div className="week-kana-chip" key={group}><span lang="ja">{group}</span><RomajiText text={group} progress={progress} mode={romajiMode} /><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={{ weekNumber: week.week, lessonNumber: firstLessonNumber }} /></div>)}</div>{week.kanjiCards.length > 0 && <div className="kanji-focus"><span>Useful kanji</span>{week.kanjiCards.map((item) => <span key={item.kanji} className="kanji-chip"><span lang="ja">{item.kanji}</span> <small lang="ja">{item.reading}</small><RomajiText text={item.reading} progress={progress} mode={romajiMode} /></span>)}</div>}
+          {week.milestone && <div className="milestone-mini"><Target size={15} /><span>{week.milestone.title}</span>{milestoneDone ? <span className="milestone-mini-done"><Check size={13} /> saved</span> : <span className="milestone-mini-tag">CHECKPOINT</span>}</div>}
+        </div>
+      </div>}
+    </section>
+  }
   return (
-    <div className="content-page page-enter">
-      <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> THE 12-WEEK ROUTE</div><h1>Course path<span className="title-period">.</span></h1><p>Thirty-six short lessons, moving from useful phrases to more flexible travel conversations.</p></div>
-      <div className="course-overview"><div className="course-overview-mark"><GraduationCap size={23} /></div><div className="course-overview-copy"><strong>Japanese Travel & Conversation</strong><span>Beginner · 12 weeks · 3 lessons per week</span></div><div className="course-overview-progress"><strong>{done}<span>/{total}</span></strong><small>lessons practised</small></div><div className="course-overview-meter"><ProgressBar value={total ? (done / total) * 100 : 0} /></div></div>
+    <div className="content-page page-enter course-page">
+      <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> THE LEARNING ROUTE</div><h1>Course path<span className="title-period">.</span></h1><p>Four connected stages take you from your first greeting to more independent travel conversations. The 12-week timing is a suggestion, not a deadline.</p></div>
+      <div className="course-overview"><div className="course-overview-mark"><GraduationCap size={23} /></div><div className="course-overview-copy"><strong>Japanese Travel & Conversation</strong><span>4 stages · 36 short lessons · go at your own pace</span></div><div className="course-overview-progress"><strong>{done}<span>/{total}</span></strong><small>lessons practised</small></div><div className="course-overview-meter"><ProgressBar value={total ? (done / total) * 100 : 0} /></div></div>
+      <div className="course-sequence-note"><span className="sequence-chip">Notice</span><ArrowRight size={14} /><span className="sequence-chip">Practise with support</span><ArrowRight size={14} /><span className="sequence-chip">Adapt</span><span className="sequence-explainer">Each week follows the same predictable learning rhythm.</span></div>
       <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
-      <div className="week-list">
-        {weeks.map((week, weekIndex) => {
-          const firstLessonNumber = weeks.slice(0, weekIndex).reduce((count, previousWeek) => count + previousWeek.lessons.length, 0) + 1
-          const completeCount = week.lessons.filter((lesson) => completed.includes(lesson.id)).length
-          const isOpen = expandedWeeks.has(week.week)
-          const milestoneDone = week.milestone && progress.milestones?.[week.milestone.id]?.completed
-          return <section className={`week-row ${isOpen ? 'week-open' : ''}`} key={week.week}>
-            <button className="week-header" onClick={() => toggle(week.week)} aria-expanded={isOpen}>
-              <div className={`week-index ${completeCount === 3 ? 'week-index-done' : ''}`}>{completeCount === 3 ? <Check size={16} /> : String(week.week).padStart(2, '0')}</div>
-              <div className="week-title-block"><span>WEEK {String(week.week).padStart(2, '0')}</span><strong>{week.title}</strong><small>{week.canDo}</small></div>
-              <div className="week-status"><span>{completeCount}/3</span><ChevronDown size={17} className={isOpen ? 'chevron-rotated' : ''} /></div>
-            </button>
-            {isOpen && <div className="week-body">
-              <div className="week-lessons">{week.lessons.map((lesson, index) => {
-                const isDone = completed.includes(lesson.id)
-                const started = !!progress.lessonSessions?.[lesson.id]?.startedAt
-                return <button className={`lesson-row ${isDone ? 'lesson-row-done' : ''}`} key={lesson.id} onClick={() => onOpenLesson(lesson.id)}>
-                  <span className={`lesson-row-icon ${isDone ? 'lesson-row-icon-done' : ''}`}>{isDone ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span><span className="lesson-row-main"><strong>{lesson.title}</strong><small>{lesson.stage.replace('-', ' ')} <span>·</span> {lesson.scene}</small></span><span className={`status-pill ${isDone ? 'status-done' : started ? 'status-started' : ''}`}>{isDone ? 'Practised' : started ? 'In progress' : 'Start'}</span><ArrowRight size={15} className="lesson-row-arrow" />
-                </button>
-              })}</div>
-              <div className="week-support"><div><BookOpen size={15} /><strong>Kana focus</strong></div><div className="week-kana-audio">{week.kanaFocus.filter(isJapanesePracticeText).map((group) => <div className="week-kana-chip" key={group}><span lang="ja">{group}</span><RomajiText text={group} progress={progress} mode={romajiMode} /><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={{ weekNumber: week.week, lessonNumber: firstLessonNumber }} /></div>)}</div>{week.kanjiCards.length > 0 && <div className="kanji-focus"><span>Useful kanji</span>{week.kanjiCards.map((item) => <span key={item.kanji} className="kanji-chip"><span lang="ja">{item.kanji}</span> <small lang="ja">{item.reading}</small><RomajiText text={item.reading} progress={progress} mode={romajiMode} /></span>)}</div>}
-                {week.milestone && <div className="milestone-mini"><Target size={15} /><span>{week.milestone.title}</span>{milestoneDone ? <span className="milestone-mini-done"><Check size={13} /> saved</span> : <span className="milestone-mini-tag">CHECKPOINT</span>}</div>}
-              </div>
-            </div>}
-          </section>
-        })}
-      </div>
+      <div className="phase-list">{learningPath.map((phase, phaseIndex) => {
+        const phaseWeeks = phase.weeks.map((weekNumber) => weeks.find((week) => week.week === weekNumber)).filter(Boolean)
+        const phaseDone = phaseWeeks.reduce((sum, week) => sum + week.lessons.filter((lesson) => completed.has(lesson.id)).length, 0)
+        const phaseTotal = phaseWeeks.reduce((sum, week) => sum + week.lessons.length, 0)
+        return <section className="phase-section" key={phase.id}>
+          <div className="phase-heading"><span className="phase-number">{String(phaseIndex + 1).padStart(2, '0')}</span><div className="phase-heading-copy"><span>{phase.level} · WEEKS {phase.weeks.map((week) => String(week).padStart(2, '0')).join('–')}</span><h2>{phase.title}</h2><p>{phase.outcome}</p></div><span className="phase-count">{phaseDone}/{phaseTotal}<small>practised</small></span></div>
+          <div className="week-list">{phaseWeeks.map(renderWeek)}</div>
+        </section>
+      })}</div>
     </div>
   )
 }
@@ -310,7 +322,6 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
   const lessonNumber = course.weeks.flatMap((item) => item.lessons).findIndex((item) => item.id === lesson.id) + 1
   const voiceContext = { weekNumber: week.week, lessonNumber }
   const [step, setStep] = useState(session.step || 0)
-  const [showDialogueText, setShowDialogueText] = useState(false)
   const [showMeaning, setShowMeaning] = useState(false)
   const [showPhrases, setShowPhrases] = useState(false)
   const [listenChoice, setListenChoice] = useState(session.listenChoice ?? null)
@@ -324,7 +335,6 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
   const [showSpeakingPractice, setShowSpeakingPractice] = useState(false)
   const stepHeadingRef = useRef(null)
   const mountedLesson = useRef(false)
-  const steps = ['Recall', 'Hear the scene', 'Check meaning', 'Choose a reply', 'Make it yours']
   const speechTargets = getLessonSpeechTargets(week, lesson)
   const speakingTargets = [
     ...speechTargets.dialogue.map((line, index) => ({ id: `${lesson.id}-line-${index + 1}`, text: line.ja, meaning: line.en, label: `${labelSpeaker(line.speaker)} · ${line.en}`, detail: lesson.title, type: 'dialogue' })),
@@ -332,7 +342,11 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
   ]
   const warmupPrompt = getRetrievalPrompt(course, progress, lesson.id)
   const recallCard = warmupPrompt?.phrase
-  const priorFunctionWeek = week.milestone ? course.weeks.find((item) => item.week === week.week - 1) || course.weeks[0] : null
+  const hasWarmup = Boolean(recallCard)
+  const steps = [hasWarmup ? 'Quick revisit' : 'Today’s goal', 'Meet the scene', 'Check understanding', 'Choose a reply', 'Make it yours']
+  const firstLesson = lesson.id === 'W01-L1' && !(progress.completedLessonIds || []).length
+  const priorFunctionCandidate = week.milestone ? course.weeks.find((item) => item.week === week.week - 1) : null
+  const priorFunctionWeek = priorFunctionCandidate && (progress.completedLessonIds || []).some((id) => id.startsWith(`W${String(priorFunctionCandidate.week).padStart(2, '0')}-L`)) ? priorFunctionCandidate : null
   const isComplete = progress.completedLessonIds?.includes(lesson.id)
   const listenCorrect = listenChoice === lesson.listenCheck.answer
   const responseCorrect = lesson.responsePractice.answer == null || responseChoice === lesson.responsePractice.answer
@@ -392,28 +406,38 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
 
   return <div className="lesson-page lesson-guide page-enter">
     <button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Course path</button>
-    <div className="lesson-top"><div><div className="eyebrow"><span className="eyebrow-line" /> WEEK {String(week.week).padStart(2, '0')} · {lesson.id}</div><h1>{lesson.title}<span className="title-period">.</span></h1><p>{week.canDo}</p></div><span className={`stage-pill stage-${lesson.stage}`}>{lesson.stage.replace('-', ' ')}</span></div>
+    <div className="lesson-top"><div><div className="eyebrow"><span className="eyebrow-line" /> WEEK {String(week.week).padStart(2, '0')} · LESSON {lesson.id.split('-L')[1]}</div><h1>{lesson.title}<span className="title-period">.</span></h1><p className="lesson-goal-line"><strong>Today’s goal</strong>{lesson.goal}</p></div><span className={`stage-pill stage-${lesson.stage}`}>{lesson.stage === 'recognize' ? 'Notice' : lesson.stage === 'supported-response' ? 'Practise with support' : 'Adapt'}</span></div>
     <div className="guide-progress" aria-label={`Step ${step + 1} of ${steps.length}: ${steps[step]}`}><div className="guide-progress-copy"><span>STEP {String(step + 1).padStart(2, '0')} OF {String(steps.length).padStart(2, '0')}</span><strong>{steps[step]}</strong></div><div className="guide-progress-track" role="progressbar" aria-label="Lesson progress" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={step + 1}><span style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div></div>
     <div className="lesson-layout guided-layout"><div className="lesson-main guided-main">
-      {step === 0 && <section className="practice-card guided-card">
-        <p className="guide-overline">A gentle warm-up</p><h2 ref={stepHeadingRef} tabIndex={-1}>What can you remember?</h2><p className="practice-intro">Take a moment to recall one useful expression from your last lesson. This is practice, not a test.</p>
-        <div className="recall-prompt"><div className="recall-icon"><RotateCcw size={17} /></div><div><span>{warmupPrompt?.label || 'Quick recall'}</span><strong>{recallCard?.use || warmupPrompt?.prompt}</strong></div></div>
-        {warmupPrompt?.context && <p className="recall-context">{warmupPrompt.context}</p>}
-        {warmupCue && <div className="cue-reveal"><span>A small hint</span><strong lang="ja">{recallCard?.ja || 'こんにちは。'}</strong><SpeechButton text={recallCard?.ja || 'こんにちは。'} tts={tts} label="Listen to the recall cue" compact voiceContext={voiceContext} /><small>{recallCard?.en || 'Hello / good afternoon.'}</small></div>}
-        <div className="guide-actions">{warmupCue ? <button className="primary-button" onClick={() => goStep(1)}>Continue to the scene <ArrowRight size={15} /></button> : <><button className="primary-button" onClick={() => { saveWarmup('remembered'); goStep(1) }}>I remembered one <ArrowRight size={15} /></button><button className="text-link guide-help-link" onClick={() => { saveWarmup('cue', true); setWarmupCue(true) }}>Give me a hint</button></>}</div>
-        <p className="guide-note">Your response is private and unscored.</p>
+      {step === 0 && !hasWarmup && <section className="practice-card guided-card orientation-card">
+        <p className="guide-overline">{firstLesson ? 'Welcome · no preparation needed' : 'A fresh step forward'}</p><h2 ref={stepHeadingRef} tabIndex={-1}>{firstLesson ? 'We’ll start with one small conversation.' : 'Here’s the plan for today.'}</h2>
+        <p className="practice-intro">{firstLesson ? 'You do not need to know any Japanese yet. We’ll meet a short, useful scene, notice what is happening, then try a reply together.' : 'There is no revisit due from lessons you have completed. We’ll learn a new scene, practise a useful reply, and make it your own.'}</p>
+        <div className="lesson-goal-card"><span><Target size={16} /> TODAY’S GOAL</span><strong>{lesson.goal}</strong></div>
+        <div className="lesson-route" aria-label="What you will do"><div><span>01</span><strong>Meet the scene</strong><small>Read it or listen</small></div><div><span>02</span><strong>Try a reply</strong><small>With helpful clues</small></div><div><span>03</span><strong>Make it yours</strong><small>At your own pace</small></div></div>
+        <div className="guide-actions"><button className="primary-button" onClick={() => goStep(1)}>Start with the scene <ArrowRight size={15} /></button></div>
+        <p className="guide-note">No test and no speech setup required. Your practice is private.</p>
+      </section>}
+      {step === 0 && hasWarmup && <section className="practice-card guided-card">
+        <p className="guide-overline">Optional · from a lesson you completed</p><h2 ref={stepHeadingRef} tabIndex={-1}>Bring one useful phrase back.</h2><p className="practice-intro">A quick revisit can help a phrase stick. It is always fine to skip and move on to today’s new scene.</p>
+        <div className="recall-prompt"><div className="recall-icon"><RotateCcw size={17} /></div><div><span>{warmupPrompt.label || 'A phrase you have studied'}</span><strong>{recallCard.use || warmupPrompt.prompt}</strong></div></div>
+        {warmupPrompt.context && <p className="recall-context">{warmupPrompt.context}</p>}
+        {warmupCue && <div className="cue-reveal"><span>Your helpful hint</span><strong lang="ja">{recallCard.ja}</strong><SpeechButton text={recallCard.ja} tts={tts} label="Listen to the recall cue" compact voiceContext={voiceContext} /><small>{recallCard.en}</small></div>}
+        <div className="guide-actions">{warmupCue ? <button className="primary-button" onClick={() => goStep(1)}>Continue to today’s scene <ArrowRight size={15} /></button> : <><button className="primary-button" onClick={() => { saveWarmup('remembered'); goStep(1) }}>I can recall it <ArrowRight size={15} /></button><button className="text-link guide-help-link" onClick={() => { saveWarmup('cue', true); setWarmupCue(true) }}>Show me the phrase</button></>}<button className="text-link guide-help-link" onClick={() => { saveWarmup('skipped'); goStep(1) }}>Skip the revisit</button></div>
+        <p className="guide-note">Unscored and based only on lessons you have completed.</p>
       </section>}
       {step === 1 && <section className="practice-card guided-card">
-        <p className="guide-overline">Listen first, if you like</p><h2 ref={stepHeadingRef} tabIndex={-1}>Listen for the story</h2><p className="practice-intro">Imagine you are there. Hear the exchange first; the written Japanese stays tucked away until you ask for it.</p>
+        <p className="guide-overline">A real-life situation · read or listen</p><h2 ref={stepHeadingRef} tabIndex={-1}>Meet the scene</h2><p className="practice-intro">{lesson.goal} Read the Japanese and meanings below, or listen if audio is ready. Either way, you can follow along.</p>
         <div className="scene-banner"><Compass size={18} /><span>{lesson.scene}</span></div>
-        <div className="listen-first-panel guided-listen-panel"><div className="listen-first-copy"><strong>One conversation, in a natural voice</strong><span>{tts.activeEngineStatus?.modelName || 'Selected local voice'} · speech is generated on this device</span></div><button type="button" className="primary-button" onClick={() => playDialogue(1)} disabled={!tts.activeEngineStatus?.ready || tts.busy} aria-label="Listen to the whole dialogue at normal speed"><Volume2 size={16} /> Listen to the conversation</button><div className="listen-playback-status" role="status">{tts.isPlaying ? 'Playing the conversation…' : tts.busy ? 'Preparing local speech…' : 'Audio is optional. You can also read the scene.'}</div></div>
+        <div className="listen-first-panel guided-listen-panel"><div className="listen-first-copy"><strong>Listen to the conversation</strong><span>{tts.activeEngineStatus?.modelName || 'Optional local audio'}{tts.activeEngineStatus?.ready ? ' · audio stays on this device' : ' · reading works without audio setup'}</span></div><button type="button" className="primary-button" onClick={() => playDialogue(1)} disabled={!tts.activeEngineStatus?.ready || tts.busy} aria-label="Listen to the whole dialogue at normal speed"><Volume2 size={16} /> {tts.activeEngineStatus?.ready ? 'Play audio' : 'Audio not set up'}</button><div className="listen-playback-status" role="status">{tts.isPlaying ? 'Playing the conversation…' : tts.busy ? 'Preparing local speech…' : 'Audio is optional. The written scene is ready below.'}</div></div>
         <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
-        <details className="guide-support"><summary>Need the words or extra help?</summary><div className="guide-support-body">
-          <div className="guide-support-actions"><button type="button" className="outline-button" onClick={() => playDialogue(0.85)} disabled={!tts.activeEngineStatus?.ready || tts.busy}><Volume2 size={14} /> Replay more slowly</button><button type="button" className="outline-button" onClick={() => { setShowDialogueText((visible) => !visible); if (showDialogueText) setShowMeaning(false) }}>{showDialogueText ? 'Hide Japanese' : 'Show Japanese'}</button>{showDialogueText && <button type="button" className="outline-button" onClick={() => setShowMeaning((visible) => !visible)}>{showMeaning ? 'Hide English' : 'Show English meanings'}</button>}<button type="button" className="outline-button" onClick={() => setShowPhrases((visible) => !visible)}>{showPhrases ? 'Hide useful phrases' : 'Show useful phrases'}</button></div>
-          {showDialogueText && <div className="dialogue-list">{speechTargets.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{line.ja}</strong><RomajiText text={line.ja} progress={progress} mode={romajiMode} />{showMeaning && <span className="dialogue-meaning">{line.en}</span>}</div></div>)}</div>}
+        <div className="scene-reading"><div className="scene-reading-header"><div><span className="guide-overline">THE CONVERSATION</span><strong>Read along at your pace</strong></div><button type="button" className="outline-button" onClick={() => setShowMeaning((visible) => !visible)}>{showMeaning ? 'Hide English' : 'Show English meanings'}</button></div>
+          <div className="dialogue-list">{speechTargets.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{line.ja}</strong><RomajiText text={line.ja} progress={progress} mode={romajiMode} />{showMeaning && <span className="dialogue-meaning">{line.en}</span>}</div></div>)}</div>
+        </div>
+        <details className="guide-support"><summary>Audio options and useful phrases</summary><div className="guide-support-body">
+          <div className="guide-support-actions"><button type="button" className="outline-button" onClick={() => playDialogue(0.85)} disabled={!tts.activeEngineStatus?.ready || tts.busy}><Volume2 size={14} /> Replay more slowly</button><button type="button" className="outline-button" onClick={() => setShowPhrases((visible) => !visible)}>{showPhrases ? 'Hide useful phrases' : 'Show useful phrases'}</button></div>
           {showPhrases && <div className="phrase-bank-inline">{speechTargets.phrases.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><div><strong lang="ja">{item.ja}</strong><RomajiText text={item.ja} progress={progress} mode={romajiMode} /></div><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact voiceContext={voiceContext} /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
         </div></details>
-        <div className="practice-footer guide-footer"><button type="button" className="guide-back-button" onClick={() => goStep(0)}><ArrowLeft size={15} /> Back</button><button className="primary-button" onClick={() => goStep(2)}>Check what I understood <ArrowRight size={15} /></button></div>
+        <div className="practice-footer guide-footer"><button type="button" className="guide-back-button" onClick={() => goStep(0)}><ArrowLeft size={15} /> Back</button><button className="primary-button" onClick={() => goStep(2)}>What did I notice? <ArrowRight size={15} /></button></div>
       </section>}
       {step === 2 && <QuestionCard number="03" label="LISTENING CHECK" title="What happened in the scene?" prompt={lesson.listenCheck.question} choices={lesson.listenCheck.choices} value={listenChoice} setValue={(value) => { setListenChoice(value); setShowListenFeedback(false); onPatch({ listenChoice: value, listenSubmitted: false }) }} submitted={showListenFeedback} correct={listenCorrect} feedback={listenCorrect ? 'That matches the key detail in the scene.' : 'Look for the detail that answers the question, then try again.'} onSubmit={() => submitCheck('listen')} onNext={() => goStep(3)} onBack={() => goStep(1)} headingRef={stepHeadingRef} />}
       {step === 3 && isOpenEndedResponse && <OpenResponseCard prompt={lesson.responsePractice.prompt} guidance={lesson.responsePractice.why} phraseBank={speechTargets.phrases} tts={tts} voiceContext={voiceContext} value={openResponse} submitted={showResponseFeedback} setValue={(value) => { setOpenResponse(value); setShowResponseFeedback(false); onPatch({ openResponse: value, responseSubmitted: false }) }} onSubmit={() => { setShowResponseFeedback(true); onPatch({ openResponse, responseSubmitted: true }) }} onNext={() => goStep(4)} onBack={() => goStep(2)} headingRef={stepHeadingRef} />}

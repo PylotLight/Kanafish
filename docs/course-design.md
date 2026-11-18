@@ -15,6 +15,12 @@ Teach beginner-to-basic Japanese for practical travel and everyday conversation.
 7. Simple explanations and stories
 8. Problems, clarification and asking for help
 
+## Beginner course route
+
+The 12-week course is grouped into four visible phases: **Find your first words** (weeks 1–3), **Handle everyday needs** (weeks 4–6), **Get around** (weeks 7–8), and **Keep the conversation moving** (weeks 9–12). The first phase assumes no prior Japanese. Every lesson states one practical goal and builds toward familiar travel exchanges with gradually less scripting. This is a beginner-to-intermediate travel path, not an advanced-Japanese course; advanced grammar, specialist vocabulary, and open-ended study are deliberately left for a later course.
+
+The three-lesson rhythm is predictable: notice a scene and its meaning, practise a supported reply, then adapt the exchange. Phase names describe the learner's broader journey; the lesson rhythm describes what happens inside each week.
+
 ## Four-stage progression
 
 1. **Recognize:** identify common phrases, understand the situation and notice a useful response.
@@ -35,7 +41,9 @@ Each functional category should recur across stages. The learner should revisit 
 
 ## Interactive lesson experience
 
-A lesson should connect a short situation and dialogue to a small number of useful phrases, a response or comprehension activity, supported speaking practice, and a chance to adapt the exchange. Kana practice belongs in the same context. Hints and phrase banks can support early attempts and then recede as the learner retries with a changed detail.
+A brand-new learner should first see a welcoming orientation and today's concrete goal—not a recall prompt that assumes a lesson happened. A revisit is offered only when the learner has completed source material, and it can always be skipped. With no eligible revisit, the lesson starts with new material. The scene's Japanese text is immediately readable, with meaning available on request; local audio and speech setup are optional and never gate progress.
+
+A lesson should connect that short situation and dialogue to a small number of useful phrases, a response or comprehension activity, supported speaking practice, and a chance to adapt the exchange. Kana practice belongs in the same context. Hints and phrase banks can support early attempts and then recede as the learner retries with a changed detail.
 
 Progress should make practice visible: lesson status, revisited activities, and learner-entered observations or evidence for the existing milestone checks. Completion is not a fluency score; the app should present the observable task criteria so learners can understand what they did and what to practise next.
 

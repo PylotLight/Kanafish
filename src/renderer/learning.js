@@ -1,6 +1,6 @@
 import { kanaToRomaji } from './romaji.js'
 
-const VERSION = 2
+const VERSION = 3
 const isRecord = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const validId = (v) => typeof v === 'string' && v.trim().length > 0
 const validDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v
@@ -32,6 +32,7 @@ export function normalizeProgress(value) {
     const lapses = Number.isInteger(item.lapses) && item.lapses >= 0 ? item.lapses : 0
     flashcards[id] = { intervalDays, dueDate: validDate(item.dueDate) ? item.dueDate : null, repetitions,
       lastReviewed: validDate(item.lastReviewed) ? item.lastReviewed : null,
+      introducedAt: validDate(item.introducedAt) ? item.introducedAt : null,
       lastRating: ['again', 'hard', 'good', 'easy'].includes(item.lastRating) ? item.lastRating : null,
       easeFactor, lapses }
   }
@@ -51,6 +52,49 @@ export function getLessons(course) {
     (Array.isArray(week?.lessons) ? week.lessons : []).map((lesson) => ({ week: week.week, lesson })))
 }
 
+function normalizeJapaneseText(value) {
+  return String(value ?? '').replace(/[\s。、，「」？！,.!?]/gu, '')
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function lessonText(lesson) {
+  return [
+    ...(lesson?.dialogue ?? []).map((line) => line.ja),
+    lesson?.responsePractice?.prompt,
+    ...(lesson?.responsePractice?.choices ?? []),
+    lesson?.sayTask,
+    lesson?.adaptation,
+    ...(lesson?.successChecks ?? []),
+  ].filter(Boolean).join(' ')
+}
+
+function phraseAppearsInLesson(phrase, lesson) {
+  const text = normalizeJapaneseText(lessonText(lesson))
+  const parts = String(phrase?.ja ?? '').split(/(\[[^\]]+\])/g).filter(Boolean)
+  if (!text || !parts.length) return false
+  const source = parts.map((part) => /^\[[^\]]+\]$/.test(part)
+    ? '.+?'
+    : escapeRegExp(normalizeJapaneseText(part))).join('')
+  return Boolean(source) && new RegExp(source, 'u').test(text)
+}
+
+function completedLessonsInWeek(course, progress, weekNumber) {
+  const completed = new Set(progress.completedLessonIds)
+  const week = course.weeks?.find((item) => item.week === weekNumber)
+  return (week?.lessons ?? []).filter((lesson) => completed.has(lesson.id))
+}
+
+function studiedPhrases(course, progress, weekNumber) {
+  const week = course.weeks?.find((item) => item.week === weekNumber)
+  const completedLessons = completedLessonsInWeek(course, progress, weekNumber)
+  if (!week || !completedLessons.length) return []
+  return (week.phraseBank ?? []).map((phrase, index) => ({ phrase, week: weekNumber, id: `w${weekNumber}-phrase-${index + 1}`, index }))
+    .filter(({ phrase }) => completedLessons.some((lesson) => phraseAppearsInLesson(phrase, lesson)))
+}
+
 export function getRetrievalPrompt(course, progress, lessonId) {
   const state = normalizeProgress(progress)
   const entries = getLessons(course)
@@ -59,15 +103,9 @@ export function getRetrievalPrompt(course, progress, lessonId) {
   const current = entries[currentIndex]
   const lessonNumber = Number(/-L([1-3])$/.exec(lessonId)?.[1] ?? 0)
   const weeks = Array.isArray(course?.weeks) ? course.weeks : []
-  const pickPhrase = (sourceWeek, phrases, preferredIndex = 0, weakIds = []) => {
-    if (!Array.isArray(phrases) || phrases.length === 0) return null
+  const pickPhrase = (candidates, preferredIndex = 0, weakIds = []) => {
+    if (!candidates.length) return null
     const weak = new Set(weakIds)
-    const candidates = phrases.map((phrase, index) => ({
-      phrase,
-      week: sourceWeek,
-      id: `w${sourceWeek}-phrase-${index + 1}`,
-      index,
-    }))
     const rank = ({ id }) => {
       const lastRating = state.flashcards[id]?.lastRating
       if (weak.has(id) && !['good', 'easy'].includes(lastRating)) return -1
@@ -78,22 +116,22 @@ export function getRetrievalPrompt(course, progress, lessonId) {
   }
 
   if (lessonNumber === 1 && current.week > 1) {
-    const previousWeek = weeks.find((week) => week.week === current.week - 1)
-    const candidate = previousWeek && pickPhrase(previousWeek.week, previousWeek.phraseBank)
+    const previousWeekNumber = current.week - 1
+    const previousWeek = weeks.find((week) => week.week === previousWeekNumber)
+    const candidate = previousWeek && pickPhrase(studiedPhrases(course, state, previousWeekNumber))
     if (candidate) return {
       type: 'weekly', week: candidate.week, phrase: candidate.phrase,
       label: `Weekly revisit · Week ${String(candidate.week).padStart(2, '0')}`,
       prompt: candidate.phrase.use,
-      context: `Try to bring it into this new scene: ${current.lesson.scene}`,
+      context: `This phrase appeared in a lesson you completed. Try it in today’s new scene: ${current.lesson.scene}`,
     }
   }
 
   if (lessonNumber === 3 && current.week >= 4) {
     const oldest = current.week - 4
     const newest = current.week - 2
-    const candidates = weeks
-      .filter((week) => week.week >= oldest && week.week <= newest)
-      .flatMap((week) => (week.phraseBank ?? []).map((phrase, index) => ({ phrase, week: week.week, id: `w${week.week}-phrase-${index + 1}`, index })))
+    const candidates = weeks.filter((week) => week.week >= oldest && week.week <= newest)
+      .flatMap((week) => studiedPhrases(course, state, week.week))
     const rank = ({ id }) => {
       const lastRating = state.flashcards[id]?.lastRating
       const markedWeak = Object.values(state.lessonSessions || {}).some((session) => session.weakCardIds?.includes(id))
@@ -106,7 +144,7 @@ export function getRetrievalPrompt(course, progress, lessonId) {
       type: 'spaced', week: candidate.week, phrase: candidate.phrase,
       label: `Longer-spaced revisit · Week ${String(candidate.week).padStart(2, '0')}`,
       prompt: candidate.phrase.use,
-      context: `Try the phrase in today’s changed scene: ${current.lesson.scene}`,
+      context: `You practised this item earlier. Try it in today’s changed scene: ${current.lesson.scene}`,
     }
   }
 
@@ -114,17 +152,16 @@ export function getRetrievalPrompt(course, progress, lessonId) {
   if (previousCompleted) {
     const previousSession = state.lessonSessions[previousCompleted.lesson.id]
     const preferredIndex = previousSession?.warmup === 'remembered' ? 1 : 0
-    const previousWeek = weeks.find((week) => week.week === previousCompleted.week)
-    const candidate = previousWeek && pickPhrase(previousCompleted.week, previousWeek.phraseBank, preferredIndex, previousSession?.weakCardIds)
+    const candidate = pickPhrase(studiedPhrases(course, state, previousCompleted.week), preferredIndex, previousSession?.weakCardIds)
     if (candidate) return {
       type: 'lesson', week: candidate.week, phrase: candidate.phrase,
-      label: `From your last completed lesson · Week ${String(candidate.week).padStart(2, '0')}`,
+      label: `From a completed lesson · Week ${String(candidate.week).padStart(2, '0')}`,
       prompt: candidate.phrase.use,
-      context: previousSession?.warmup === 'remembered' ? 'A different useful phrase this time.' : 'Try once before opening a cue; missed items return for another practice.',
+      context: previousSession?.warmup === 'remembered' ? 'A different useful phrase from material you have practised.' : 'Try once from memory or use a cue. This is a revisit, not a test.',
     }
   }
 
-  return { type: 'starter', week: current.week, phrase: null, label: 'Your first conversation', prompt: 'Can you think of a Japanese greeting or polite opening?', context: '' }
+  return null
 }
 
 export function getCourseStats(course, progress) {
@@ -145,7 +182,7 @@ export function getFlashcards(course) {
   const cards = []
   for (const week of Array.isArray(course?.weeks) ? course.weeks : []) {
     const w = week.week
-    ;(week.phraseBank ?? []).forEach((p, i) => cards.push({ id: `w${w}-phrase-${i + 1}`, type: 'phrase', week: w, front: p.ja, back: p.en, detail: p.use ?? '', romaji: kanaToRomaji(p.ja) }))
+    ;(week.phraseBank ?? []).forEach((p, i) => cards.push({ id: `w${w}-phrase-${i + 1}`, type: 'phrase', week: w, front: p.ja, back: p.en, detail: p.use ?? '', romaji: kanaToRomaji(p.ja), lessonIds: (week.lessons ?? []).filter((lesson) => phraseAppearsInLesson(p, lesson)).map((lesson) => lesson.id) }))
     ;(week.kanaFocus ?? []).forEach((kana, i) => cards.push({ id: `w${w}-kana-${i + 1}`, type: 'kana', week: w, front: kana, back: `Read aloud: ${kana}`, detail: 'Recognize and pronounce this kana group.', romaji: kanaToRomaji(kana) }))
     ;(week.kanjiCards ?? []).forEach((k, i) => cards.push({ id: `w${w}-kanji-${i + 1}`, type: 'kanji', week: w, front: k.kanji, reading: k.reading, back: `${k.reading} — ${k.meaning}`, detail: k.whyHere ?? '', romaji: kanaToRomaji(k.reading) }))
     ;(week.lessons ?? []).forEach((lesson) => (lesson.dialogue ?? []).forEach((line, i) => cards.push({
@@ -158,9 +195,13 @@ export function getFlashcards(course) {
 
 export function getDueCards(cards, progress, dateISO, limit = 20) {
   const state = normalizeProgress(progress)
+  const completedLessons = new Set(state.completedLessonIds)
   const due = (Array.isArray(cards) ? cards : []).filter((card) => {
     const schedule = state.flashcards[card.id]
-    return !schedule || !schedule.dueDate || schedule.dueDate <= dateISO
+    const tiedToCompletedLesson = completedLessons.has(card.lessonId)
+      || (Array.isArray(card.lessonIds) && card.lessonIds.some((lessonId) => completedLessons.has(lessonId)))
+    const hasStudyHistory = Boolean(schedule?.introducedAt || schedule?.lastReviewed || tiedToCompletedLesson)
+    return hasStudyHistory && (!schedule?.dueDate || schedule.dueDate <= dateISO)
   })
   const urgency = (card) => {
     const schedule = state.flashcards[card.id]
@@ -201,8 +242,8 @@ export function rateCard(progress, cardId, rating, dateISO, card = null) {
       : rating === 'good' ? (repetitions === 0 ? 3 : Math.max(4, Math.ceil(oldInterval * easeFactor)))
         : (repetitions === 0 ? 5 : Math.max(7, Math.ceil(oldInterval * (easeFactor + 1))))
   const next = { ...state, flashcards: { ...state.flashcards,
-    [cardId]: { intervalDays, dueDate: addDays(dateISO, intervalDays), repetitions: rating === 'again' ? 0 : repetitions + 1,
-      lastReviewed: dateISO, lastRating: rating, easeFactor, lapses: (prior?.lapses ?? 0) + (rating === 'again' ? 1 : 0) } }, lastStudyDate: dateISO }
+      [cardId]: { intervalDays, dueDate: addDays(dateISO, intervalDays), repetitions: rating === 'again' ? 0 : repetitions + 1,
+        lastReviewed: dateISO, introducedAt: prior?.introducedAt ?? null, lastRating: rating, easeFactor, lapses: (prior?.lapses ?? 0) + (rating === 'again' ? 1 : 0) } }, lastStudyDate: dateISO }
   return card?.type === 'kana' ? recordKanaPractice(next, card.front, rating, dateISO) : next
 }
 
@@ -240,11 +281,19 @@ export function getRatingIntervals(progress, cardId, dateISO) {
   ]))
 }
 
-export function markLessonComplete(progress, lessonId, dateISO) {
+export function markLessonComplete(progress, lessonId, dateISO, cards = []) {
   if (!validId(lessonId)) throw new TypeError('lessonId must be a non-empty string')
   if (!validDate(dateISO)) throw new TypeError('dateISO must be a valid YYYY-MM-DD date')
   const state = normalizeProgress(progress)
-  return { ...state, completedLessonIds: [...new Set([...state.completedLessonIds, lessonId])], lastStudyDate: dateISO }
+  const flashcards = { ...state.flashcards }
+  for (const card of Array.isArray(cards) ? cards : []) {
+    if (card.lessonId !== lessonId && !card.lessonIds?.includes(lessonId)) continue
+    const previous = flashcards[card.id]
+    if (previous?.introducedAt || previous?.lastReviewed) continue
+    flashcards[card.id] = { intervalDays: 1, dueDate: addDays(dateISO, 1), repetitions: 0, lastReviewed: null,
+      introducedAt: dateISO, lastRating: null, easeFactor: 2.5, lapses: 0 }
+  }
+  return { ...state, flashcards, completedLessonIds: [...new Set([...state.completedLessonIds, lessonId])], lastStudyDate: dateISO }
 }
 export function saveLessonSession(progress, lessonId, patch) {
   if (!validId(lessonId) || !isRecord(patch)) throw new TypeError('lessonId and object patch are required')
