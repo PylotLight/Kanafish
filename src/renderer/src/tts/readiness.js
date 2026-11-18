@@ -7,7 +7,8 @@ const ENGINE_REQUIREMENTS = Object.freeze({
   'magpie-v2607': { model: 'magpieStatus', modelKey: 'modelInstalled', runtimeKey: 'runtimeReady' },
   'qwen3-tts-0.6b-customvoice': { model: 'qwenStatus', modelKey: 'modelInstalled', runtimeKey: 'runtimeReady' },
   'irodori-v4.1-small': { model: 'irodoriStatus', modelKey: 'modelInstalled', runtimeKey: 'runtimeReady' },
-  'irodori-v4.1-small-mf': { model: 'irodoriMfOnnxStatus', modelKey: 'installed', runtimeKey: 'runtimeReady' },
+  // MF runs in-process on ONNX Runtime WASM, so there is no separate runtime to set up.
+  'irodori-v4.1-small-mf': { model: 'irodoriMfOnnxStatus', modelKey: 'installed', runtimeReady: () => true },
   'miotts-0.6b': { model: 'mioStatus', modelKey: 'modelInstalled', runtimeKey: 'runtimeReady' }
 })
 

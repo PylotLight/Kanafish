@@ -14,6 +14,8 @@ const inflightDownloads = new Map()
 const verifiedAssets = new Set()
 const MAX_DOWNLOAD_ATTEMPTS = 5
 const INACTIVITY_TIMEOUT_MS = 60_000
+const DOWNLOAD_CONCURRENCY = 3
+const WRITE_BATCH_BYTES = 4 * 1024 * 1024
 
 async function matchesSha256(path, expected) {
   const hash = createHash('sha256')
@@ -161,6 +163,7 @@ export async function downloadVerifiedFile({
     if (signal?.aborted) relay()
     let handle
     let reader
+    let flush = async () => {}
     try {
       const headers = offset ? { Range: `bytes=${offset}-` } : {}
       let headerTimer
@@ -203,6 +206,20 @@ export async function downloadVerifiedFile({
       if (offset) for await (const chunk of createReadStream(partPath)) hash.update(chunk)
       reader = response.body.getReader()
       let bytes = offset
+      let pending = []
+      let pendingBytes = 0
+      flush = async () => {
+        if (!pendingBytes) return
+        const buffer = pending.length === 1 ? pending[0] : Buffer.concat(pending, pendingBytes)
+        pending = []
+        pendingBytes = 0
+        let written = 0
+        while (written < buffer.byteLength) {
+          const writeResult = await handle.write(buffer, written, buffer.byteLength - written)
+          if (!writeResult.bytesWritten) throw Object.assign(new Error(`Could not write downloaded bytes for ${file.path}`), { code: 'EIO', retryable: true })
+          written += writeResult.bytesWritten
+        }
+      }
       while (true) {
         checkAbort(signal)
         let timer
@@ -220,16 +237,14 @@ export async function downloadVerifiedFile({
           await rm(partPath, { force: true })
           throw new Error(`Downloaded file exceeded expected size for ${file.path}`)
         }
-        let written = 0
-        while (written < chunk.byteLength) {
-          const writeResult = await handle.write(chunk, written, chunk.byteLength - written)
-          if (!writeResult.bytesWritten) throw Object.assign(new Error(`Could not write downloaded bytes for ${file.path}`), { code: 'EIO', retryable: true })
-          written += writeResult.bytesWritten
-        }
+        pending.push(chunk)
+        pendingBytes += chunk.byteLength
+        if (pendingBytes >= WRITE_BATCH_BYTES) await flush()
         hash.update(chunk)
         bytes += chunk.byteLength
         progress(bytes)
       }
+      await flush()
       await handle.sync()
       await handle.close()
       handle = null
@@ -244,6 +259,8 @@ export async function downloadVerifiedFile({
       return
     } catch (error) {
       await reader?.cancel?.().catch(() => {})
+      // Keep already-received bytes so a cancelled or interrupted download resumes from them.
+      if (handle) await flush().catch(() => {})
       await handle?.close().catch(() => {})
       if (signal?.aborted) {
         progress((await fileStatOrNull(partPath))?.size || 0, true)
@@ -269,17 +286,54 @@ async function downloadModel(modelId, { cacheRoot = getHfHubCacheRoot(), fetchIm
   const totalBytes = initialStatus.totalBytes
   let completedFiles = initialStatus.files.filter(file => file.downloaded).length
   onProgress({ modelId, file: '', downloadedBytes, totalBytes, completedFiles, totalFiles: model.files.length })
-  for (const file of model.files) {
-    checkAbort(signal)
-    if (initialStatus.files.find(item => item.path === file.path)?.downloaded) continue
-    const filePath = getTtsModelFilePath(modelId,file.path,cacheRoot)
-    await mkdir(dirname(filePath),{recursive:true})
-    await rm(filePath, { force: true })
-    await downloadVerifiedFile({ url:`https://huggingface.co/${model.repoId}/resolve/${model.revision}/${file.path}`, file, path:filePath, fetchImpl, signal, onProgress, modelId, totalBytes, downloadedBytes, completedFiles, totalFiles: model.files.length })
-    downloadedBytes += file.size
-    completedFiles += 1
-    onProgress({ modelId,file:file.path,downloadedBytes,totalBytes,fileBytes:file.size,fileSize:file.size,completedFiles,totalFiles:model.files.length,terminal:true })
+  // Several files at once: one Hugging Face stream is often the bottleneck on slow links.
+  const inflightBytes = new Map()
+  const report = (extra = {}) => {
+    let active = 0
+    for (const bytes of inflightBytes.values()) active += bytes
+    onProgress({ modelId, downloadedBytes: downloadedBytes + active, totalBytes, completedFiles, totalFiles: model.files.length, ...extra })
   }
+  const local = new AbortController()
+  const relayAbort = () => local.abort(signal.reason)
+  if (signal?.aborted) relayAbort()
+  else signal?.addEventListener('abort', relayAbort, { once: true })
+  const queue = model.files.filter(file => !initialStatus.files.find(item => item.path === file.path)?.downloaded)
+  let firstError = null
+  const worker = async () => {
+    try { await drain() } catch (error) {
+      firstError ??= error
+      if (!local.signal.aborted) local.abort(error)
+    }
+  }
+  const drain = async () => {
+    while (queue.length) {
+      checkAbort(local.signal)
+      const file = queue.shift()
+      const filePath = getTtsModelFilePath(modelId,file.path,cacheRoot)
+      await mkdir(dirname(filePath),{recursive:true})
+      await rm(filePath, { force: true })
+      inflightBytes.set(file.path, 0)
+      await downloadVerifiedFile({
+        url:`https://huggingface.co/${model.repoId}/resolve/${model.revision}/${file.path}`, file, path:filePath, fetchImpl, signal: local.signal, modelId,
+        totalBytes, downloadedBytes: 0, completedFiles, totalFiles: model.files.length,
+        onProgress: (progress) => {
+          inflightBytes.set(file.path, progress.fileBytes || 0)
+          report({ file: file.path, fileBytes: progress.fileBytes, fileSize: file.size })
+        }
+      })
+      inflightBytes.delete(file.path)
+      downloadedBytes += file.size
+      completedFiles += 1
+      report({ file:file.path, fileBytes:file.size, fileSize:file.size, terminal:true })
+    }
+  }
+  const workers = Array.from({ length: Math.min(DOWNLOAD_CONCURRENCY, queue.length) }, () => worker())
+  try {
+    await Promise.all(workers)
+  } finally {
+    signal?.removeEventListener('abort', relayAbort)
+  }
+  if (firstError) throw signal?.aborted ? (signal.reason || firstError) : firstError
   return getTtsModelStatus(modelId,cacheRoot)
 }
 
