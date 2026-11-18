@@ -163,6 +163,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('kanafish:asr-status', () => asrRuntime.getStatus())
   ipcMain.handle('kanafish:asr-setup-runtime', () => asrRuntime.setupRuntime())
   ipcMain.handle('kanafish:asr-cancel-runtime-setup', () => asrRuntime.cancelRuntimeSetup())
+  ipcMain.handle('kanafish:asr-warm', () => asrRuntime.warmWorker())
   ipcMain.handle('kanafish:asr-download-model', () => asrRuntime.downloadModel())
   ipcMain.handle('kanafish:asr-cancel-model-download', () => asrRuntime.cancelModelDownload())
   ipcMain.handle('kanafish:asr-transcribe', (_event, request = {}) => {

@@ -7,11 +7,13 @@ export const PREFERENCES_KEY = 'kanafish-preferences-v1'
 
 export const THEME_OPTIONS = Object.freeze(['light', 'dark', 'amoled'])
 export const TEXT_SCALE_OPTIONS = Object.freeze([1, 1.18, 1.32])
+export const ROMAJI_MODE_OPTIONS = Object.freeze(['adaptive', 'always', 'hidden'])
 
 export const DEFAULT_PREFERENCES = Object.freeze({
   theme: 'light',
   textScale: 1.18,
   sidebarCollapsed: false,
+  romajiMode: 'adaptive',
   supertonicVoice: DEFAULT_SUPERTONIC_VOICE_SETTINGS
 })
 
@@ -23,6 +25,7 @@ export function normalizePreferences(value) {
     sidebarCollapsed: typeof source.sidebarCollapsed === 'boolean'
       ? source.sidebarCollapsed
       : DEFAULT_PREFERENCES.sidebarCollapsed,
+    romajiMode: ROMAJI_MODE_OPTIONS.includes(source.romajiMode) ? source.romajiMode : DEFAULT_PREFERENCES.romajiMode,
     supertonicVoice: normalizeSupertonicVoiceSettings(source.supertonicVoice)
   }
 }

@@ -275,6 +275,20 @@ describe('Haas speech.cpp runtime', () => {
     expect((await runtime.getStatus()).workerRunning).toBe(false)
   })
 
+  test('prewarms one shared worker without recording and reuses it for recognition', async () => {
+    const { runtime, spawn } = await makeRuntime()
+    await runtime.setupRuntime()
+    await runtime.downloadModel()
+    const warmed = await Promise.all([runtime.warmWorker(), runtime.warmWorker()])
+    expect(warmed.every((result) => result.ready)).toBe(true)
+    expect(spawn.calls.filter((call) => call.args[0] === 'worker')).toHaveLength(1)
+    expect(spawn.received.some((message) => message.type === 'transcribe')).toBe(false)
+    const result = await runtime.transcribe(encodeWav16(tone(1)))
+    expect(result.loadSeconds).toBe(0)
+    expect(spawn.calls.filter((call) => call.args[0] === 'worker')).toHaveLength(1)
+    await runtime.stop()
+  })
+
   test('cancels an in-flight transcription through the worker protocol', async () => {
     const { runtime, spawn } = await makeRuntime({ spawn: { worker: { deferTranscribe: true } } })
     await runtime.setupRuntime()

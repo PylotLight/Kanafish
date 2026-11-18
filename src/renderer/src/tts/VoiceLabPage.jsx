@@ -92,7 +92,7 @@ export default function VoiceLabPage({ tts, voiceSettings, onVoiceSettingsChange
           <button className="primary-button" type="button" onClick={() => void tts.downloadModel().catch(() => {})} disabled={tts.downloading}><Download size={15} /> Download model</button>
           <span>About 401 MB · Wi-Fi recommended · resumes from valid cached files</span>
         </div>}
-        <div className="voice-local-note"><LockKeyhole size={15} /><span>Text and generated audio stay on this device. Kanafish does not record speech or score pronunciation.</span></div>
+        <div className="voice-local-note"><LockKeyhole size={15} /><span>Text and generated audio stay on this device. Any recording and transcript are processed locally and not saved to progress; Kanafish does not score pronunciation.</span></div>
       </section>
 
       <section className="voice-lab-panel voice-test-panel" aria-labelledby="try-line-heading">

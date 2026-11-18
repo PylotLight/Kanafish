@@ -14,13 +14,6 @@ function formatSeconds(value) {
   return Number.isFinite(value) ? `${value.toFixed(2)} s` : '—'
 }
 
-const VERDICT_COPY = {
-  match: 'Matches the line',
-  close: 'Close — check the highlighted wording',
-  retry: 'Quite different — try again more slowly',
-  nothing: 'Nothing was recognized'
-}
-
 export default function SpeechRecognitionPanel() {
   const asr = useAsr()
   const [mode, setMode] = useState('free')
@@ -136,13 +129,13 @@ export default function SpeechRecognitionPanel() {
         {asr.result && <div className="tts-result-card asr-result" role="status">
           <div className="tts-result-heading"><Check size={15} /><strong>Recognized</strong><span>{asr.result.backend}</span></div>
           <p className="asr-transcript" lang="ja">{asr.result.text || '（何も認識されませんでした）'}</p>
-          {score && <div className={`asr-score asr-score-${score.verdict}`}><strong>{score.score}%</strong><span>{VERDICT_COPY[score.verdict]}</span></div>}
+          {score && <div className="asr-text-comparison"><strong>Text comparison</strong><span>{score.score}% character overlap with the sample line.</span></div>}
           <div className="tts-result-stats">
             <div><span>Audio</span><strong>{formatSeconds(asr.result.audioSeconds)}</strong></div>
             <div><span>Recognition</span><strong>{formatSeconds(asr.result.recognitionSeconds)}</strong></div>
             <div><span>{asr.result.loadSeconds > 0 ? 'Model load' : 'Speed'}</span><strong>{asr.result.loadSeconds > 0 ? formatSeconds(asr.result.loadSeconds) : Number.isFinite(asr.result.rtfx) ? `${asr.result.rtfx.toFixed(0)}× real time` : '—'}</strong></div>
           </div>
-          {score && <small>The score compares characters after folding katakana to hiragana and dropping punctuation. It is not a pronunciation grade, and a kanji vs kana spelling of the same word counts as different.</small>}
+          {score && <small>This compares the written transcript with the sample after folding katakana to hiragana and dropping punctuation. It does not assess pronunciation, accent, or fluency, and kanji versus kana spelling of the same word counts as different.</small>}
         </div>}
       </div>
     </div>

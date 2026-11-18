@@ -8,6 +8,7 @@ export function useTts(supertonicVoiceSettings) {
   const workerRef = useRef(null)
   const requestIdRef = useRef(0)
   const pendingRef = useRef(new Map())
+  const warmPromisesRef = useRef(new Map())
   const activeAudioRef = useRef(null)
   const playbackRequestRef = useRef(0)
   const mountedRef = useRef(false)
@@ -457,13 +458,18 @@ export function useTts(supertonicVoiceSettings) {
       if (message.type === 'engine') setBackend(message.backend)
       if (message.type === 'load-progress') setEngineProgress(message)
       if (message.type === 'synthesis-progress') setSynthesisProgress(message)
-      if (message.type === 'result' || message.type === 'error') {
+      if (message.type === 'result' || message.type === 'error' || message.type === 'warmed') {
         const pending = pendingRef.current.get(message.id)
         if (!pending) return
         pendingRef.current.delete(message.id)
         setBusyCount(pendingRef.current.size)
         if (message.type === 'result') {
           setError('')
+          setSynthesisProgress(null)
+          pending.resolve(message)
+        } else if (message.type === 'warmed') {
+          setError('')
+          setEngineProgress(null)
           setSynthesisProgress(null)
           pending.resolve(message)
         } else {
@@ -478,6 +484,7 @@ export function useTts(supertonicVoiceSettings) {
       setError(message)
       for (const pending of pendingRef.current.values()) pending.reject(new Error(message))
       pendingRef.current.clear()
+      warmPromisesRef.current.clear()
       setBusyCount(0)
       workerRef.current = null
     }
@@ -584,6 +591,26 @@ export function useTts(supertonicVoiceSettings) {
       worker.postMessage({ type: 'synthesize', id, text, options: { ...synthesisOptions, voice } })
     })
   }, [activeModelId, ensureWorker, irodoriMfOnnxStatus?.installed, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, mioStatus?.modelInstalled, mioStatus?.runtimeReady, mioVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice, voiceSettings])
+
+  const prewarm = useCallback((options = {}) => {
+    if (activeModelId !== 'supertonic-3' || !modelStatus?.installed) return Promise.resolve({ ready: false, skipped: true })
+    const { weekNumber, lessonNumber, courseId } = options
+    const voice = isSupertonicVoice(options.voice)
+      ? options.voice
+      : resolveSupertonicVoice(voiceSettings, { weekNumber, lessonNumber, courseId })
+    const existing = warmPromisesRef.current.get(voice)
+    if (existing) return existing
+    const worker = ensureWorker()
+    const id = ++requestIdRef.current
+    const promise = new Promise((resolve, reject) => {
+      pendingRef.current.set(id, { resolve, reject, kind: 'warm' })
+      setBusyCount(pendingRef.current.size)
+      setEngineProgress({ name: 'Supertonic 3', current: 0, total: 1 })
+      worker.postMessage({ type: 'warm', id, options: { voice } })
+    }).finally(() => warmPromisesRef.current.delete(voice))
+    warmPromisesRef.current.set(voice, promise)
+    return promise
+  }, [activeModelId, ensureWorker, modelStatus?.installed, voiceSettings])
 
   const stopCurrentAudio = useCallback(() => {
     const playback = activeAudioRef.current
@@ -767,6 +794,7 @@ export function useTts(supertonicVoiceSettings) {
     removeIrodoriPythonRuntime,
     activeModelId,
     activeEngineStatus,
+    prewarm,
     backend,
     engineProgress,
     synthesisProgress,

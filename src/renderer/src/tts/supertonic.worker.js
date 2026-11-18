@@ -106,6 +106,14 @@ async function synthesize(request) {
   }, [audioBuffer])
 }
 
+async function warm(request) {
+  const { id, options = {} } = request
+  const voiceId = isSupertonicVoice(options.voice) ? options.voice : 'M1'
+  const ttsEngine = await getEngine(id)
+  await getVoiceStyle(voiceId)
+  post({ type: 'warmed', id, backend: ttsEngine.backend, voiceId })
+}
+
 async function drainQueue() {
   if (processing) return
   processing = true
@@ -113,7 +121,8 @@ async function drainQueue() {
     while (queue.length) {
       const request = queue.shift()
       try {
-        await synthesize(request)
+        if (request.type === 'warm') await warm(request)
+        else await synthesize(request)
       } catch (error) {
         post({ type: 'error', id: request.id, error: error?.message || String(error) })
       }
@@ -124,7 +133,7 @@ async function drainQueue() {
 }
 
 self.addEventListener('message', (event) => {
-  if (event.data?.type !== 'synthesize') return
+  if (!['synthesize', 'warm'].includes(event.data?.type)) return
   queue.push(event.data)
   void drainQueue()
 })
