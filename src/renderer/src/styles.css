@@ -87,7 +87,14 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .streak-icon { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 9px; background: light-dark(#f6ede0, #241b0e); color: light-dark(#b77c50, #dcc9bb); }
 .streak-card strong { display: block; color: light-dark(#536a61, #cbd4d1); font-size: calc(10px * var(--text-scale, 1.18)); font-weight: 600; }
 .streak-card small { display: block; margin-top: 3px; color: light-dark(#9aa39d, #c6cac8); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
-.today-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(250px, .88fr); gap: 16px; }
+.today-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.today-strip { display: grid; gap: 14px; }
+.today-progress { display: flex; align-items: center; gap: 15px; padding: 14px 16px; border: 1px solid light-dark(#e4e7e0, #484c43); border-radius: 11px; background: light-dark(#f6f7f4, #1c1c13); }
+.today-progress > .progress-track { flex: 1 0 auto; min-width: 60px; }
+.today-progress-meta { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; }
+.today-progress-meta strong { color: light-dark(#446357, #c6d2ce); font-size: calc(12px * var(--text-scale, 1.18)); font-weight: 650; }
+.today-progress-meta strong span { color: light-dark(#97a19b, #c5cac8); font-weight: 500; }
+.today-progress-meta small { color: light-dark(#8a958d, #c3c8c7); font-size: calc(10px * var(--text-scale, 1.18)); }
 .feature-card { position: relative; min-height: 287px; overflow: hidden; padding: 22px 25px 21px; border: 1px solid light-dark(#dbe7dc, #404e41); border-radius: 13px; background: linear-gradient(118deg, light-dark(#e7f0e8, #141d15) 0%, light-dark(#e2ede5, #151e17) 57%, light-dark(#d9e8df, #16211a) 100%); }
 .feature-card::after { position: absolute; right: -80px; bottom: -140px; width: 290px; height: 290px; border: 1px solid light-dark(rgba(59, 105, 88, .1), rgba(39, 52, 47, .1)); border-radius: 50%; content: ''; }
 .feature-card::before { position: absolute; right: -27px; bottom: -114px; width: 213px; height: 213px; border: 1px solid light-dark(rgba(59, 105, 88, .1), rgba(39, 52, 47, .1)); border-radius: 50%; content: ''; }
@@ -105,7 +112,6 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .primary-button:hover:not(:disabled) { background: light-dark(#1f554e, #275852); transform: translateY(-1px); }
 .feature-decoration { position: absolute; right: 34px; bottom: 29px; display: flex; align-items: flex-end; gap: 15px; color: light-dark(rgba(60, 111, 92, .16), rgba(198, 220, 212, .16)); font-family: 'Noto Sans JP', sans-serif; font-size: calc(42px * var(--text-scale, 1.18)); font-weight: 600; transform: rotate(-9deg); user-select: none; }
 .feature-decoration span:last-child { margin-bottom: 25px; font-size: calc(25px * var(--text-scale, 1.18)); }
-.daily-stack { display: grid; grid-template-rows: .73fr 1.27fr; gap: 14px; }
 .review-card { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 15px; border: 1px solid light-dark(#e7e5dd, #4d4b41); border-radius: 12px; background: light-dark(#fffefa, #261f04); text-align: left; cursor: pointer; transition: border .16s ease, transform .16s ease; }
 .review-card:hover { border-color: light-dark(#bfd3c4, #3d4940); transform: translateY(-1px); }
 .review-card-icon { width: 35px; height: 35px; flex: 0 0 35px; display: grid; place-items: center; border-radius: 10px; background: light-dark(#f0ece0, #211d12); color: light-dark(#8a8056, #d7d3c5); }
@@ -128,7 +134,6 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .text-link { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: light-dark(#39736a, #c5ddd9); font-size: calc(10px * var(--text-scale, 1.18)); font-weight: 600; cursor: pointer; }
 .text-link:hover { color: light-dark(#1d554d, #c4e5e0); }
 .weekly-card .text-link { margin-top: 13px; font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
-.lower-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr); gap: 16px; margin-top: 17px; }
 .panel { border: 1px solid light-dark(#e7e7e0, #4c4c43); border-radius: 11px; background: light-dark(rgba(255,255,252,.68), rgba(38, 38, 4, .68)); }
 .next-step-panel { padding: 17px 19px 14px; }
 .next-step-panel .section-heading { margin-bottom: 7px; }
@@ -428,7 +433,7 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 
 @media (max-width: 1160px) {
   .page-content { padding-right: 28px; padding-left: 28px; }
-  .today-grid { grid-template-columns: minmax(0,1.3fr) minmax(230px,.9fr); }
+  .today-grid { grid-template-columns: 1fr; }
   .feature-card { padding-right: 20px; padding-left: 20px; }
   .feature-decoration { right: 12px; opacity: .65; }
   .lesson-layout { grid-template-columns: 155px minmax(0,1fr); gap: 14px; }
@@ -439,8 +444,6 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
   .topbar { padding: 0 21px; }
   .page-content { padding: 23px 21px 35px; }
   .today-grid { grid-template-columns: 1fr; }
-  .daily-stack { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
-  .lower-grid { grid-template-columns: 1fr; }
   .lesson-layout { grid-template-columns: 1fr; }
   .lesson-rail { position: static; display: flex; align-items: center; gap: 3px; padding: 6px; overflow-x: auto; }
   .rail-title, .rail-tip { display: none; }
@@ -467,10 +470,10 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
   .feature-card { min-height: 280px; padding: 17px; }
   .feature-card h2 { font-size: calc(23px * var(--text-scale, 1.18)); }
   .feature-decoration { right: 4px; bottom: 25px; font-size: calc(32px * var(--text-scale, 1.18)); opacity: .35; }
-  .daily-stack { grid-template-columns: 1fr; }
   .review-card { padding: 12px; }
   .daily-note-panel { padding: 15px; }
   .today-footer { flex-wrap: wrap; line-height: 1.45; }
+  .today-progress { flex-wrap: wrap; gap: 12px; }
   .course-overview { grid-template-columns: 37px 1fr auto; gap: 9px; padding: 11px; }
   .course-overview-mark { width: 35px; height: 35px; }
   .course-sequence-note { align-items: flex-start; gap: 6px; padding: 10px; }

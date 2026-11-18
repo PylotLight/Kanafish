@@ -242,18 +242,12 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
           </>}
           <div className="feature-decoration"><span>あ</span><span>話</span></div>
         </section>
-        <section className="daily-stack">
-          {dueCount ? <button className="review-card" onClick={onReview}>
-            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">READY WHEN YOU ARE</span><strong>{`${dueCount} practised items to revisit`}</strong><small>Only phrases and lines from lessons you’ve completed.</small></div><ArrowRight size={17} className="review-arrow" />
-          </button> : <div className="review-card review-card-clear" role="status">
-            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">SPACED REVIEW</span><strong>{stats.completedLessons ? 'Nothing due right now' : 'Nothing to review yet'}</strong><small>{stats.completedLessons ? 'Your practised phrases return on a gentle schedule.' : 'Review begins only after you’ve practised something.'}</small></div>
-          </div>}
-          <div className="weekly-card"><div className="section-heading compact-heading"><div><span className="eyebrow">YOUR JOURNEY</span><h3>{currentPhase?.title || 'Four connected stages'}</h3></div><span className="weekly-ring">{stats.percent}%</span></div><ProgressBar value={stats.percent} /><div className="weekly-stats"><div><strong>{stats.completedLessons}<span>/{stats.totalLessons}</span></strong><small>lessons</small></div><div><strong>{stats.completedWeeks}<span>/{stats.totalWeeks}</span></strong><small>weeks</small></div><div><strong>{stats.milestones.filter((item) => item.completed).length}<span>/{stats.milestones.length}</span></strong><small>checkpoints</small></div></div><button className="text-link" onClick={onCourse}>See the four-stage path <ArrowRight size={14} /></button></div>
+        <section className="today-strip">
+          {dueCount > 0 && <button className="review-card" onClick={onReview}>
+            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">READY TO REVIEW</span><strong>{`${dueCount} phrase${dueCount === 1 ? '' : 's'} to revisit`}</strong><small>From lessons you’ve already completed.</small></div><ArrowRight size={17} className="review-arrow" />
+          </button>}
+          <div className="today-progress"><ProgressBar value={stats.percent} /><div className="today-progress-meta"><strong>{stats.completedLessons}<span>/{stats.totalLessons}</span></strong><small>lessons practised · {stats.completedWeeks}/{stats.totalWeeks} weeks</small></div><button className="text-link" onClick={onCourse}>See the full path <ArrowRight size={14} /></button></div>
         </section>
-      </div>
-      <div className="lower-grid">
-        <section className="panel next-step-panel"><div className="section-heading"><div><span className="eyebrow">{firstSession ? 'THE COURSE IN FOUR PARTS' : 'UP NEXT'}</span><h3>{firstSession ? 'A path that builds naturally' : milestone ? milestone.title : 'The whole course is yours to revisit'}</h3></div><span className="round-icon"><Target size={17} /></span></div><p>{firstSession ? course.learningPath.map((phase) => phase.title).join('  →  ') : milestone ? milestone.task : 'Revisit a scene, browse your phrasebook, or practise a checkpoint at your own pace.'}</p><div className="panel-foot"><span className="soft-tag"><CircleCheck size={14} /> {firstSession ? 'Short lessons · no fixed schedule' : 'Learner-recorded evidence'}</span><span className="muted-caption">No automatic fluency score</span></div></section>
-        <section className="panel daily-note-panel"><div className="note-ornament"><Lightbulb size={18} /></div><div><span className="eyebrow">A CALM WAY TO LEARN</span><h3>You choose your support.</h3><p>Listen, read, ask for a hint, or try the line with a partner. Audio is optional, and mistakes are part of practice.</p></div></section>
       </div>
       <div className="today-footer"><span>Go at your own pace</span><span className="footer-dot" /> Beginner foundations first; more independent travel conversations later.</div>
     </div>
