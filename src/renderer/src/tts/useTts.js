@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getTtsEngineReadiness } from './readiness.js'
 import { ENABLED_TTS_MODEL_IDS } from './modelCatalog.js'
+import { isSupertonicVoice, normalizeSupertonicVoiceSettings, resolveSupertonicVoice } from './supertonicVoices.js'
 
-export function useTts() {
+export function useTts(supertonicVoiceSettings) {
+  const voiceSettings = useMemo(() => normalizeSupertonicVoiceSettings(supertonicVoiceSettings), [supertonicVoiceSettings])
   const workerRef = useRef(null)
   const requestIdRef = useRef(0)
   const pendingRef = useRef(new Map())
@@ -573,11 +575,15 @@ export function useTts() {
     const id = ++requestIdRef.current
     setBusyCount(pendingRef.current.size + 1)
     setEngineProgress(null)
+    const { weekNumber, lessonNumber, courseId, ...synthesisOptions } = options
+    const voice = isSupertonicVoice(options.voice)
+      ? options.voice
+      : resolveSupertonicVoice(voiceSettings, { weekNumber, lessonNumber, courseId })
     return new Promise((resolve, reject) => {
       pendingRef.current.set(id, { resolve, reject })
-      worker.postMessage({ type: 'synthesize', id, text, options })
+      worker.postMessage({ type: 'synthesize', id, text, options: { ...synthesisOptions, voice } })
     })
-  }, [activeModelId, ensureWorker, irodoriMfOnnxStatus?.installed, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, mioStatus?.modelInstalled, mioStatus?.runtimeReady, mioVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice])
+  }, [activeModelId, ensureWorker, irodoriMfOnnxStatus?.installed, irodoriStatus?.modelInstalled, irodoriStatus?.runtimeReady, magpieStatus?.modelInstalled, magpieVoice, mioStatus?.modelInstalled, mioStatus?.runtimeReady, mioVoice, modelStatus?.installed, qwenStatus?.modelInstalled, qwenVoice, voiceSettings])
 
   const stopCurrentAudio = useCallback(() => {
     const playback = activeAudioRef.current
@@ -657,11 +663,15 @@ export function useTts() {
     stopCurrentAudio()
     setError('')
     const { rate = 1, ...synthesisOptions } = options
+    const voice = isSupertonicVoice(synthesisOptions.voice)
+      ? synthesisOptions.voice
+      : resolveSupertonicVoice(voiceSettings, synthesisOptions)
+    const dialogueOptions = { ...synthesisOptions, voice }
     const results = []
     try {
       for (const [index, line] of dialogue.entries()) {
         if (requestId !== playbackRequestRef.current) return { cancelled: true, results }
-        const result = await synthesize(line.ja, synthesisOptions)
+        const result = await synthesize(line.ja, dialogueOptions)
         if (requestId !== playbackRequestRef.current) return { cancelled: true, results }
         const playback = await playAudioResult(result, rate, requestId, line.ja)
         if (playback === null || requestId !== playbackRequestRef.current) return { cancelled: true, results }
@@ -675,7 +685,7 @@ export function useTts() {
       if (requestId === playbackRequestRef.current) setError(playFailure?.message || 'Could not play the lesson dialogue.')
       throw playFailure
     }
-  }, [playAudioResult, stopCurrentAudio, synthesize])
+  }, [playAudioResult, stopCurrentAudio, synthesize, voiceSettings])
 
   const clearError = useCallback(() => setError(''), [])
 

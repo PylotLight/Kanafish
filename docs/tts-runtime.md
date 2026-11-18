@@ -1,6 +1,6 @@
 # Optional local TTS runtimes
 
-Only Supertonic 3 is currently exposed in Voice Lab. The other integrations documented below are retained in source but disabled and hidden after the live setup showed only Supertonic working; the earlier sandbox checks do not prove they work on the owner's device. The detailed setup notes below preserve that work for re-validation. Supertonic model weights stay outside Git and are downloaded only after a separate user action.
+Only Supertonic 3 is currently exposed in Voice Lab. Its pinned model pack includes all ten official voice styles (M1–M5/F1–F5); the [upstream voice guide](https://github.com/supertone-oss-archive/supertonic-py/blob/main/docs/voices.md) describes their tones, and the [model style directory](https://huggingface.co/Supertone/supertonic-3/tree/main/voice_styles) lists their JSON presets. Voice Lab can use a fixed voice or rotate by week, lesson, or listen. The other integrations documented below are retained in source but disabled and hidden after the live setup showed only Supertonic working; the earlier sandbox checks do not prove they work on the owner's device. The detailed setup notes below preserve that work for re-validation. Supertonic model weights stay outside Git and are downloaded only after a separate user action.
 
 On-device Japanese speech recognition (Haas-ja-v1.0 with speech.cpp) is available separately in Voice Lab; see [asr-runtime.md](asr-runtime.md) for its app-managed runtime and model details.
 

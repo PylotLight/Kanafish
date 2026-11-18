@@ -97,6 +97,10 @@
 .voice-model-choice button small { margin-top: 4px; color: var(--muted); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); line-height: 1.35; }
 .voice-model-choice button:focus-visible, .voice-voice-select:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .voice-voice-select { display: block; width: 100%; margin-top: 6px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--cream); color: var(--ink); font: inherit; }
+.voice-config-controls { margin-top: 13px; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--cream); }
+.voice-config-description, .voice-config-note { margin: 8px 0 0; color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
+.voice-config-description strong { color: var(--ink); }
+.voice-config-note { font-size: max(10px, calc(8px * var(--text-scale, 1.18))); }
 .magpie-runtime-help { margin-top: 12px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--cream); color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.5; }
 .magpie-runtime-help summary { color: var(--ink); font-weight: 650; cursor: pointer; }
 .magpie-runtime-help p { margin: 8px 0; }
