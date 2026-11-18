@@ -10,9 +10,9 @@ Comprehension and response choices give task-level explanations and can be retri
 
 ## Voice Lab
 
-Open **Voice Lab** from the sidebar to compare the same Japanese test lines across six local engines: Supertonic 3, Magpie, Qwen3-TTS, Irodori, Irodori MF ONNX, and MioTTS. Supertonic 3 is the default and the owner's preferred voice in listening comparisons; other engines are optional, and their quality or speed is not assumed to match. Voice Lab shows setup state, license notes, model size, runtime needs, and available test evidence. Lessons and other speech buttons use the currently selected engine; Kanafish does not silently switch engines if it is not ready.
+Open **Voice Lab** from the sidebar to download Supertonic 3 and test a supplied or custom Japanese line. It is the only engine currently enabled; the other integrated engines are hidden and disabled pending live re-validation. Supertonic uses a fixed M1 voice preset, so there is no voice picker. The model is about 399 MB and is downloaded only when requested. Lessons use the same engine and do not silently switch to another one.
 
-Model weights and optional runtimes are fetched only after setup is requested and are kept outside Git. Supertonic uses ONNX Runtime WebGPU with a WebAssembly CPU fallback; Magpie and Qwen use app-managed native C++ runtimes; MioTTS uses its pinned native runtime; Irodori MF runs with ONNX and no Python; plain Irodori uses an optional app-managed Python environment. See the [local runtime setup guide](tts-runtime.md) for exact setup and license distinctions. The MioTTS Japanese preset output is restricted to non-commercial use.
+Supertonic model weights are fetched only after setup is requested and are kept outside Git. It uses ONNX Runtime WebGPU when available, with a WebAssembly CPU fallback. The lesson dialogue can be played at normal speed or replayed at **0.85×**; single-line listening buttons use normal speed. There is no in-app voice, pitch, or synthesis-speed picker. The app does not record speech or score pronunciation.
 
 Sandbox CPU timings and smoke-test results are summarized in the [runtime notes](tts-runtime.md); they show whether a pipeline generated audio, not how natural or accurate it sounds. The owner’s Mac and its Metal/MPS paths have not been tested. Do not treat performance on this sandbox as a prediction for a Mac.
 

@@ -53,8 +53,13 @@ describe('TTS model registry and cache', () => {
 
 import { getTtsEngineReadiness } from '../src/renderer/src/tts/readiness.js'
 import { test as readinessTest, expect as readinessExpect } from 'bun:test'
-readinessTest('Irodori MF is ready as soon as its ONNX pack is installed (no separate runtime)', () => {
-  const ready = getTtsEngineReadiness('irodori-v4.1-small-mf', { irodoriMfOnnxStatus: { installed: true } })
+readinessTest('Supertonic is the only enabled engine and becomes ready when its model is installed', () => {
+  const ready = getTtsEngineReadiness('supertonic-3', { modelStatus: { installed: true } })
   readinessExpect(ready.ready).toBe(true)
-  readinessExpect(getTtsEngineReadiness('irodori-v4.1-small-mf', { irodoriMfOnnxStatus: { installed: false } }).missing).toBe('model')
+})
+readinessTest('a paused engine stays unavailable even when its former ONNX pack is installed', () => {
+  const ready = getTtsEngineReadiness('irodori-v4.1-small-mf', { irodoriMfOnnxStatus: { installed: true } })
+  readinessExpect(ready.ready).toBe(false)
+  readinessExpect(ready.missing).toBe('engine')
+  readinessExpect(ready.message).toContain('temporarily disabled')
 })

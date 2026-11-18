@@ -12,7 +12,8 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     evidence: 'CPU-tested here: 0.21–0.46× real-time factor across four Japanese samples; 1.23 s session load. Human listening and Mac GPU tests have not been done.',
     sourceUrl: 'https://huggingface.co/supertone-oss-archive/supertonic-3',
     codeUrl: 'https://github.com/supertone-oss-archive/supertonic',
-    availableInApp: true
+    availableInApp: true,
+    enabledInApp: true
   }),
   Object.freeze({
     id: 'magpie-v2607',
@@ -27,7 +28,8 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     evidence: 'Japanese synthesis verified on the sandbox CPU; Kanafish downloads and caches the pinned local model stack. Optional native runtime is not bundled; Metal/MPS and human listening tests are pending.',
     sourceUrl: 'https://huggingface.co/nvidia/magpie_tts_multilingual_357m',
     codeUrl: 'https://github.com/NVIDIA/NeMo-Speech.cpp',
-    availableInApp: true
+    availableInApp: true,
+    enabledInApp: false
   }),
   Object.freeze({
     id: 'qwen3-tts-0.6b-customvoice',
@@ -42,7 +44,8 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     evidence: 'Four-line CPU benchmark: 3.44–6.06× real time on eight threads; the actual Kanafish adapter also generated a Japanese WAV (3.09× on one short line). Mac Metal and human listening tests have not been done.',
     sourceUrl: 'https://huggingface.co/BricksDisplay/Qwen3-TTS-12Hz-0.6B-CustomVoice-GGUF',
     codeUrl: 'https://github.com/mybigday/codec.cpp/tree/d5e385229ea5a0f48fff696fed4699a852aa43b7',
-    availableInApp: true
+    availableInApp: true,
+    enabledInApp: false
   }),
   Object.freeze({
     id: 'irodori-v4.1-small',
@@ -56,7 +59,8 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     evidence: 'Integrated Kanafish CPU path generated and validated a 48 kHz RIFF/WAVE for こんにちは。: 11.55 s model load, 8.09 s generation for 1.48 s audio (RTF 5.47). Mac/MPS and human listening tests have not been done.',
     sourceUrl: 'https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small',
     codeUrl: 'https://github.com/Aratako/Irodori-TTS',
-    availableInApp: true
+    availableInApp: true,
+    enabledInApp: false
   }),
   Object.freeze({
     id: 'irodori-v4.1-small-mf',
@@ -71,7 +75,8 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     evidence: 'Separate distilled MF checkpoint; it is not plain v4.1-Small. The Node/JavaScript ONNX path generated a valid non-silent 48 kHz WAV for こんにちは。 First run took 12.78 s for 1.20 s audio (RTF 10.65, including model load) on this sandbox CPU. Mac/WebGPU and human listening tests are pending.',
     sourceUrl: 'https://huggingface.co/Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8',
     codeUrl: 'https://github.com/kgmkm/muse-irodori-voice',
-    availableInApp: true
+    availableInApp: true,
+    enabledInApp: false
   }),
   Object.freeze({
     id: 'miotts-0.6b',
@@ -86,7 +91,8 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     evidence: 'Integrated Kanafish adapter installed the pinned runtime and verified all four model assets, then generated a non-silent mono 44.1 kHz PCM16 WAV for こんにちは。: 2.81 s for 0.60 s audio (RTF 4.68) on Linux CPU. Human listening and Mac tests are pending; the bundled Japanese presets have an upstream non-commercial output restriction.',
     sourceUrl: 'https://huggingface.co/cstr/miotts-0.6b-GGUF',
     codeUrl: 'https://github.com/CrispStrobe/CrispASR',
-    availableInApp: true
+    availableInApp: true,
+    enabledInApp: false
   }),
   Object.freeze({
     id: 'qwen3-tts-0.6b-base',
@@ -120,4 +126,9 @@ export const TTS_MODEL_CATALOG = Object.freeze([
 
 export const RUNNABLE_TTS_MODEL_IDS = Object.freeze(
   TTS_MODEL_CATALOG.filter((model) => model.availableInApp).map((model) => model.id)
+)
+
+// Temporary live-test rollout: only Supertonic 3 is selectable in the app.
+export const ENABLED_TTS_MODEL_IDS = Object.freeze(
+  TTS_MODEL_CATALOG.filter((model) => model.enabledInApp).map((model) => model.id)
 )
