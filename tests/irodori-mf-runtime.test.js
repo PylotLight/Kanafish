@@ -59,4 +59,25 @@ describe('Irodori v4.1-Small-MF runtime safeguards', () => {
     await expect(runtime.downloadModel()).rejects.toThrow(/Not enough free disk space/)
     expect(downloadCalls).toBe(0)
   })
+
+  test('exposes explicit cancellation to the active downloader and clears the handle after completion', async () => {
+    let markStarted
+    const started = new Promise((resolve) => { markStarted = resolve })
+    const runtime = createIrodoriMfOnnxRuntime({
+      cacheRoot: '/tmp/kanafish-mf-runtime-test',
+      getModelStatus: async () => ({ installed: false, files: [{ size: 100, downloaded: false }] }),
+      makeDirectory: async () => {},
+      getFilesystemStats: async () => ({ bavail: 1_000_000_000, bsize: 1 }),
+      downloadModelAssets: async (_modelId, { signal }) => new Promise((_, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+        markStarted()
+      })
+    })
+
+    const pending = runtime.downloadModel()
+    await started
+    expect(runtime.cancelDownload()).toEqual({ cancelled: true })
+    await expect(pending).rejects.toThrow(/cancelled.*resume/i)
+    expect(runtime.cancelDownload()).toEqual({ cancelled: false })
+  })
 })

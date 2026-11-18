@@ -8,6 +8,7 @@ export function useTts() {
   const [modelStatus, setModelStatus] = useState(null)
   const [magpieStatus, setMagpieStatus] = useState(null)
   const [qwenStatus, setQwenStatus] = useState(null)
+  const [qwenStatusRefreshing, setQwenStatusRefreshing] = useState(false)
   const [irodoriStatus, setIrodoriStatus] = useState(null)
   const [irodoriMfOnnxStatus, setIrodoriMfOnnxStatus] = useState(null)
   const [mioStatus, setMioStatus] = useState(null)
@@ -36,6 +37,7 @@ export function useTts() {
   const [irodoriDownloadError, setIrodoriDownloadError] = useState('')
   const [irodoriMfOnnxProgress, setIrodoriMfOnnxProgress] = useState(null)
   const [irodoriMfOnnxDownloading, setIrodoriMfOnnxDownloading] = useState(false)
+  const [irodoriMfOnnxCancelling, setIrodoriMfOnnxCancelling] = useState(false)
   const [irodoriMfOnnxDownloadError, setIrodoriMfOnnxDownloadError] = useState('')
   const [mioProgress, setMioProgress] = useState(null)
   const [mioDownloading, setMioDownloading] = useState(false)
@@ -103,6 +105,25 @@ export function useTts() {
       setMioStatusError(mioResult.reason?.message || 'Could not inspect the MioTTS runtime or model cache.')
     }
     return supertonicResult.status === 'fulfilled' ? supertonicResult.value : null
+  }, [])
+
+  const refreshQwenStatus = useCallback(async () => {
+    if (!window.kanafish?.getQwenStatus) {
+      setQwenStatusError('The codec.cpp runtime status is available in the Kanafish desktop app.')
+      return null
+    }
+    setQwenStatusRefreshing(true)
+    try {
+      const status = await window.kanafish.getQwenStatus()
+      setQwenStatus(status)
+      setQwenStatusError('')
+      return status
+    } catch (failure) {
+      setQwenStatusError(failure?.message || 'Could not inspect the codec.cpp runtime.')
+      return null
+    } finally {
+      setQwenStatusRefreshing(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -242,7 +263,7 @@ export function useTts() {
     try {
       const status = await window.kanafish.setupQwenRuntime()
       setQwenStatus(status)
-      setQwenProgress({ runtimeId: 'codecCpp', state: 'complete', stage: 'complete', message: 'Compatible codec.cpp tts-server is ready.' })
+      setQwenProgress({ runtimeId: 'codecCpp', state: 'complete', stage: 'complete', message: 'Pinned codec.cpp installed; live server and Japanese-voice checks run at synthesis startup.' })
       return status
     } catch (setupFailure) {
       const message = setupFailure?.message || 'Could not build codec.cpp.'
@@ -292,7 +313,9 @@ export function useTts() {
       setIrodoriMfOnnxProgress({ modelId: status.id, state: 'complete', downloadedBytes: status.totalBytes, totalBytes: status.totalBytes, completedFiles: status.files.length, totalFiles: status.files.length, message: 'MF ONNX graphs and tokenizer are checksum-verified.' })
       return status
     } catch (downloadFailure) {
-      const message = downloadFailure?.message || 'Could not download the Irodori-Small-MF ONNX pack.'
+      const message = /cancelled/i.test(downloadFailure?.message || '')
+        ? 'Download cancelled. Partial file data is kept; choose Download again to resume.'
+        : downloadFailure?.message || 'Could not download the Irodori-Small-MF ONNX pack.'
       setIrodoriMfOnnxDownloadError(message)
       try { setIrodoriMfOnnxStatus(await window.kanafish.getIrodoriMfOnnxStatus()) } catch {}
       throw downloadFailure
@@ -300,6 +323,16 @@ export function useTts() {
       setIrodoriMfOnnxDownloading(false)
     }
   }, [irodoriMfOnnxStatus?.totalBytes])
+
+  const cancelIrodoriMfOnnxDownload = useCallback(async () => {
+    if (!window.kanafish?.cancelIrodoriMfOnnxDownload) return { cancelled: false }
+    setIrodoriMfOnnxCancelling(true)
+    try {
+      return await window.kanafish.cancelIrodoriMfOnnxDownload()
+    } finally {
+      setIrodoriMfOnnxCancelling(false)
+    }
+  }, [])
 
   const setupIrodoriPython = useCallback(async () => {
     if (!window.kanafish?.setupIrodoriPython) throw new Error('Irodori setup is available in the Kanafish desktop app.')
@@ -573,10 +606,12 @@ export function useTts() {
     statusError,
     magpieStatusError,
     qwenStatusError,
+    qwenStatusRefreshing,
     irodoriStatusError,
     irodoriMfOnnxStatusError,
     mioStatusError,
     refreshModelStatus,
+    refreshQwenStatus,
     downloadProgress,
     downloading,
     downloadError,
@@ -607,8 +642,10 @@ export function useTts() {
     downloadIrodoriModel,
     irodoriMfOnnxProgress,
     irodoriMfOnnxDownloading,
+    irodoriMfOnnxCancelling,
     irodoriMfOnnxDownloadError,
     downloadIrodoriMfOnnxModel,
+    cancelIrodoriMfOnnxDownload,
     removeIrodoriMfOnnxModel,
     mioProgress,
     mioDownloading,

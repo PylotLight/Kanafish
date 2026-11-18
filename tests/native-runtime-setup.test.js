@@ -10,7 +10,7 @@ import {
   NATIVE_RUNTIME_BUILD_RESERVE_BYTES,
   NATIVE_RUNTIME_PLANS
 } from '../src/main/tts/nativeRuntimeSetup.js'
-import { supportsCodecCppTtsServer } from '../src/main/tts/qwenRuntime.js'
+import { createQwenRuntime, supportsCodecCppTtsServer } from '../src/main/tts/qwenRuntime.js'
 
 const HELP_OUTPUT = `Usage: tts-server [options]\n  --model MODEL\n  --backbone BACKBONE\n  --host HOST\n  --port PORT\n  --api-key KEY\n  --n-threads N\nResponse formats: wav, pcm`
 
@@ -78,7 +78,7 @@ async function makeFixture({ availableBytes = NATIVE_RUNTIME_BUILD_RESERVE_BYTES
     getFilesystemStats: async () => ({ bavail: Math.floor(availableBytes / 4096), bsize: 4096 }),
     onProgress
   })
-  return { root, userDataDir, manager, calls }
+  return { root, userDataDir, manager, calls, spawnImpl }
 }
 
 async function clean(fixture) {
@@ -155,7 +155,7 @@ test('native setup locks concurrent builds and cancellation is honored before th
   }
 })
 
-test('native setup checks out the exact pin, health-checks the executable, and installs only under app data', async () => {
+test('native setup checks out the exact pin, verifies required CLI capabilities, and installs only under app data', async () => {
   const childEnvironments = []
   const fixture = await makeFixture({
     extraEnv: { GITHUB_TOKEN: 'not-for-child' },
@@ -170,8 +170,18 @@ test('native setup checks out the exact pin, health-checks the executable, and i
     expect(result.installed).toBe(true)
     expect(result.executablePath).toBe(getNativeRuntimeInstallPaths(fixture.userDataDir, 'codecCpp').executablePath)
     await access(result.executablePath)
+    const restartedRuntime = createQwenRuntime({
+      userDataDir: fixture.userDataDir,
+      env: { PATH: join(fixture.root, 'empty-path') },
+      home: fixture.root,
+      fetchImpl: async () => new Response('unused'),
+      spawnImpl: fixture.spawnImpl
+    })
+    const restartedStatus = await restartedRuntime.getStatus()
+    expect(restartedStatus.runtimePath).toBe(result.executablePath)
+    expect(restartedStatus.runtimeReady).toBe(true)
     expect(fixture.calls.some((call) => call.args.includes(NATIVE_RUNTIME_PLANS.codecCpp.revision))).toBe(true)
-    for (const call of fixture.calls) childEnvironments.push(call.env)
+    for (const call of fixture.calls) if (call.env?.GIT_TERMINAL_PROMPT === '0') childEnvironments.push(call.env)
     expect(childEnvironments.length).toBeGreaterThan(0)
     expect(childEnvironments.every((env) => !env.TEST_TOKEN && !env.AWS_ACCESS_KEY_ID && !env.GITHUB_TOKEN)).toBe(true)
     expect(childEnvironments.every((env) => env.GIT_TERMINAL_PROMPT === '0' && env.GIT_CONFIG_NOSYSTEM === '1')).toBe(true)
@@ -191,7 +201,7 @@ test('native setup refuses a source pin mismatch and cleans staged files', async
   }
 })
 
-test('native setup refuses to install a binary that fails its runtime health check', async () => {
+test('native setup refuses to install a binary missing required CLI capabilities', async () => {
   const fixture = await makeFixture({ helpOutput: 'Usage: tts-server --unsupported' })
   try {
     await expect(fixture.manager.setup('codecCpp', async (binary, runCheck) => {

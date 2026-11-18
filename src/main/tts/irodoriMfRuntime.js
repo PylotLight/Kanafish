@@ -44,6 +44,7 @@ export function createIrodoriMfOnnxRuntime({
 } = {}) {
   let inferencePromise = null
   let downloadPromise = null
+  let downloadController = null
   let activeSynthesis = null
 
   async function getStatus() {
@@ -53,6 +54,8 @@ export function createIrodoriMfOnnxRuntime({
 
   async function downloadModel() {
     if (downloadPromise) return downloadPromise
+    const controller = new AbortController()
+    downloadController = controller
     const task = (async () => {
       const status = await getModelStatus(IRODORI_MF_ONNX_MODEL_ID, cacheRoot)
       if (!status.installed) {
@@ -60,10 +63,20 @@ export function createIrodoriMfOnnxRuntime({
         const filesystem = await getFilesystemStats(cacheRoot)
         assertIrodoriMfFreeSpace(status, filesystem.bavail * filesystem.bsize)
       }
-      return downloadModelAssets(IRODORI_MF_ONNX_MODEL_ID, { cacheRoot, onProgress })
+      if (controller.signal.aborted) throw controller.signal.reason
+      return downloadModelAssets(IRODORI_MF_ONNX_MODEL_ID, { cacheRoot, onProgress, signal: controller.signal })
     })()
-    downloadPromise = task.finally(() => { downloadPromise = null })
+    downloadPromise = task.finally(() => {
+      downloadPromise = null
+      if (downloadController === controller) downloadController = null
+    })
     return downloadPromise
+  }
+
+  function cancelDownload() {
+    if (!downloadController || !downloadPromise) return { cancelled: false }
+    downloadController.abort(new Error('Irodori v4.1-Small-MF download cancelled. Partial data is kept so you can resume by downloading again.'))
+    return { cancelled: true }
   }
 
   async function loadInference() {
@@ -123,5 +136,5 @@ export function createIrodoriMfOnnxRuntime({
     inferencePromise = null
   }
 
-  return { getStatus, downloadModel, synthesize, removeModel, stop }
+  return { getStatus, downloadModel, cancelDownload, synthesize, removeModel, stop }
 }

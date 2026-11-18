@@ -6,7 +6,7 @@ import { delimiter, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { spawn } from 'node:child_process'
 import { createServer } from 'node:net'
 import { performance } from 'node:perf_hooks'
-import { NATIVE_RUNTIME_PLANS } from './nativeRuntimeSetup.js'
+import { getNativeRuntimeInstallPaths } from './nativeRuntimeSetup.js'
 
 export const QWEN3_TTS_RUNTIME = Object.freeze({
   id: 'qwen3-tts-0.6b-customvoice',
@@ -59,6 +59,7 @@ export function getCodecCppServerCandidates({ env = process.env, home = homedir(
   const executable = platform === 'win32' ? 'tts-server.exe' : 'tts-server'
   const candidates = []
   if (env.KANAFISH_CODEC_CPP_TTS_SERVER_PATH) candidates.push(env.KANAFISH_CODEC_CPP_TTS_SERVER_PATH)
+  if (userDataDir) candidates.push(getNativeRuntimeInstallPaths(userDataDir, 'codecCpp', undefined, platform).executablePath)
   const localAppData = env.LOCALAPPDATA || join(home, 'AppData', 'Local')
   if (platform === 'win32') {
     candidates.push(join(localAppData, 'Kanafish', 'codec.cpp', 'build', executable))
@@ -69,7 +70,6 @@ export function getCodecCppServerCandidates({ env = process.env, home = homedir(
     candidates.push(join(home, 'Library', 'Application Support', 'Kanafish', 'codec.cpp', 'build', executable))
     candidates.push('/usr/local/bin/tts-server', '/opt/homebrew/bin/tts-server')
   }
-  if (userDataDir) candidates.push(join(userDataDir, 'native-runtimes', 'codec.cpp', NATIVE_RUNTIME_PLANS.codecCpp.revision, 'install', 'bin', executable))
   if (env.PATH) {
     for (const entry of env.PATH.split(delimiter)) candidates.push(join(entry, executable))
   }
@@ -195,7 +195,9 @@ export function createQwenRuntime({
   spawnImpl = spawn,
   onProgress = () => {},
   runtimeConfig = QWEN3_TTS_RUNTIME,
-  nativeRuntimeSetup = null
+  nativeRuntimeSetup = null,
+  serverStartupTimeoutMs = 180_000,
+  serverStartupPollIntervalMs = 300
 } = {}) {
   if (!userDataDir) throw new Error('A Kanafish user-data directory is required for the Qwen TTS cache.')
   if (typeof fetchImpl !== 'function') throw new Error('The local HTTP client is unavailable.')
@@ -224,7 +226,16 @@ export function createQwenRuntime({
     const path = await findCommand()
     if (!path) return { runtimeFound: false, runtimeReady: false, canDownload: false, runtimePath: '', runtimeError: '' }
     try {
-      const { stdout, stderr } = await runCommand(path, ['--help'], { spawnImpl, env: runtimeEnv })
+      const { stdout, stderr, code, signal } = await runCommand(path, ['--help'], { spawnImpl, env: runtimeEnv })
+      if (code !== 0 || signal) {
+        return {
+          runtimeFound: true,
+          runtimeReady: false,
+          canDownload: false,
+          runtimePath: path,
+          runtimeError: `codec.cpp tts-server --help exited with ${signal || `code ${code}`}.`
+        }
+      }
       const helpOutput = `${stdout}\n${stderr}`
       const runtimeReady = supportsCodecCppTtsServer(helpOutput)
       return {
@@ -440,7 +451,7 @@ export function createQwenRuntime({
       if (code !== 0 && code !== null) processError = new Error(`codec.cpp tts-server exited with ${signal || `code ${code}`}${serverLog ? `: ${serverLog.slice(-1800).trim()}` : ''}`)
       else if (code === null && signal) processError = new Error(`codec.cpp tts-server stopped with ${signal}${serverLog ? `: ${serverLog.slice(-1800).trim()}` : ''}`)
     })
-    const deadline = Date.now() + 180_000
+    const deadline = Date.now() + serverStartupTimeoutMs
     while (Date.now() < deadline) {
       if (processError) throw processError
       if (!serverRunning) throw new Error(`codec.cpp tts-server exited before becoming ready${serverLog ? `: ${serverLog.slice(-1800).trim()}` : ''}`)
@@ -460,7 +471,7 @@ export function createQwenRuntime({
         if (error?.message?.includes('required Japanese preset') || error?.message?.includes('voice-list request failed')) throw error
         if (processError) throw processError
       }
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 300))
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, serverStartupPollIntervalMs))
     }
     throw new Error(`Timed out waiting for codec.cpp to load the Qwen model${serverLog ? `: ${serverLog.slice(-1800).trim()}` : ''}`)
   }
