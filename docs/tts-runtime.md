@@ -2,6 +2,8 @@
 
 Only Supertonic 3 is currently exposed in Voice Lab. The other integrations documented below are retained in source but disabled and hidden after the live setup showed only Supertonic working; the earlier sandbox checks do not prove they work on the owner's device. The detailed setup notes below preserve that work for re-validation. Supertonic model weights stay outside Git and are downloaded only after a separate user action.
 
+On-device Japanese speech recognition (Haas-ja-v1.0 with speech.cpp) is available separately in Voice Lab; see [asr-runtime.md](asr-runtime.md) for its app-managed runtime and model details.
+
 ## In-app native runtime setup: Qwen and Magpie
 
 When a compatible native runtime is missing, Voice Lab offers a build action. It explains the long build and 8 GiB free-space threshold and asks for confirmation before it downloads source or compiles anything. After consent, it shows progress, errors and a cancel action; a failed or cancelled build can be retried. It clones a pinned source commit and its submodules, builds in a temporary directory under Kanafish app data, runs a feature check, and only then installs the result under that app-data directory. It does not install system packages, download model weights, or replace system files.

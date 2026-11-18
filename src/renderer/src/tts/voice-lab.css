@@ -122,3 +122,23 @@
   .tts-candidate-card .tts-candidate-evidence { min-height: 0; }
   .tts-candidates-heading { align-items: flex-start; }
 }
+
+/* On-device speech recognition (Haas-ja-v1.0 via speech.cpp) */
+.asr-panel { margin-top: 15px; }
+.asr-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .95fr); gap: 15px; align-items: start; }
+.asr-gap { margin-top: 9px; }
+.asr-mode { margin-bottom: 10px; }
+.asr-target-line { margin: 0 0 12px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--cream); color: var(--ink); font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif; font-size: calc(14px * var(--text-scale, 1.18)); line-height: 1.6; }
+.voice-sample-chip.selected { border-color: var(--teal); background: var(--mint); color: var(--teal); }
+.asr-record-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.asr-record-button { min-width: 168px; }
+.asr-record-button.recording { background: #b4533d; border-color: #b4533d; }
+.asr-transcript { margin: 10px 0 4px; color: var(--ink); font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif; font-size: calc(15px * var(--text-scale, 1.18)); line-height: 1.65; overflow-wrap: anywhere; }
+.asr-score { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 2px; color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); }
+.asr-score strong { font-size: calc(18px * var(--text-scale, 1.18)); color: var(--ink); }
+.asr-score-match strong { color: var(--teal); }
+.asr-score-close strong { color: #847447; }
+.asr-score-retry strong, .asr-score-nothing strong { color: #8d4f3e; }
+@media (max-width: 900px) {
+  .asr-layout { grid-template-columns: 1fr; }
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import SpeechRecognitionPanel from '../asr/SpeechRecognitionPanel.jsx'
 import { AlertCircle, Check, Download, LockKeyhole, Sparkles, Volume2 } from 'lucide-react'
 
 const SAMPLE_LINES = [
@@ -93,5 +94,7 @@ export default function VoiceLabPage({ tts }) {
         </div>}
       </section>
     </div>
+
+    <SpeechRecognitionPanel />
   </div>
 }

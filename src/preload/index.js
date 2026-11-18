@@ -62,6 +62,22 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
     ipcRenderer.on('kanafish:irodori-progress', listener)
     return () => ipcRenderer.removeListener('kanafish:irodori-progress', listener)
   },
+  getAsrStatus: () => ipcRenderer.invoke('kanafish:asr-status'),
+  setupAsrRuntime: () => ipcRenderer.invoke('kanafish:asr-setup-runtime'),
+  cancelAsrRuntimeSetup: () => ipcRenderer.invoke('kanafish:asr-cancel-runtime-setup'),
+  downloadAsrModel: () => ipcRenderer.invoke('kanafish:asr-download-model'),
+  cancelAsrModelDownload: () => ipcRenderer.invoke('kanafish:asr-cancel-model-download'),
+  transcribeAsr: (request) => ipcRenderer.invoke('kanafish:asr-transcribe', request),
+  cancelAsrTranscription: () => ipcRenderer.invoke('kanafish:asr-cancel-transcription'),
+  removeAsrModel: () => ipcRenderer.invoke('kanafish:asr-remove-model'),
+  removeAsrRuntime: () => ipcRenderer.invoke('kanafish:asr-remove-runtime'),
+  requestMicrophoneAccess: () => ipcRenderer.invoke('kanafish:request-microphone-access'),
+  onAsrProgress: (callback) => {
+    if (typeof callback !== 'function') return () => {}
+    const listener = (_event, progress) => callback(progress)
+    ipcRenderer.on('kanafish:asr-progress', listener)
+    return () => ipcRenderer.removeListener('kanafish:asr-progress', listener)
+  },
   getMioStatus: () => ipcRenderer.invoke('kanafish:mio-status'),
   setupMioRuntime: () => ipcRenderer.invoke('kanafish:mio-setup-runtime'),
   downloadMioModel: () => ipcRenderer.invoke('kanafish:mio-download-model'),
