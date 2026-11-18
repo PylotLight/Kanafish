@@ -141,13 +141,13 @@ body { -webkit-font-smoothing: antialiased; }
   }
 }
 
-.recall-context { margin: 9px 2px 0 43px; color: light-dark(#849388, #c8cdc9); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); line-height: 1.5; animation: glass-reveal .2s ease both; }
+.recall-context { margin: 9px 2px 0 43px; color: light-dark(#849388, #c8cdc9); font-size: max(11px, calc(9px * var(--text-scale, 1.18))); line-height: 1.5; animation: glass-reveal .2s ease both; }
 .save-warning { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 20px; border-bottom: 1px solid light-dark(rgba(194, 151, 101, .28), rgba(70, 58, 45, .28)); background: light-dark(rgba(250, 238, 218, .78), rgba(41, 29, 9, .78)); color: light-dark(#7e6045, #dacfc5); font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.45; }
-.save-warning button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid light-dark(rgba(157, 121, 81, .3), rgba(60, 52, 44, .3)); border-radius: 6px; background: light-dark(rgba(255,255,255,.6), rgba(20, 20, 20, .6)); color: light-dark(#795c40, #dbd0c5); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); font-weight: 600; cursor: pointer; }
+.save-warning button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid light-dark(rgba(157, 121, 81, .3), rgba(60, 52, 44, .3)); border-radius: 6px; background: light-dark(rgba(255,255,255,.6), rgba(20, 20, 20, .6)); color: light-dark(#795c40, #dbd0c5); font-size: max(11px, calc(9px * var(--text-scale, 1.18))); font-weight: 600; cursor: pointer; }
 .save-warning button:hover { background: light-dark(rgba(255,255,255,.9), rgba(20, 20, 20, .9)); }
 .checkpoint-revisit { display: flex; align-items: flex-start; gap: 9px; margin: 12px 0; padding: 10px 11px; border: 1px solid light-dark(rgba(255,255,255,.78), rgba(76, 76, 76, .78)); border-radius: 8px; background: linear-gradient(120deg, light-dark(rgba(248,244,226,.72), rgba(37, 32, 12, .72)), light-dark(rgba(245,248,235,.59), rgba(28, 33, 14, .59))); box-shadow: inset 0 1px rgba(255,255,255,.8); }
 .checkpoint-revisit-icon { width: 25px; height: 25px; flex: 0 0 25px; display: grid; place-items: center; border-radius: 7px; background: light-dark(rgba(232,229,204,.65), rgba(37, 35, 20, .65)); color: light-dark(#897f4f, #d9d5c4); }
-.checkpoint-revisit span { display: block; margin: 1px 0 4px; color: light-dark(#988b62, #d5d1c4); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); font-weight: 700; letter-spacing: .45px; }
-.checkpoint-revisit strong { display: block; color: light-dark(#6b674a, #d7d5ca); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); font-weight: 500; line-height: 1.5; }
+.checkpoint-revisit span { display: block; margin: 1px 0 4px; color: light-dark(#988b62, #d5d1c4); font-size: max(11px, calc(8px * var(--text-scale, 1.18))); font-weight: 700; letter-spacing: .45px; }
+.checkpoint-revisit strong { display: block; color: light-dark(#6b674a, #d7d5ca); font-size: max(11px, calc(9px * var(--text-scale, 1.18))); font-weight: 500; line-height: 1.5; }
 .checkpoint-revisit { animation: glass-reveal .23s ease both; }
 @media (max-width: 620px) { .recall-context { margin-left: 2px; } }
