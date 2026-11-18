@@ -11,6 +11,18 @@ const SUPERFILES = [
   { path: 'voice_styles/M1.json', size: 291_748, sha256: 'e35604687f5d23694b8e91593a93eec0e4eca6c0b02bb8ed69139ab2ea6b0a5b' }
 ].map((file) => Object.freeze(file))
 
+const IRODORI_MF_ONNX_FILES = [
+  { path: 'text_encoder_int8.onnx', size: 555_363_395, sha256: '1d1802b7ac4abbb8fac46a5086dab934f309020ec7cc6cf360099915943f6528' },
+  { path: 'duration.onnx', size: 87_172_678, sha256: 'b807f0e9a3e86bce4fd4324db6da2ded1627f6af3ed155b918e249f2fde50809' },
+  { path: 'context_kv.onnx', size: 220_370_315, sha256: 'e2a0851dab34612e1676a81316b6bc0de0ded6de27c78b8a740d6338c229adb3' },
+  { path: 'dit_step_int8.onnx', size: 319_814_013, sha256: 'b1364a5fa2012ce6556f251533772c854059bee44bdb14e2500a0d5771e0fb9b' },
+  { path: 'dacvae_decode.onnx', size: 261_400_162, sha256: '48f55372b800130ce3f56895501fcb154bac486a9ac805da1c39ccd06e2d1e48' },
+  { path: 'speaker_encoder.onnx', size: 242_880_837, sha256: 'ecfa3a47f0a5bde19a4fcdca46d27fe51da97fbf68897476dca313017931945f' },
+  { path: 'tokenizer/tokenizer.json', size: 6_718_495, sha256: '6a0734cf21c802169defaffe719bc2ef12bb9d0be37e54b61ed27aa89394723d' },
+  { path: 'tokenizer/tokenizer_config.json', size: 668, sha256: 'd229a271c64de1a7939d20d3665498e873fa91d5ee2edf135d73ec752cb9c9d3' },
+  { path: 'config.json', size: 2_178, sha256: 'd892d41544af570725846443c091cebb8bf7cfd687153d376128e05e58e665ee' }
+].map((file) => Object.freeze(file))
+
 export const TTS_MODEL_REGISTRY = Object.freeze({
   'supertonic-3': Object.freeze({
     id: 'supertonic-3',
@@ -24,6 +36,19 @@ export const TTS_MODEL_REGISTRY = Object.freeze({
     codeLicense: 'MIT',
     runtime: 'ONNX Runtime WebGPU with WebAssembly CPU fallback',
     files: Object.freeze(SUPERFILES)
+  }),
+  'irodori-v4.1-small-mf': Object.freeze({
+    id: 'irodori-v4.1-small-mf',
+    name: 'Irodori-TTS v4.1-Small-MF (int8 ONNX)',
+    locale: 'Japanese only',
+    repoId: 'Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8',
+    revision: '0701bc6758cbb364a9577d5799a90a45baa8ffa2',
+    modelCardUrl: 'https://huggingface.co/Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8',
+    codeUrl: 'https://github.com/kgmkm/muse-irodori-voice',
+    weightsLicense: 'MIT component licenses; model card labels the pack “other”',
+    codeLicense: 'MIT reference runner',
+    runtime: 'JavaScript ONNX Runtime WebAssembly CPU; no Python',
+    files: Object.freeze(IRODORI_MF_ONNX_FILES)
   })
 })
 

@@ -23,6 +23,7 @@
     "vite": "^8.3.5"
   },
   "dependencies": {
+    "@huggingface/tokenizers": "^0.2.0",
     "lucide-react": "^1.67.0",
     "onnxruntime-web": "^1.23.0",
     "react": "^19.3.1",

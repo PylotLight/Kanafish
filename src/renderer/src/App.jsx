@@ -114,9 +114,6 @@ function App() {
         <div className="brand-lockup">
           <div className="brand-mark"><span>か</span><span>な</span></div>
           <div><strong>Kanafish</strong><small>Japanese, for real life</small></div>
-          <button type="button" className="sidebar-collapse-button" onClick={() => updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed })} aria-label={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!preferences.sidebarCollapsed} aria-controls="primary-nav" title={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            {preferences.sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </button>
         </div>
         <div className="course-chip"><span className="course-chip-dot" /> BEGINNER COURSE <span>12 WEEKS</span></div>
         <nav id="primary-nav" className="primary-nav" aria-label="Main navigation">
@@ -136,8 +133,11 @@ function App() {
           <div className="local-note"><LockKeyhole size={15} /><span>Your progress stays on this device.</span></div>
           <button type="button" className="quiet-button export-button" onClick={exportProgress} aria-label="Export progress" title="Export progress"><Download size={15} /><span>Export progress</span></button>
           <div className="sidebar-utility" role="group" aria-label="App actions">
-            <NavButton icon={<Settings size={17} />} label="Settings" active={view === 'settings'} onClick={() => navigate('settings')} />
-            <button type="button" className="nav-button exit-button" onClick={() => window.kanafish?.exitApp?.()} aria-label="Exit Kanafish" title="Exit Kanafish"><LogOut size={17} /><span>Exit</span></button>
+            <button type="button" className="sidebar-dock-button" onClick={() => updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed })} aria-label={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!preferences.sidebarCollapsed} aria-controls="primary-nav" title={preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              {preferences.sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}<span className="sr-only">{preferences.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
+            </button>
+            <button type="button" className={`sidebar-dock-button ${view === 'settings' ? 'active' : ''}`} onClick={() => navigate('settings')} aria-label="Settings" aria-current={view === 'settings' ? 'page' : undefined} title="Settings"><Settings size={17} /><span className="sr-only">Settings</span></button>
+            <button type="button" className="sidebar-dock-button exit-button" onClick={() => window.kanafish?.exitApp?.()} aria-label="Exit Kanafish" title="Exit Kanafish"><LogOut size={17} /><span className="sr-only">Exit Kanafish</span></button>
           </div>
           <div className="profile-row"><div className="avatar">L</div><div><strong>Learner</strong><small>Self-paced practice</small></div><Sparkles className="profile-sparkle" size={16} /></div>
         </div>

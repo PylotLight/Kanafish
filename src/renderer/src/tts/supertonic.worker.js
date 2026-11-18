@@ -18,8 +18,8 @@ function post(data) {
   self.postMessage(data)
 }
 
-async function loadWithRuntime(runtimeName, provider, requestId) {
-  const runtime = await import(runtimeName)
+async function loadWithRuntime(importRuntime, provider, requestId) {
+  const runtime = await importRuntime()
   if (provider === 'wasm' && runtime.env?.wasm) {
     const cores = Number(self.navigator?.hardwareConcurrency || 1)
     runtime.env.wasm.numThreads = self.crossOriginIsolated ? Math.max(1, Math.min(4, cores)) : 1
@@ -47,7 +47,7 @@ async function getEngine(requestId) {
     try {
       const adapter = await self.navigator.gpu.requestAdapter()
       if (!adapter) throw new Error('No compatible WebGPU adapter was found')
-      return await loadWithRuntime('onnxruntime-web/webgpu', 'webgpu', requestId)
+      return await loadWithRuntime(() => import('onnxruntime-web/webgpu'), 'webgpu', requestId)
     } catch (error) {
       webGpuError = error
     }
@@ -55,9 +55,14 @@ async function getEngine(requestId) {
     webGpuError = new Error('WebGPU is unavailable in this runtime')
   }
   try {
-    return await loadWithRuntime('onnxruntime-web', 'wasm', requestId)
+    return await loadWithRuntime(() => import('onnxruntime-web/wasm'), 'wasm', requestId)
   } catch (error) {
-    if (webGpuError) error.message = `WebGPU failed (${webGpuError.message}); WASM fallback failed (${error.message})`
+    if (webGpuError) {
+      throw new Error(
+        `ONNX Runtime could not initialize either backend. WebGPU: ${webGpuError.message || webGpuError}; WASM CPU fallback: ${error?.message || error}. If either error mentions a missing module or WASM asset, repair or reinstall Kanafish so its bundled ONNX Runtime files are restored.`,
+        { cause: error }
+      )
+    }
     throw error
   }
 }

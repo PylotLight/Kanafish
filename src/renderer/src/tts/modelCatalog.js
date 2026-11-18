@@ -59,18 +59,34 @@ export const TTS_MODEL_CATALOG = Object.freeze([
     availableInApp: true
   }),
   Object.freeze({
+    id: 'irodori-v4.1-small-mf',
+    name: 'Irodori-TTS v4.1-Small-MF (int8 ONNX)',
+    status: 'runnable',
+    statusLabel: 'Runnable · no Python',
+    languages: 'Japanese only',
+    parameters: 'MeanFlow-distilled · 4 sampling steps · 1.69 GB ONNX pack',
+    weightsLicense: 'MIT component licenses; model card labels the pack “other”',
+    codeLicense: 'MIT reference runner',
+    runtime: 'JavaScript ONNX Runtime WebAssembly CPU; no Python',
+    evidence: 'Separate distilled MF checkpoint; it is not plain v4.1-Small. The Node/JavaScript ONNX path generated a valid non-silent 48 kHz WAV for こんにちは。 First run took 12.78 s for 1.20 s audio (RTF 10.65, including model load) on this sandbox CPU. Mac/WebGPU and human listening tests are pending.',
+    sourceUrl: 'https://huggingface.co/Ryoppi/Irodori-TTS-v4.1-Small-MF-ONNX-int8',
+    codeUrl: 'https://github.com/kgmkm/muse-irodori-voice',
+    availableInApp: true
+  }),
+  Object.freeze({
     id: 'miotts-0.6b',
     name: 'MioTTS-0.6B',
-    status: 'advanced',
-    statusLabel: 'Advanced / end-to-end unverified',
+    status: 'runnable',
+    statusLabel: 'Runnable with pinned native runtime',
     languages: 'Japanese + English',
-    parameters: '0.6B LLM; separate codec required',
-    weightsLicense: 'Apache-2.0 for 0.6B model',
-    runtime: 'GGUF LLM server plus MioCodec and Python API service',
-    evidence: 'Has a published GGUF route. The complete pipeline is not verified on CPU or Apple Metal; the vendor’s fast RTF claims are from an RTX 5090.',
-    sourceUrl: 'https://huggingface.co/Aratako/MioTTS-0.6B',
-    codeUrl: 'https://github.com/Aratako/MioTTS-Inference',
-    availableInApp: false
+    parameters: '0.6B LLM + MioCodec-v2 decoder',
+    weightsLicense: 'Apache-2.0 model · MIT codec',
+    codeLicense: 'MIT runtime',
+    runtime: 'Pinned CrispASR 0.8.54 native C++ CPU process; app-managed prebuilt runtime; no Python',
+    evidence: 'Integrated Kanafish adapter installed the pinned runtime and verified all four model assets, then generated a non-silent mono 44.1 kHz PCM16 WAV for こんにちは。: 2.81 s for 0.60 s audio (RTF 4.68) on Linux CPU. Human listening and Mac tests are pending; the bundled Japanese presets have an upstream non-commercial output restriction.',
+    sourceUrl: 'https://huggingface.co/cstr/miotts-0.6b-GGUF',
+    codeUrl: 'https://github.com/CrispStrobe/CrispASR',
+    availableInApp: true
   }),
   Object.freeze({
     id: 'qwen3-tts-0.6b-base',

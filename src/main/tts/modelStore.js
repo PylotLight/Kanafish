@@ -5,6 +5,7 @@ import { Readable } from 'node:stream'
 import { dirname, extname } from 'node:path'
 import {
   getHfHubCacheRoot,
+  getModelSnapshotDirectory,
   getTtsModel,
   getTtsModelFilePath
 } from './modelRegistry.js'
@@ -56,7 +57,7 @@ export async function getTtsModelStatus(modelId = 'supertonic-3', cacheRoot = ge
     totalBytes,
     downloadedBytes,
     installed: files.every((file) => file.downloaded),
-    cachePath: getTtsModelFilePath(modelId, model.files[0].path, cacheRoot).replace(/[/\\]onnx[/\\]tts\.json$/, '')
+    cachePath: getModelSnapshotDirectory(modelId, cacheRoot)
   }
 }
 
