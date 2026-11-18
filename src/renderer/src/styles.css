@@ -307,6 +307,9 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .answer-ja { font-weight: 600; }
 .answer-romaji { color: light-dark(#6f7f77, #c0c6c4); font-size: calc(9px * var(--text-scale, 1.18)); }
 .answer-meaning { color: light-dark(#4a5c53, #c3c9c6); }
+.answer-meaning-toggle { color: light-dark(#7f8b83, #c2c8c6); font-size: calc(9px * var(--text-scale, 1.18)); font-style: italic; cursor: pointer; user-select: none; }
+.answer-meaning-toggle:hover { color: light-dark(#3d6956, #c8dbd3); }
+.answer-meaning-toggle:focus-visible { outline: 2px solid light-dark(#347a6f, #3f7f73); outline-offset: 2px; border-radius: 3px; }
 .feedback-box { display: flex; gap: 8px; margin-top: 12px; padding: 10px; border-radius: 7px; }
 .feedback-good { background: light-dark(#eef6ee, #111d11); color: light-dark(#4d7a5d, #c7d8cd); }
 .feedback-retry { background: light-dark(#f8f1e8, #22190d); color: light-dark(#8b7952, #d8d2c4); }
@@ -794,6 +797,7 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .guided-card .answer-letter { width: 27px; height: 27px; flex: 0 0 27px; font-size: calc(11px * var(--text-scale, 1.18)); }
 .guided-card .answer-romaji { font-size: calc(11px * var(--text-scale, 1.18)); }
 .guided-card .answer-meaning { font-size: calc(11px * var(--text-scale, 1.18)); }
+.guided-card .answer-meaning-toggle { font-size: calc(10px * var(--text-scale, 1.18)); }
 .guided-card .feedback-box { margin-top: 16px; padding: 14px; border-radius: 9px; }
 .guided-card .feedback-box strong { font-size: calc(13px * var(--text-scale, 1.18)); }
 .guided-card .feedback-box p { font-size: calc(12px * var(--text-scale, 1.18)); line-height: 1.6; }

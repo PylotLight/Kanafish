@@ -465,7 +465,24 @@ function OpenResponseCard({ prompt, guidance, phraseBank, tts, voiceContext, val
 
 function QuestionCard({ number, label, title, prompt, choices, meanings, value, setValue, submitted, correct, feedback, onSubmit, onNext, onBack, headingRef, why }) {
   const hasAnswer = value !== null && value !== undefined
-  return <section className="practice-card question-card guided-card"><p className="guide-overline">{number} · {label}</p><h2 ref={headingRef} tabIndex={-1}>{title}</h2><p className="question-prompt">{prompt}</p><div className="answer-options">{choices.map((choice, index) => <div className="answer-option-row" key={`${index}-${choice}`}><button type="button" className={`answer-option ${value === index ? 'answer-option-selected' : ''} ${submitted && value === index && correct ? 'answer-option-correct' : ''} ${submitted && value === index && !correct ? 'answer-option-wrong' : ''}`} onClick={() => setValue(index)} aria-pressed={value === index}><span className="answer-letter">{String.fromCharCode(65 + index)}</span><span className="answer-copy"><span className="answer-ja" lang="ja">{choice}</span><span className="answer-romaji">{kanaToRomaji(choice)}</span>{meanings?.[index] ? <span className="answer-meaning">{meanings[index]}</span> : null}</span>{submitted && value === index && correct && <Check size={16} />}</button></div>)}</div>
+  const [revealedMeanings, setRevealedMeanings] = useState(() => new Set())
+  function toggleMeaning(index) {
+    setRevealedMeanings((current) => {
+      const next = new Set(current)
+      if (next.has(index)) next.delete(index); else next.add(index)
+      return next
+    })
+  }
+  function renderMeaning(optionIndex) {
+    const meaning = meanings?.[optionIndex]
+    if (!meaning) return null
+    const isRevealed = revealedMeanings.has(optionIndex)
+    return <span>
+      <span className="answer-meaning-toggle" role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleMeaning(optionIndex) } }}>{isRevealed ? 'Hide meaning' : 'Show meaning'}</span>
+      {isRevealed && <span className="answer-meaning">{meaning}</span>}
+    </span>
+  }
+  return <section className="practice-card question-card guided-card"><p className="guide-overline">{number} · {label}</p><h2 ref={headingRef} tabIndex={-1}>{title}</h2><p className="question-prompt">{prompt}</p><div className="answer-options">{choices.map((choice, index) => <div className="answer-option-row" key={`${index}-${choice}`}><button type="button" className={`answer-option ${value === index ? 'answer-option-selected' : ''} ${submitted && value === index && correct ? 'answer-option-correct' : ''} ${submitted && value === index && !correct ? 'answer-option-wrong' : ''}`} onClick={() => setValue(index)} aria-pressed={value === index}><span className="answer-letter">{String.fromCharCode(65 + index)}</span><span className="answer-copy"><span className="answer-ja" lang="ja">{choice}</span><span className="answer-romaji">{kanaToRomaji(choice)}</span>{renderMeaning(index)}</span>{submitted && value === index && correct && <Check size={16} />}</button></div>)}</div>
     {submitted && <div className={`feedback-box ${correct ? 'feedback-good' : 'feedback-retry'}`}><span>{correct ? <Check size={16} /> : <RotateCcw size={16} />}</span><div><strong>{correct ? 'Good catch' : 'Keep exploring'}</strong><p>{feedback}{why && correct ? ` ${why}` : ''}</p></div></div>}
     <div className="practice-footer guide-footer"><button type="button" className="guide-back-button" onClick={onBack}><ArrowLeft size={15} /> Back</button>{submitted && correct ? <button className="primary-button" onClick={onNext}>Continue <ArrowRight size={15} /></button> : <button className="primary-button" onClick={submitted && !correct ? () => { setValue(null) } : onSubmit} disabled={!hasAnswer}>{submitted && !correct ? 'Try another answer' : 'Check my answer'} <ArrowRight size={15} /></button>}</div>
   </section>
