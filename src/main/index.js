@@ -25,7 +25,12 @@ let irodoriRuntime
 let irodoriMfOnnxRuntime
 let mioRuntime
 let asrRuntime
+const asrStreamSenders = new Map()
 let quittingAfterTtsStop = false
+
+function assertAsrStreamOwner(event, sessionId) {
+  if (asrStreamSenders.get(sessionId) !== event.sender) throw new Error('This live recognition session belongs to another renderer.')
+}
 
 protocol.registerSchemesAsPrivileged([{
   scheme: 'kanafish-cache',
@@ -113,6 +118,10 @@ app.whenReady().then(async () => {
     userDataDir: app.getPath('userData'),
     onProgress: (progress) => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('kanafish:asr-progress', progress)
+    },
+    onStreamEvent: (event) => {
+      const sender = asrStreamSenders.get(event.sessionId)
+      if (sender && !sender.isDestroyed()) sender.send('kanafish:asr-stream-event', event)
     }
   })
   // Microphone for on-device speech recognition: allow audio capture for the app's own renderer page only; deny all
@@ -166,6 +175,36 @@ app.whenReady().then(async () => {
   ipcMain.handle('kanafish:asr-warm', () => asrRuntime.warmWorker())
   ipcMain.handle('kanafish:asr-download-model', () => asrRuntime.downloadModel())
   ipcMain.handle('kanafish:asr-cancel-model-download', () => asrRuntime.cancelModelDownload())
+  ipcMain.handle('kanafish:asr-download-vad-model', () => asrRuntime.downloadVadModel())
+  ipcMain.handle('kanafish:asr-cancel-vad-download', () => asrRuntime.cancelVadDownload())
+  ipcMain.handle('kanafish:asr-remove-vad-model', () => asrRuntime.removeVadModelCache())
+  ipcMain.handle('kanafish:asr-stream-start', async (event, request = {}) => {
+    const session = await asrRuntime.startStream(request.sampleRate)
+    asrStreamSenders.set(session.sessionId, event.sender)
+    event.sender.once('destroyed', () => {
+      asrStreamSenders.delete(session.sessionId)
+      void asrRuntime.cancelStream(session.sessionId)
+    })
+    return session
+  })
+  ipcMain.handle('kanafish:asr-stream-frame', (event, request = {}) => {
+    if (typeof request.sessionId !== 'string' || !(request.pcm instanceof Uint8Array)) throw new Error('Live recognition needs a session ID and PCM frame bytes.')
+    assertAsrStreamOwner(event, request.sessionId)
+    return asrRuntime.pushStreamFrame(request.sessionId, request.pcm)
+  })
+  ipcMain.handle('kanafish:asr-stream-finish', async (event, request = {}) => {
+    if (typeof request.sessionId !== 'string') throw new Error('Live recognition needs a session ID.')
+    assertAsrStreamOwner(event, request.sessionId)
+    try { return await asrRuntime.finishStream(request.sessionId) }
+    finally { asrStreamSenders.delete(request.sessionId) }
+  })
+  ipcMain.handle('kanafish:asr-stream-cancel', async (event, request = {}) => {
+    if (typeof request.sessionId !== 'string') throw new Error('Live recognition needs a session ID.')
+    const sessionId = request.sessionId
+    assertAsrStreamOwner(event, sessionId)
+    try { return await asrRuntime.cancelStream(sessionId) }
+    finally { asrStreamSenders.delete(sessionId) }
+  })
   ipcMain.handle('kanafish:asr-transcribe', (_event, request = {}) => {
     const audio = request?.audio
     if (!(audio instanceof Uint8Array)) throw new Error('Speech recognition needs WAV bytes.')

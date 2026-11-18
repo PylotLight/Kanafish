@@ -138,6 +138,9 @@
 .asr-record-button { min-width: 168px; }
 .asr-record-button.recording { background: #b4533d; border-color: #b4533d; }
 .asr-transcript { margin: 10px 0 4px; color: var(--ink); font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif; font-size: calc(15px * var(--text-scale, 1.18)); line-height: 1.65; overflow-wrap: anywhere; }
+.asr-live-preview { margin-top: 10px; padding: 9px 11px; border: 1px solid color-mix(in srgb, var(--teal) 28%, var(--line)); border-radius: 8px; background: color-mix(in srgb, var(--mint) 45%, var(--paper)); }
+.asr-live-preview > span { display: inline-flex; align-items: center; gap: 5px; color: var(--teal); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); font-weight: 750; letter-spacing: .04em; }
+.asr-live-preview p { min-height: 1.4em; margin: 5px 0 0; color: var(--ink); font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif; font-size: calc(15px * var(--text-scale, 1.18)); line-height: 1.6; overflow-wrap: anywhere; }
 .asr-score { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 2px; color: var(--muted); font-size: calc(10px * var(--text-scale, 1.18)); }
 .asr-score strong { font-size: calc(18px * var(--text-scale, 1.18)); color: var(--ink); }
 .asr-score-match strong { color: var(--teal); }

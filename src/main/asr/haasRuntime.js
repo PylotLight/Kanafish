@@ -5,15 +5,17 @@ import { dirname, join, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { performance } from 'node:perf_hooks'
 import { downloadVerifiedFile } from '../tts/modelStore.js'
-import { HAAS_ASR_MODEL, SPEECH_CPP_RELEASE, getHaasModelUrl, getSpeechCppAsset, getSpeechCppAssetUrl } from './haasRegistry.js'
+import { HAAS_ASR_MODEL, SILERO_VAD_MODEL, SPEECH_CPP_RELEASE, getHaasModelUrl, getVadModelUrl, getSpeechCppAsset, getSpeechCppAssetUrl } from './haasRegistry.js'
 import { readZipEntry } from './zipEntry.js'
 import { buildTranscribeLines, createSpeechWorkerClient, SpeechWorkerError } from './speechWorker.js'
+import { buildStreamingAsrArgs, createSpeechStreamClient } from './speechStream.js'
 
 export const ASR_MAX_SECONDS = 60
 export const ASR_MIN_SECONDS = 0.2
 export const ASR_MAX_WAV_BYTES = 44 + ASR_MAX_SECONDS * 48_000 * 2 + 4096
 export const ASR_IDLE_STOP_MS = 5 * 60 * 1000
 export const ASR_DISK_RESERVE_BYTES = 64 * 1024 * 1024
+export const ASR_STREAM_MAX_SECONDS = ASR_MAX_SECONDS
 const COMMAND_OUTPUT_LIMIT = 16_000
 
 export function parseSpeechVersion(output = '') {
@@ -124,11 +126,14 @@ export function createHaasAsrRuntime({
   fetchImpl = globalThis.fetch,
   spawnImpl = spawn,
   onProgress = () => {},
+  onStreamEvent = () => {},
   release = SPEECH_CPP_RELEASE,
   model = HAAS_ASR_MODEL,
+  vadModel = SILERO_VAD_MODEL,
   downloadFile = downloadVerifiedFile,
   getFilesystemStats = statfs,
   workerFactory = createSpeechWorkerClient,
+  streamFactory = createSpeechStreamClient,
   idleStopMs = ASR_IDLE_STOP_MS,
   workerOptions = {}
 } = {}) {
@@ -141,6 +146,9 @@ export function createHaasAsrRuntime({
   const modelRoot = join(appData, 'asr-models', model.id, model.revision)
   const modelPath = join(modelRoot, model.file.path)
   const modelPartPath = `${modelPath}.part`
+  const vadRoot = join(appData, 'asr-models', vadModel.id, vadModel.revision)
+  const vadPath = join(vadRoot, vadModel.file.path)
+  const vadPartPath = `${vadPath}.part`
   const binaryPath = asset ? join(installRoot, asset.executable) : ''
   const runtimeEnv = speechEnvironment(env)
 
@@ -148,14 +156,23 @@ export function createHaasAsrRuntime({
   let runtimeController = null
   let modelTask = null
   let modelController = null
+  let vadTask = null
+  let vadController = null
   let worker = null
   let workerStartTask = null
+  let streamClient = null
+  let streamStartTask = null
+  let streamStartInProgress = false
+  let streamSampleRate = 0
+  let activeStreamSession = null
   let idleTimer = null
   let activeTranscription = null
   let activeTranscriptionState = null
   let requestCounter = 0
+  let streamRequestCounter = 0
   let lastLoadSeconds = null
   const verifiedModelSignatures = new Map()
+  const verifiedVadSignatures = new Map()
   const inspectedRuntime = new Map()
 
   async function probeBinary(path) {
@@ -205,9 +222,27 @@ export function createHaasAsrRuntime({
     }
   }
 
+  async function vadMatches() {
+    try {
+      const info = await lstat(vadPath)
+      if (!info.isFile() || info.isSymbolicLink() || info.size !== vadModel.file.size) return false
+      const signature = fileSignature(info)
+      if (verifiedVadSignatures.get(vadPath) === signature) return true
+      if ((await hashFile(vadPath)) !== vadModel.file.sha256) {
+        verifiedVadSignatures.delete(vadPath)
+        return false
+      }
+      verifiedVadSignatures.set(vadPath, signature)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async function getStatus() {
-    const [runtime, modelInstalled, partial] = await Promise.all([inspectRuntime(), modelMatches(), statOrNull(modelPartPath).catch(() => null)])
+    const [runtime, modelInstalled, partial, vadInstalled, vadPartial] = await Promise.all([inspectRuntime(), modelMatches(), statOrNull(modelPartPath).catch(() => null), vadMatches(), statOrNull(vadPartPath).catch(() => null)])
     const partialBytes = partial?.isFile() ? Math.min(partial.size, model.file.size) : 0
+    const vadPartialBytes = vadPartial?.isFile() ? Math.min(vadPartial.size, vadModel.file.size) : 0
     return {
       id: model.id,
       name: model.name,
@@ -228,6 +263,18 @@ export function createHaasAsrRuntime({
       totalBytes: model.file.size,
       downloadedBytes: modelInstalled ? model.file.size : partialBytes,
       modelInstalled,
+      vadId: vadModel.id,
+      vadName: vadModel.name,
+      vadRepo: vadModel.repo,
+      vadRevision: vadModel.revision,
+      vadLicense: vadModel.license,
+      vadFile: vadModel.file.path,
+      vadTotalBytes: vadModel.file.size,
+      vadDownloadedBytes: vadInstalled ? vadModel.file.size : vadPartialBytes,
+      vadInstalled,
+      vadDownloading: Boolean(vadTask),
+      canDownloadVad: Boolean(asset),
+      streamReady: Boolean(runtime.runtimeReady && modelInstalled && vadInstalled),
       canDownload: Boolean(asset),
       cachePath: modelRoot,
       runtimeCachePath: installRoot,
@@ -235,6 +282,8 @@ export function createHaasAsrRuntime({
       settingUpRuntime: Boolean(runtimeTask),
       downloadingModel: Boolean(modelTask),
       workerRunning: Boolean(worker?.running),
+      streamProcessRunning: Boolean(streamClient?.running),
+      streaming: Boolean(activeStreamSession),
       lastLoadSeconds,
       ...runtime
     }
@@ -244,6 +293,7 @@ export function createHaasAsrRuntime({
     const existing = await inspectRuntime()
     if (existing.runtimeReady) return getStatus()
     await stopWorker()
+    await stopStreamingClient()
     await mkdir(downloadsRoot, { recursive: true })
     const archivePath = join(downloadsRoot, asset.name)
     const fileSpec = { path: asset.name, size: asset.size, sha256: asset.sha256 }
@@ -302,7 +352,7 @@ export function createHaasAsrRuntime({
   function setupRuntime() {
     if (runtimeTask) return runtimeTask
     if (!asset) return Promise.reject(new Error(`speech.cpp has no pinned release for ${platform}-${arch}.`))
-    if (activeTranscription) return Promise.reject(new Error('Wait for recognition to finish before replacing the runtime.'))
+    if (activeTranscription || activeStreamSession) return Promise.reject(new Error('Wait for recognition to finish before replacing the runtime.'))
     const controller = new AbortController()
     runtimeController = controller
     runtimeTask = installRuntime(controller.signal).catch((error) => {
@@ -323,6 +373,8 @@ export function createHaasAsrRuntime({
 
   async function fetchModel(signal) {
     if (await modelMatches()) return getStatus()
+    await stopWorker()
+    await stopStreamingClient()
     await mkdir(modelRoot, { recursive: true })
     const partial = await statOrNull(modelPartPath)
     const pending = model.file.size - (partial?.isFile() ? Math.min(partial.size, model.file.size) : 0)
@@ -359,6 +411,7 @@ export function createHaasAsrRuntime({
   function downloadModel() {
     if (modelTask) return modelTask
     if (!asset) return Promise.reject(new Error(`speech.cpp has no pinned release for ${platform}-${arch}.`))
+    if (activeTranscription || activeStreamSession) return Promise.reject(new Error('Wait for recognition to finish before replacing the Haas model.'))
     const controller = new AbortController()
     modelController = controller
     modelTask = fetchModel(controller.signal).catch((error) => {
@@ -377,16 +430,64 @@ export function createHaasAsrRuntime({
     return { cancelled: true }
   }
 
+  async function fetchVadModel(signal) {
+    if (await vadMatches()) return getStatus()
+    if (activeStreamSession) throw new Error('Wait for live recognition to finish before replacing the VAD model.')
+    if (streamClient?.running) await stopStreamingClient()
+    await mkdir(vadRoot, { recursive: true })
+    await rm(vadPath, { force: true })
+    onProgress({ kind: 'vad', state: 'downloading', file: vadModel.file.path, downloadedBytes: 0, totalBytes: vadModel.file.size, message: `Downloading ${vadModel.name}…` })
+    await downloadFile({
+      url: getVadModelUrl(vadModel),
+      file: vadModel.file,
+      path: vadPath,
+      partPath: vadPartPath,
+      fetchImpl,
+      signal,
+      modelId: vadModel.id,
+      totalBytes: vadModel.file.size,
+      onProgress: (progress) => onProgress({ kind: 'vad', state: 'downloading', file: vadModel.file.path, downloadedBytes: progress.fileBytes ?? progress.downloadedBytes ?? 0, totalBytes: vadModel.file.size, message: `Downloading ${vadModel.name}…` })
+    })
+    verifiedVadSignatures.clear()
+    if (!(await vadMatches())) throw new Error('The downloaded Silero VAD model failed its pinned SHA-256 check.')
+    onProgress({ kind: 'vad', state: 'complete', downloadedBytes: vadModel.file.size, totalBytes: vadModel.file.size, message: `${vadModel.name} is checksum-verified.` })
+    return getStatus()
+  }
+
+  function downloadVadModel() {
+    if (vadTask) return vadTask
+    if (!asset) return Promise.reject(new Error(`speech.cpp has no pinned release for ${platform}-${arch}.`))
+    if (activeStreamSession) return Promise.reject(new Error('Wait for live recognition to finish before downloading the VAD model.'))
+    const controller = new AbortController()
+    vadController = controller
+    vadTask = fetchVadModel(controller.signal).catch((error) => {
+      onProgress({ kind: 'vad', state: controller.signal.aborted ? 'cancelled' : 'error', message: controller.signal.aborted ? 'VAD download cancelled. The partial file is kept and resumes next time.' : error?.message })
+      throw error
+    }).finally(() => {
+      vadTask = null
+      if (vadController === controller) vadController = null
+    })
+    return vadTask
+  }
+
+  function cancelVadDownload() {
+    if (!vadController) return { cancelled: false }
+    vadController.abort(new Error('Silero VAD download cancelled. The partial file is kept and resumes next time.'))
+    return { cancelled: true }
+  }
+
   function scheduleIdleStop() {
     clearTimeout(idleTimer)
     if (!idleStopMs) return
     idleTimer = setTimeout(() => {
-      if (!activeTranscription) void stopWorker()
+      if (!activeTranscription && !activeStreamSession) void Promise.allSettled([stopWorker(), stopStreamingClient()])
     }, idleStopMs)
     idleTimer.unref?.()
   }
 
   async function ensureWorker() {
+    if (activeStreamSession) throw new Error('Wait for live recognition to finish before starting buffered recognition.')
+    await stopStreamingClient()
     if (worker?.running) return worker
     if (workerStartTask) return workerStartTask
     const current = workerFactory({
@@ -424,6 +525,7 @@ export function createHaasAsrRuntime({
 
   async function warmWorker() {
     if (activeTranscription) return { ready: Boolean(worker?.running), alreadyInUse: true, loadSeconds: 0 }
+    if (activeStreamSession) return { ready: Boolean(streamClient?.running), alreadyInUse: true, loadSeconds: 0 }
     clearTimeout(idleTimer)
     const runtime = await inspectRuntime()
     if (!runtime.runtimeReady) throw new Error(runtime.runtimeError || 'Install the speech.cpp runtime in Voice Lab first.')
@@ -435,7 +537,275 @@ export function createHaasAsrRuntime({
     return { ready: true, alreadyWarm: wasRunning, loadSeconds: wasRunning ? 0 : (performance.now() - started) / 1000 }
   }
 
+  function notifyStreamSession(session) {
+    const waiters = [...session.waiters]
+    session.waiters.clear()
+    for (const notify of waiters) notify()
+  }
+
+  function streamText(session) {
+    return session.order.map((id) => {
+      const item = session.items.get(id)
+      return item?.final ?? item?.partial ?? ''
+    }).join('')
+  }
+
+  function handleStreamEvent(event) {
+    const session = activeStreamSession
+    if (!session || session.cancelled) return
+    session.lastEventAt = performance.now()
+    const type = event.type
+    const itemId = String(event.item_id || event.itemId || session.activeItemId || '')
+    let kind = 'status'
+    if (type === 'input_audio_buffer.speech_started') {
+      session.hadSpeech = true
+      session.activeItemId = itemId
+      if (itemId && !session.items.has(itemId)) {
+        session.items.set(itemId, { partial: '', final: null })
+        session.order.push(itemId)
+      }
+      if (itemId) session.pendingItems.add(itemId)
+      kind = 'speech-started'
+    } else if (type === 'input_audio_buffer.speech_stopped') {
+      session.hadSpeech = true
+      if (itemId) session.pendingItems.add(itemId)
+      kind = 'speech-stopped'
+    } else if (type === 'conversation.item.input_audio_transcription.delta') {
+      session.hadSpeech = true
+      const id = itemId || `stream-item-${session.order.length + 1}`
+      if (!session.items.has(id)) {
+        session.items.set(id, { partial: '', final: null })
+        session.order.push(id)
+      }
+      session.pendingItems.add(id)
+      const delta = typeof event.delta === 'string' ? event.delta : typeof event.text === 'string' ? event.text : ''
+      session.items.get(id).partial += delta
+      session.activeItemId = id
+      kind = 'partial'
+    } else if (type === 'conversation.item.input_audio_transcription.completed') {
+      const id = itemId || session.activeItemId || `stream-item-${session.order.length + 1}`
+      if (!session.items.has(id)) {
+        session.items.set(id, { partial: '', final: null })
+        session.order.push(id)
+      }
+      session.items.get(id).final = typeof event.transcript === 'string' ? event.transcript : ''
+      session.pendingItems.delete(id)
+      if (session.activeItemId === id) session.activeItemId = ''
+      session.completedCount += 1
+      session.hadSpeech = true
+      kind = 'final'
+    } else if (type === 'failed') {
+      const detail = event.error || event.message || 'Live recognition failed.'
+      session.error = new Error(typeof detail === 'string' ? detail : detail.message || 'Live recognition failed.')
+      kind = 'error'
+    } else {
+      return
+    }
+    session.text = streamText(session)
+    const update = { sessionId: session.id, kind, text: session.text, itemId }
+    if (kind === 'error') update.message = session.error.message
+    try { onStreamEvent(update) } catch {}
+    if (kind === 'error') onProgress({ kind: 'stream', state: 'error', message: session.error.message })
+    notifyStreamSession(session)
+  }
+
+  function failActiveStream(error) {
+    const session = activeStreamSession
+    if (!session || session.error) return
+    session.error = error instanceof Error ? error : new Error(String(error || 'Live recognition failed.'))
+    try { onStreamEvent({ sessionId: session.id, kind: 'error', text: session.text || '', message: session.error.message }) } catch {}
+    onProgress({ kind: 'stream', state: 'error', message: session.error.message })
+    notifyStreamSession(session)
+  }
+
+  async function stopStreamingClient() {
+    if (streamStartTask) await streamStartTask.catch(() => {})
+    const current = streamClient
+    streamClient = null
+    streamSampleRate = 0
+    if (current) await current.stop().catch(() => {})
+  }
+
+  async function ensureStreamingClient(sampleRate) {
+    if (streamClient?.running && streamSampleRate === sampleRate) return streamClient
+    if (streamClient) await stopStreamingClient()
+    await stopWorker()
+    const current = streamFactory({
+      spawnImpl,
+      executable: binaryPath,
+      args: buildStreamingAsrArgs(modelPath, vadPath, sampleRate, workerOptions),
+      env: runtimeEnv,
+      cwd: installRoot,
+      onEvent: handleStreamEvent,
+      onError: (error) => {
+        failActiveStream(error)
+        if (streamClient === current) {
+          streamClient = null
+          streamSampleRate = 0
+        }
+      }
+    })
+    streamClient = current
+    streamSampleRate = sampleRate
+    const task = (async () => {
+      onProgress({ kind: 'stream', state: 'loading', message: 'Starting local live recognition…' })
+      try {
+        await current.start()
+        return current
+      } catch (error) {
+        if (streamClient === current) {
+          streamClient = null
+          streamSampleRate = 0
+        }
+        await current.stop().catch(() => {})
+        throw error
+      }
+    })()
+    streamStartTask = task
+    try { return await task } finally { if (streamStartTask === task) streamStartTask = null }
+  }
+
+  async function startStream(sampleRate = 16_000) {
+    if (activeTranscription) throw new Error('Speech recognition is already running. Wait for it to finish.')
+    if (activeStreamSession) throw new Error('Live speech recognition is already running.')
+    if (streamStartInProgress) throw new Error('Live speech recognition is already starting.')
+    if (!Number.isInteger(sampleRate) || sampleRate < 8_000 || sampleRate > 48_000) throw new Error('The live audio sample rate must be 8–48 kHz.')
+    streamStartInProgress = true
+    streamRequestCounter += 1
+    const session = {
+      id: `asr-live-${streamRequestCounter}-${randomBytes(4).toString('hex')}`,
+      sampleRate,
+      startedAt: performance.now(),
+      audioBytes: 0,
+      items: new Map(),
+      order: [],
+      pendingItems: new Set(),
+      activeItemId: '',
+      completedCount: 0,
+      hadSpeech: false,
+      text: '',
+      error: null,
+      cancelled: false,
+      waiters: new Set(),
+      lastEventAt: 0
+    }
+    activeStreamSession = session
+    clearTimeout(idleTimer)
+    try {
+      const runtime = await inspectRuntime()
+      if (!runtime.runtimeReady) throw new Error(runtime.runtimeError || 'Install the speech.cpp runtime in Voice Lab first.')
+      if (!(await modelMatches())) throw new Error('Download the Haas-ja-v1.0 model in Voice Lab first.')
+      if (!(await vadMatches())) throw new Error('Download the small Silero VAD model in Voice Lab to enable live recognition.')
+      if (session.cancelled || activeStreamSession !== session) throw new Error('Live speech recognition was cancelled before startup completed.')
+      await ensureStreamingClient(sampleRate)
+      if (session.cancelled || activeStreamSession !== session) {
+        await stopStreamingClient()
+        throw new Error('Live speech recognition was cancelled before startup completed.')
+      }
+      onProgress({ kind: 'stream', state: 'listening', message: 'Live recognition is running on this device.' })
+      return { sessionId: session.id, sampleRate }
+    } catch (error) {
+      if (activeStreamSession === session) activeStreamSession = null
+      await stopStreamingClient()
+      scheduleIdleStop()
+      throw error
+    } finally {
+      streamStartInProgress = false
+    }
+  }
+
+  async function pushStreamFrame(sessionId, input) {
+    const session = activeStreamSession
+    if (!session || session.id !== sessionId || session.cancelled) throw new Error('This live recognition session is no longer active.')
+    if (session.error) throw session.error
+    const pcm = Buffer.isBuffer(input) ? input : input instanceof Uint8Array ? Buffer.from(input.buffer, input.byteOffset, input.byteLength) : null
+    if (!pcm || !pcm.length || pcm.length % 2 || pcm.length > 64 * 1024) throw new Error('Live audio frames must be non-empty, even-length PCM16LE and no larger than 64 KB.')
+    if (session.audioBytes + pcm.length > ASR_STREAM_MAX_SECONDS * session.sampleRate * 2) throw new Error(`Live recordings are limited to ${ASR_STREAM_MAX_SECONDS} seconds.`)
+    if (!streamClient?.running) throw session.error || new Error('The local live-ASR process is not running.')
+    session.audioBytes += pcm.length
+    try { await streamClient.write(pcm) } catch (error) { failActiveStream(error); throw error }
+    return { acceptedBytes: pcm.length, audioSeconds: session.audioBytes / 2 / session.sampleRate }
+  }
+
+  function waitForStreamChange(session, milliseconds) {
+    return new Promise((resolvePromise) => {
+      const timer = setTimeout(done, milliseconds)
+      function done() {
+        clearTimeout(timer)
+        session.waiters.delete(done)
+        resolvePromise()
+      }
+      session.waiters.add(done)
+    })
+  }
+
+  async function finishStream(sessionId) {
+    const session = activeStreamSession
+    if (!session || session.id !== sessionId) throw new Error('This live recognition session is no longer active.')
+    if (session.finishPromise) return session.finishPromise
+    session.finishPromise = finalizeStream(session)
+    return session.finishPromise
+  }
+
+  async function finalizeStream(session) {
+    const finishStarted = performance.now()
+    const silence = Buffer.alloc(Math.floor(session.sampleRate / 10) * 2)
+    try {
+      for (let index = 0; index < 10; index += 1) {
+        if (session.error) break
+        await streamClient.write(silence)
+      }
+    } catch (error) {
+      failActiveStream(error)
+    }
+    const quietDeadline = performance.now() + 2_500
+    const speechDeadline = performance.now() + 20_000
+    while (!session.error && !session.cancelled) {
+      const settled = session.hadSpeech && session.pendingItems.size === 0 && session.completedCount > 0
+      if (settled && performance.now() - Math.max(finishStarted, session.lastEventAt || 0) >= 1_000) break
+      const deadline = session.hadSpeech ? speechDeadline : quietDeadline
+      const remaining = deadline - performance.now()
+      if (remaining <= 0) break
+      await waitForStreamChange(session, Math.min(remaining, 250))
+    }
+    const needsFallback = Boolean(session.error || !session.text.trim() || session.pendingItems.size > 0 || session.completedCount === 0)
+    if (session.error || session.pendingItems.size > 0) await stopStreamingClient()
+    if (activeStreamSession === session) activeStreamSession = null
+    const audioSeconds = session.audioBytes / 2 / session.sampleRate
+    const recognitionSeconds = (performance.now() - finishStarted) / 1000
+    const result = {
+      text: session.text,
+      final: !needsFallback,
+      needsFallback,
+      error: session.error?.message || '',
+      hadSpeech: session.hadSpeech,
+      audioSeconds,
+      sampleRate: session.sampleRate,
+      recognitionSeconds,
+      loadSeconds: 0,
+      rtfx: recognitionSeconds > 0 ? audioSeconds / recognitionSeconds : null,
+      backend: `speech.cpp ${release.version} · ${asset?.backend || 'native'} · live VAD`,
+      modelId: model.id
+    }
+    onProgress({ kind: 'stream', state: needsFallback ? 'fallback' : 'complete', message: needsFallback ? 'Using the buffered local-recognition fallback…' : 'Live recognition complete.' })
+    try { onStreamEvent({ sessionId: session.id, kind: needsFallback ? 'fallback' : 'final', text: session.text, message: result.error }) } catch {}
+    scheduleIdleStop()
+    return result
+  }
+
+  async function cancelStream(sessionId) {
+    const session = activeStreamSession
+    if (!session || (sessionId && session.id !== sessionId)) return { cancelled: false }
+    session.cancelled = true
+    activeStreamSession = null
+    notifyStreamSession(session)
+    await stopStreamingClient()
+    scheduleIdleStop()
+    return { cancelled: true }
+  }
+
   async function transcribe(audio, { timestamps = true } = {}) {
+    if (activeStreamSession) throw new Error('Live speech recognition is already running. Wait for it to finish or cancel it.')
     if (activeTranscription) throw new Error('Speech recognition is already running. Wait for it to finish.')
     const wav = parsePcm16Wav(audio)
     if (wav.peak < 64) throw new Error('The recording is silent. Check the microphone and try again.')
@@ -509,8 +879,9 @@ export function createHaasAsrRuntime({
 
   async function removeModelCache() {
     if (modelTask) throw new Error('Wait for the Haas download to finish or cancel it first.')
-    if (activeTranscription) throw new Error('Wait for recognition to finish before removing the model.')
+    if (activeTranscription || activeStreamSession) throw new Error('Wait for recognition to finish before removing the model.')
     await stopWorker()
+    await stopStreamingClient()
     await rm(join(appData, 'asr-models', model.id), { recursive: true, force: true })
     verifiedModelSignatures.clear()
     return getStatus()
@@ -518,8 +889,9 @@ export function createHaasAsrRuntime({
 
   async function removeRuntime() {
     if (runtimeTask) throw new Error('Wait for speech.cpp setup to finish or cancel it first.')
-    if (activeTranscription) throw new Error('Wait for recognition to finish before removing the runtime.')
+    if (activeTranscription || activeStreamSession) throw new Error('Wait for recognition to finish before removing the runtime.')
     await stopWorker()
+    await stopStreamingClient()
     await rm(runtimeBase, { recursive: true, force: true })
     inspectedRuntime.clear()
     return getStatus()
@@ -528,10 +900,22 @@ export function createHaasAsrRuntime({
   async function stop() {
     cancelRuntimeSetup()
     cancelModelDownload()
+    cancelVadDownload()
     cancelTranscription()
+    await cancelStream()
     if (activeTranscription) await Promise.race([activeTranscription, new Promise((r) => setTimeout(r, 3000))])
     await stopWorker()
+    await stopStreamingClient()
   }
 
-  return Object.freeze({ getStatus, setupRuntime, cancelRuntimeSetup, downloadModel, cancelModelDownload, warmWorker, transcribe, cancelTranscription, removeModelCache, removeRuntime, stopWorker, stop })
+  async function removeVadModelCache() {
+    if (vadTask) throw new Error('Wait for the VAD download to finish or cancel it first.')
+    if (activeStreamSession) throw new Error('Wait for live recognition to finish before removing the VAD model.')
+    await stopStreamingClient()
+    await rm(join(appData, 'asr-models', vadModel.id), { recursive: true, force: true })
+    verifiedVadSignatures.clear()
+    return getStatus()
+  }
+
+  return Object.freeze({ getStatus, setupRuntime, cancelRuntimeSetup, downloadModel, cancelModelDownload, downloadVadModel, cancelVadDownload, removeVadModelCache, warmWorker, transcribe, cancelTranscription, startStream, pushStreamFrame, finishStream, cancelStream, removeModelCache, removeRuntime, stopWorker, stop })
 }

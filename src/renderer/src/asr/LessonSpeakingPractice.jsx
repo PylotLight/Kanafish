@@ -95,18 +95,20 @@ export default function LessonSpeakingPractice({ targets, tts, voiceContext, pro
     </div>}
     {asr.statusError && <div className="tts-inline-error" role="alert"><AlertCircle size={14} /> {asr.statusError}</div>}
     {asr.error && <div className="tts-inline-error" role="alert"><AlertCircle size={14} /> {asr.error}</div>}
+    {asrReady && !asr.status?.vadInstalled && <div className="lesson-speech-progress" role="note">Live text is optional: enable it with the 1.2 MB VAD add-on in Voice Lab. Otherwise, recognition appears after you stop recording. <button type="button" className="text-link" onClick={onOpenVoiceLab}>Open Voice Lab</button></div>}
 
     {asrReady && <div className="lesson-speech-recorder">
       <div className="lesson-speech-privacy"><span><Check size={13} /> On-device recognition</span><small>No audio or transcript is added to your saved progress.</small></div>
       <div className="lesson-speech-actions">
         <button type="button" className={`primary-button ${asr.recording ? 'recording' : ''}`} onClick={() => asr.recording ? asr.stopRecording() : void asr.startRecording()} disabled={asr.starting || asr.transcribing || asr.warming} aria-pressed={asr.recording}>
-          {asr.recording ? <><X size={14} /> Stop · {asr.recordSeconds.toFixed(1)} s</> : <><Mic size={15} /> {asr.warming ? 'Warming…' : asr.starting ? 'Starting…' : asr.transcribing ? 'Recognizing…' : 'Record my line'}</>}
+          {asr.recording ? <><X size={14} /> {asr.streaming ? 'Stop · live text' : 'Stop'} · {asr.recordSeconds.toFixed(1)} s</> : <><Mic size={15} /> {asr.warming ? 'Warming…' : asr.starting ? 'Starting…' : asr.transcribing ? 'Recognizing…' : 'Record my line'}</>}
         </button>
         {asr.recording && <button type="button" className="outline-button" onClick={asr.cancelRecording}>Discard recording</button>}
         {asr.transcribing && <button type="button" className="outline-button" onClick={() => void asr.cancelTranscription()} disabled={asr.cancelling}>{asr.cancelling ? 'Cancelling…' : 'Cancel recognition'}</button>}
       </div>
       {warmFailed && <button type="button" className="text-link" onClick={retryWarmup} disabled={asr.warming}><RotateCcw size={13} /> Retry model warm-up</button>}
       {asr.transcribing && <div className="lesson-speech-progress" role="status"><Activity size={14} /> {asr.progress?.message || 'Recognizing on this device…'}</div>}
+      {asr.recording && asr.streaming && <div className="asr-live-preview" role="status" aria-live="polite"><span><Activity size={14} /> LIVE DRAFT · MAY CHANGE</span><p lang="ja">{asr.liveText || 'Listening…'}</p></div>}
     </div>}
 
     {score && <div className="lesson-speech-result" role="status">
