@@ -91,13 +91,14 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .streak-card small { display: block; margin-top: 3px; color: light-dark(#9aa39d, #c6cac8); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
 .today-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 .today-strip { display: grid; gap: 14px; }
-.today-progress { display: flex; align-items: center; gap: 15px; padding: 14px 16px; border: 1px solid light-dark(#e4e7e0, #484c43); border-radius: 11px; background: light-dark(#f6f7f4, #1c1c13); }
-.today-progress > .progress-track { flex: 1 0 auto; min-width: 60px; }
-.today-progress-meta { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; }
+.today-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 14px 16px; border: 1px solid light-dark(#e4e7e0, #484c43); border-radius: 11px; background: light-dark(#f6f7f4, #1c1c13); }
+.today-progress > .progress-track { flex: 1 1 auto; min-width: 60px; }
+.today-progress-meta { flex: 0 1 240px; min-width: 0; }
 .today-progress-meta strong { color: light-dark(#446357, #c6d2ce); font-size: calc(12px * var(--text-scale, 1.18)); font-weight: 650; }
 .today-progress-meta strong span { color: light-dark(#97a19b, #c5cac8); font-weight: 500; }
 .today-progress-meta small { color: light-dark(#8a958d, #c3c8c7); font-size: calc(10px * var(--text-scale, 1.18)); }
 .feature-card { position: relative; min-height: 287px; overflow: hidden; padding: 22px 25px 21px; border: 1px solid light-dark(#dbe7dc, #404e41); border-radius: 13px; background: linear-gradient(118deg, light-dark(#e7f0e8, #141d15) 0%, light-dark(#e2ede5, #151e17) 57%, light-dark(#d9e8df, #16211a) 100%); }
+.lesson-feature { min-width: 0; }
 .feature-card::after { position: absolute; right: -80px; bottom: -140px; width: 290px; height: 290px; border: 1px solid light-dark(rgba(59, 105, 88, .1), rgba(39, 52, 47, .1)); border-radius: 50%; content: ''; }
 .feature-card::before { position: absolute; right: -27px; bottom: -114px; width: 213px; height: 213px; border: 1px solid light-dark(rgba(59, 105, 88, .1), rgba(39, 52, 47, .1)); border-radius: 50%; content: ''; }
 .feature-topline { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
