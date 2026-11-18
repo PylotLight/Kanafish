@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight,
-  CircleCheck, Clock3, Compass, Download, Flame, GraduationCap, Lightbulb, ListChecks,
+  CircleCheck, Clock3, Compass, Download, Flame, GraduationCap, Lightbulb, Mic,
   LockKeyhole, Moon, PanelLeftClose, PanelLeftOpen, Power, RotateCcw, Search, Settings,
   Sparkles, Sun, Target, Type, Volume2, X
 } from 'lucide-react'
@@ -13,6 +13,8 @@ import {
 } from '../learning.js'
 import { kanaToRomaji } from '../romaji.js'
 import LessonSpeakingPractice from './asr/LessonSpeakingPractice.jsx'
+import SayTaskPractice from './asr/SayTaskPractice.jsx'
+import { extractGreetings, extractJapanesePhrases, scoreSayTask } from './asr/sayTask.js'
 import { useTts } from './tts/useTts.js'
 import VoiceLabPage from './tts/VoiceLabPage.jsx'
 import { getLessonSpeechTargets, getTtsEngineReadiness, isJapanesePracticeText } from './tts/readiness.js'
@@ -324,7 +326,6 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
   const [showResponseFeedback, setShowResponseFeedback] = useState(!!session.responseSubmitted)
   const [adaptation, setAdaptation] = useState(session.adaptation || '')
   const [warmupCue, setWarmupCue] = useState(!!session.warmupCue)
-  const [triedAdaptation, setTriedAdaptation] = useState(!!session.triedAdaptation)
   const [showSpeakingPractice, setShowSpeakingPractice] = useState(false)
   const stepHeadingRef = useRef(null)
   const mountedLesson = useRef(false)
@@ -333,6 +334,8 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
     ...speechTargets.dialogue.map((line, index) => ({ id: `${lesson.id}-line-${index + 1}`, text: line.ja, meaning: line.en, label: `${labelSpeaker(line.speaker)} · ${line.en}`, detail: lesson.title, type: 'dialogue' })),
     ...speechTargets.phrases.map((phrase, index) => ({ id: `w${week.week}-phrase-${index + 1}`, text: phrase.ja, meaning: phrase.en, label: `Useful phrase · ${phrase.en}`, detail: phrase.use, type: 'phrase' })),
   ]
+  const sayTaskPhrases = extractJapanesePhrases(lesson.sayTask)
+  const sayTaskGreetingTargets = extractGreetings(speechTargets)
   const warmupPrompt = getRetrievalPrompt(course, progress, lesson.id)
   const recallCard = warmupPrompt?.phrase
   const hasWarmup = Boolean(recallCard)
@@ -385,10 +388,6 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
     setAdaptation(value)
     onPatch({ adaptation: value })
   }
-  function markTried() {
-    setTriedAdaptation(true)
-    onPatch({ triedAdaptation: true })
-  }
   function complete() {
     onComplete()
   }
@@ -439,7 +438,7 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
       {step === 4 && <section className="practice-card guided-card">
         <p className="guide-overline">Bring it into your own words</p><h2 ref={stepHeadingRef} tabIndex={-1}>Make the exchange yours.</h2><p className="practice-intro">Change one detail or add a follow-up. Try it aloud, with a partner, or as a short written response.</p>
         <div className="adapt-prompt"><span className="adapt-prompt-icon"><Sparkles size={17} /></span><div><span>YOUR ADAPTATION</span><strong>{lesson.adaptation}</strong></div></div>
-        <div className="say-task"><div className="say-task-head"><ListChecks size={16} /><strong>Try the conversation</strong><span>Partner, tutor, or self-led</span></div><p>{lesson.sayTask}</p><button type="button" className={`outline-button ${triedAdaptation ? 'tool-on' : ''}`} onClick={markTried}>{triedAdaptation ? <Check size={15} /> : <CircleCheck size={15} />}{triedAdaptation ? 'Attempt noted' : 'I tried the task'}</button></div>
+        <div className="say-task"><div className="say-task-head"><Mic size={16} /><strong>Speak it</strong><span>Record yourself; Kanafish listens locally</span></div><p>{lesson.sayTask}</p><SayTaskPractice sayTask={lesson.sayTask} greetingTargets={sayTaskGreetingTargets} instructionPhrases={sayTaskPhrases} successChecks={lesson.successChecks} tts={tts} voiceContext={voiceContext} progress={progress} romajiMode={romajiMode} onPatch={onPatch} onOpenVoiceLab={onOpenVoiceLab} session={session} /></div>
         <label className="field-label" htmlFor="adaptation-note">What did you change? <span>optional reflection</span></label><textarea id="adaptation-note" className="reflection-input" rows="3" placeholder="A new place, item, time, or follow-up…" value={adaptation} onChange={(event) => updateAdaptation(event.target.value)} />
         <div className="guide-speaking-toggle"><button type="button" className="outline-button" onClick={() => setShowSpeakingPractice((visible) => !visible)} aria-expanded={showSpeakingPractice} aria-controls="optional-speaking-practice"><Volume2 size={15} />{showSpeakingPractice ? 'Close speaking practice' : 'Optional: practise speaking'}</button></div>
         {showSpeakingPractice && <div id="optional-speaking-practice"><LessonSpeakingPractice targets={speakingTargets} tts={tts} voiceContext={voiceContext} progress={progress} romajiMode={romajiMode} onRate={onRateCard} onOpenVoiceLab={onOpenVoiceLab} /></div>}

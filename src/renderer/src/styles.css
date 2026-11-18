@@ -329,6 +329,34 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .say-task-head strong { color: light-dark(#557061, #cad5cf); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
 .say-task-head > span { margin-left: auto; color: light-dark(#9ba69e, #c6cbc7); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); }
 .say-task p { margin: 8px 0 9px; color: light-dark(#7d8b82, #c9cecb); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); line-height: 1.5; }
+.say-task-practice { margin-top: 12px; }
+.say-task-recorder, .say-task-setup { border: 1px solid light-dark(#e3e8e0, #3c4637); border-radius: 8px; background: light-dark(#f6f8f4, #16180c); }
+.say-task-privacy { display: flex; align-items: center; gap: 6px; padding: 8px 10px 8px 10px; font-size: max(9px, calc(8px * var(--text-scale, 1.18))); color: light-dark(#6f7f77, #c0c6c4); border-bottom: 1px solid light-dark(#e8ebe4, #2c3326); }
+.say-task-privacy small { color: light-dark(#98a29b, #b9bfbd); }
+.say-task-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 10px; }
+.say-task-actions .primary-button { display: inline-flex; align-items: center; gap: 6px; }
+.say-task-actions .primary-button.recording { background: light-dark(#e5b9a6, #43251a); border-color: light-dark(#e3b4a0, #5a3526); color: light-dark(#4a2c20, #f2e3dd); }
+.say-task-setup { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; }
+.say-task-setup strong { color: light-dark(#4c5c53, #c7d8ce); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
+.say-task-setup span { color: light-dark(#6f7b74, #c0c6c4); font-size: max(9px, calc(8px * var(--text-scale, 1.18))); line-height: 1.5; }
+.say-task-progress, .say-task-live { display: flex; align-items: center; gap: 6px; padding: 8px 10px; font-size: max(9px, calc(8px * var(--text-scale, 1.18))); color: light-dark(#6f7f77, #c0c6c4); }
+.say-task-live { flex-direction: column; align-items: flex-start; gap: 3px; }
+.say-task-live p { margin: 0; color: light-dark(#3d6956, #c8dbd3); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
+.say-task-result { margin-top: 10px; padding: 10px 12px; border: 1px solid light-dark(#d5e0d8, #333c30); border-radius: 7px; background: light-dark(#f1f4ed, #181c13); }
+.say-task-result strong { display: block; margin: 4px 0 5px; color: light-dark(#334a3c, #cfe0d8); font-size: max(11px, calc(10px * var(--text-scale, 1.18))); }
+.say-task-result small { display: block; margin-bottom: 6px; color: light-dark(#6f7b74, #c0c6c4); font-size: max(9px, calc(8px * var(--text-scale, 1.18))); line-height: 1.5; }
+.say-task-checks { margin-top: 12px; }
+.say-task-checks .eyebrow { display: block; margin-bottom: 7px; }
+.say-task-check { display: flex; align-items: center; gap: 7px; padding: 7px 10px; margin-bottom: 5px; border: 1px solid light-dark(#e3e8e0, #3c4637); border-radius: 6px; background: light-dark(#fafbf7, #191c10); }
+.say-task-check.is-pass { border-color: light-dark(#bcd6c1, #34472f); background: light-dark(#edf5ec, #161d12); }
+.say-task-check.is-pending { opacity: 0.72; }
+.say-task-check strong { color: light-dark(#334a3c, #cfe0d8); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); }
+.say-task-check small { color: light-dark(#6f7b74, #c0c6c4); font-size: max(9px, calc(8px * var(--text-scale, 1.18))); }
+.say-task-check-status { margin-left: auto; font-size: max(9px, calc(8px * var(--text-scale, 1.18))); }
+.say-task-check.is-pass .say-task-check-status { color: light-dark(#457b5a, #a9c7b3); }
+.say-task-check.is-pending .say-task-check-status { color: light-dark(#a77c5a, #d4b98f); }
+.say-task-done { display: flex; align-items: center; gap: 6px; margin-top: 9px; padding: 8px 10px; font-size: max(10px, calc(9px * var(--text-scale, 1.18))); color: light-dark(#457b5a, #a9c7b3); }
+.say-task-self-try { margin-top: 8px; }
 .field-label { display: block; margin: 12px 0 6px; color: light-dark(#596f64, #cbd3cf); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); font-weight: 600; }
 .field-label span { margin-left: 5px; color: light-dark(#9aa49d, #c6cac7); font-size: max(10px, calc(8px * var(--text-scale, 1.18))); font-weight: 400; }
 .reflection-input, .evidence-field textarea { width: 100%; resize: vertical; padding: 9px 10px; border: 1px solid light-dark(#e3e8e0, #464d42); border-radius: 6px; background: light-dark(#fdfdfa, #1d1d0e); color: light-dark(#425c51, #ccd8d3); font-size: max(10px, calc(9px * var(--text-scale, 1.18))); line-height: 1.5; }
@@ -812,6 +840,8 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .guided-card .say-task { margin: 0; padding: 15px; }
 .guided-card .say-task-head strong { font-size: calc(12px * var(--text-scale, 1.18)); }
 .guided-card .say-task p { font-size: calc(12px * var(--text-scale, 1.18)); line-height: 1.6; }
+.guided-card .say-task-check strong, .guided-card .say-task-result strong { font-size: calc(11px * var(--text-scale, 1.18)); }
+.guided-card .say-task-check, .guided-card .say-task-result, .guided-card .say-task-progress, .guided-card .say-task-live { font-size: calc(10px * var(--text-scale, 1.18)); }
 
 @media (max-width: 620px) {
   .guide-progress { align-items: stretch; flex-direction: column; gap: 8px; margin-bottom: 12px; padding: 11px 12px; }
