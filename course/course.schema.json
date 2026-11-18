@@ -89,13 +89,13 @@
         "listenCheck": {
           "type": "object",
           "required": ["question", "choices", "answer"],
-          "properties": {"question": {"type": "string"}, "choices": {"type": "array", "items": {"type": "string"}, "minItems": 2}, "answer": {"type": "integer", "minimum": 0}},
+          "properties": {"question": {"type": "string"}, "choices": {"type": "array", "items": {"type": "string"}, "minItems": 2}, "meanings": {"type": "array", "items": {"type": "string"}}, "answer": {"type": "integer", "minimum": 0}},
           "additionalProperties": false
         },
         "responsePractice": {
           "type": "object",
           "required": ["prompt", "choices", "answer", "why"],
-          "properties": {"prompt": {"type": "string"}, "choices": {"type": "array", "items": {"type": "string"}}, "answer": {"type": ["integer", "null"], "minimum": 0}, "why": {"type": "string"}},
+          "properties": {"prompt": {"type": "string"}, "choices": {"type": "array", "items": {"type": "string"}}, "meanings": {"type": "array", "items": {"type": "string"}}, "answer": {"type": ["integer", "null"], "minimum": 0}, "why": {"type": "string"}},
           "additionalProperties": false
         },
         "sayTask": {"type": "string"},

@@ -45,7 +45,7 @@ test('all 36 lessons retain their IDs, weekly order, and recognize/respond/adapt
 test('the opening scene addresses a true beginner without claiming prior lesson knowledge', () => {
   const firstLesson = course.weeks[0].lessons[0]
   expect(firstLesson.id).toBe('W01-L1')
-  expect(firstLesson.goal).toContain('Return a simple greeting')
+  expect(firstLesson.goal).toContain('Say hello back')
   expect(firstLesson.scene).toContain('You do not need to understand every word yet')
   expect(firstLesson.dialogue.length).toBeGreaterThanOrEqual(2)
 })

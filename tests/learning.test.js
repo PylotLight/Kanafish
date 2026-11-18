@@ -32,7 +32,7 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
   });
   test('a brand-new learner has no recall prompt and the opening lesson has a concrete goal', () => {
     expect(getRetrievalPrompt(course, createInitialProgress(), 'W01-L1')).toBeNull();
-    expect(lessons[0].lesson.goal).toBe('Return a simple greeting and use すみません to begin a polite request.');
+    expect(lessons[0].lesson.goal).toBe("Say hello back when someone greets you, and learn one polite way to get attention.");
     expect(course.weeks[0].lessons[0].scene).toContain('You do not need to understand every word yet');
   });
   test('starting a lesson without completing it does not create a recall prompt', () => {

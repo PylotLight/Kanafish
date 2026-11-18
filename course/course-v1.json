@@ -114,7 +114,7 @@
           "id": "W01-L1",
           "title": "Greet and open politely",
           "stage": "recognize",
-          "goal": "Return a simple greeting and use すみません to begin a polite request.",
+          "goal": "Say hello back when someone greets you, and learn one polite way to get attention.",
           "scene": "You enter a small hotel. The receptionist welcomes you and asks a longer reservation question; today, focus on greeting them back and opening politely. You do not need to understand every word yet.",
           "dialogue": [
             {
@@ -140,7 +140,12 @@
               "さようなら。",
               "おやすみなさい。"
             ],
-            "answer": 0
+            "answer": 0,
+            "meanings": [
+              "Hello / good afternoon.",
+              "Goodbye.",
+              "Good night."
+            ]
           },
           "responsePractice": {
             "prompt": "The staff member says こんにちは. Choose a suitable reply.",
@@ -150,7 +155,12 @@
               "おやすみなさい。"
             ],
             "answer": 0,
-            "why": "A daytime greeting can be returned with the same greeting."
+            "why": "A daytime greeting can be returned with the same greeting.",
+            "meanings": [
+              "Hello / good afternoon.",
+              "Goodbye.",
+              "Good night."
+            ]
           },
           "sayTask": "Say a greeting, then say すみません to get the receptionist's attention.",
           "adaptation": "Change the hotel to a shop or station. Return the greeting, then use すみません to get the person’s attention.",
