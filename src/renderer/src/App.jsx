@@ -238,7 +238,7 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
           </> : <>
             <div className="lesson-number">WEEK {String(week.week).padStart(2, '0')} <span>·</span> LESSON {next.lesson.id.split('-L')[1]}{currentPhase ? <><span>·</span> {currentPhase.title}</> : null}</div><h2>{next.lesson.title}</h2><p className="today-lesson-goal"><strong>Today you’ll be able to:</strong> {next.lesson.goal}</p>
             <div className="lesson-scene"><span className="scene-icon"><Compass size={17} /></span><span>{next.lesson.scene}</span></div>
-            <button className="primary-button" onClick={() => onOpenLesson(nextLessonId)}>{progress.lessonSessions[nextLessonId]?.startedAt ? 'Continue lesson' : firstSession ? 'Start with the scene' : 'Start next lesson'} <ArrowRight size={16} /></button>
+            <button className="primary-button" onClick={() => onOpenLesson(nextLessonId)}>{progress.lessonSessions[nextLessonId]?.step > 0 ? 'Continue lesson' : firstSession ? 'Start with the scene' : 'Start next lesson'} <ArrowRight size={16} /></button>
           </>}
           <div className="feature-decoration"><span>あ</span><span>話</span></div>
         </section>
@@ -286,7 +286,7 @@ function CoursePage({ course, progress, romajiMode, expandedWeeks, setExpandedWe
       {isOpen && <div className="week-body">
         <div className="week-lessons">{week.lessons.map((lesson, index) => {
           const isDone = completed.has(lesson.id)
-          const started = !!progress.lessonSessions?.[lesson.id]?.startedAt
+          const started = (progress.lessonSessions?.[lesson.id]?.step ?? 0) > 0
           const stageLabel = ({ recognize: 'Notice', 'supported-response': 'Practise with support', adapt: 'Adapt' })[lesson.stage]
           return <button className={`lesson-row ${isDone ? 'lesson-row-done' : ''}`} key={lesson.id} onClick={() => onOpenLesson(lesson.id)}>
             <span className={`lesson-row-icon ${isDone ? 'lesson-row-icon-done' : ''}`}>{isDone ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span><span className="lesson-row-main"><strong>{lesson.title}</strong><small><b>{stageLabel}</b><span>·</span>{lesson.goal}</small></span><span className={`status-pill ${isDone ? 'status-done' : started ? 'status-started' : ''}`}>{isDone ? 'Practised' : started ? 'In progress' : 'Start'}</span><ArrowRight size={15} className="lesson-row-arrow" />
@@ -343,8 +343,8 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
   const warmupPrompt = getRetrievalPrompt(course, progress, lesson.id)
   const recallCard = warmupPrompt?.phrase
   const hasWarmup = Boolean(recallCard)
-  const steps = [hasWarmup ? 'Quick revisit' : 'Today’s goal', 'Meet the scene', 'Check understanding', 'Choose a reply', 'Make it yours']
   const firstLesson = lesson.id === 'W01-L1' && !(progress.completedLessonIds || []).length
+  const steps = [hasWarmup ? 'Quick revisit' : (firstLesson ? 'Welcome' : "Today’s plan"), 'Meet the scene', 'Check understanding', 'Choose a reply', 'Make it yours']
   const priorFunctionCandidate = week.milestone ? course.weeks.find((item) => item.week === week.week - 1) : null
   const priorFunctionWeek = priorFunctionCandidate && (progress.completedLessonIds || []).some((id) => id.startsWith(`W${String(priorFunctionCandidate.week).padStart(2, '0')}-L`)) ? priorFunctionCandidate : null
   const isComplete = progress.completedLessonIds?.includes(lesson.id)
@@ -411,9 +411,10 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
     <div className="lesson-layout guided-layout"><div className="lesson-main guided-main">
       {step === 0 && !hasWarmup && <section className="practice-card guided-card orientation-card">
         <p className="guide-overline">{firstLesson ? 'Welcome · no preparation needed' : 'A fresh step forward'}</p><h2 ref={stepHeadingRef} tabIndex={-1}>{firstLesson ? 'We’ll start with one small conversation.' : 'Here’s the plan for today.'}</h2>
-        <p className="practice-intro">{firstLesson ? 'You do not need to know any Japanese yet. We’ll meet a short, useful scene, notice what is happening, then try a reply together.' : 'There is no revisit due from lessons you have completed. We’ll learn a new scene, practise a useful reply, and make it your own.'}</p>
-        <div className="lesson-goal-card"><span><Target size={16} /> TODAY’S GOAL</span><strong>{lesson.goal}</strong></div>
-        <div className="lesson-route" aria-label="What you will do"><div><span>01</span><strong>Meet the scene</strong><small>Read it or listen</small></div><div><span>02</span><strong>Try a reply</strong><small>With helpful clues</small></div><div><span>03</span><strong>Make it yours</strong><small>At your own pace</small></div></div>
+        <p className="practice-intro">{firstLesson ? 'You do not need to know any Japanese yet. We’ll learn a few sounds first, then meet a short, useful scene and try a reply together.' : 'There is no revisit due from lessons you have completed. We’ll learn a new scene, practise a useful reply, and make it your own.'}</p>
+        {firstLesson && week.kanaFocus?.length > 0 && <div className="orientation-kana"><span className="orientation-kana-label">First sounds</span><div className="orientation-kana-rows">{week.kanaFocus.slice(0, 2).map((group) => <span className="orientation-kana-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to the kana group ${group}`} compact voiceContext={voiceContext} /></span>)}</div><p className="orientation-kana-hint">Just recognise and say them — no pressure to remember yet.</p></div>}
+        <div className="orientation-goal"><span>TODA’S GOAL</span><strong>{lesson.goal}</strong></div>
+        <div className="orientation-flow" aria-label="What today feels like"><div><span>01</span><strong>Meet the scene</strong><small>Read it or listen</small></div><div><span>02</span><strong>Try a reply</strong><small>With helpful clues</small></div><div><span>03</span><strong>Make it yours</strong><small>At your own pace</small></div></div>
         <div className="guide-actions"><button className="primary-button" onClick={() => goStep(1)}>Start with the scene <ArrowRight size={15} /></button></div>
         <p className="guide-note">No test and no speech setup required. Your practice is private.</p>
       </section>}
