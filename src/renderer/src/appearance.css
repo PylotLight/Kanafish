@@ -1,7 +1,24 @@
 /* Kanafish appearance and accessibility controls. */
 .app-shell {
   --text-scale: 1.18;
+  --heading-scale: 1.18;
   color-scheme: light;
+}
+.app-shell :is(h1, h2, h3),
+.app-shell .brand-lockup strong,
+.app-shell .review-card-body > strong,
+.app-shell .course-overview-copy > strong,
+.app-shell .week-title-block > strong,
+.app-shell .feature-decoration {
+  --text-scale: var(--heading-scale);
+}
+.brand-lockup > div:nth-child(2),
+.welcome-row > div:first-child,
+.lesson-top > div:first-child,
+.settings-section-heading > div:last-child,
+.milestone-card-head .milestone-heading,
+.course-overview-copy {
+  align-self: flex-start;
 }
 .app-shell[data-theme='dark'],
 .app-shell[data-theme='amoled'] {
@@ -59,6 +76,59 @@
 .sidebar.is-collapsed .nav-button em { position: absolute; top: 2px; right: 1px; min-width: 14px; height: 13px; padding: 0 3px; font-size: 8px; }
 .sidebar.is-collapsed .sidebar-footer { flex-direction: column; gap: 2px; margin: 0 -8px; padding: 6px 0 9px; }
 .sidebar.is-collapsed .sidebar-collapse-button { margin-right: 0; order: 3; }
+.sidebar {
+  background: linear-gradient(155deg, light-dark(rgba(238, 244, 238, .54), rgba(19, 28, 19, .56)), light-dark(rgba(225, 235, 228, .32), rgba(22, 30, 24, .38)));
+  border-right-color: light-dark(rgba(255, 255, 255, .55), rgba(255, 255, 255, .12));
+  -webkit-backdrop-filter: blur(34px) saturate(175%);
+  backdrop-filter: blur(34px) saturate(175%);
+  box-shadow: inset -1px 0 rgba(255, 255, 255, .08);
+}
+.sidebar-footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: 4px;
+  margin: 10px -10px 0;
+  padding: 9px 10px 9px;
+  border-top-color: light-dark(rgba(255, 255, 255, .48), rgba(255, 255, 255, .12));
+  background: linear-gradient(155deg, light-dark(rgba(244, 248, 243, .42), rgba(18, 23, 21, .62)), light-dark(rgba(228, 236, 229, .28), rgba(16, 21, 19, .48)));
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  backdrop-filter: blur(30px) saturate(170%);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .08), 0 -8px 22px -20px rgba(0, 0, 0, .55);
+}
+.sidebar .sidebar-footer-icon-button {
+  width: 34px;
+  height: 32px;
+  flex: 0 0 34px;
+  justify-self: center;
+  border: 1px solid transparent;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.sidebar .sidebar-footer .sidebar-collapse-button { margin-right: 0; }
+.sidebar .sidebar-footer-icon-button:hover {
+  border-color: light-dark(rgba(255, 255, 255, .64), rgba(255, 255, 255, .14));
+  background: light-dark(rgba(255, 255, 255, .46), rgba(255, 255, 255, .07));
+  color: var(--teal);
+}
+.sidebar .sidebar-footer-icon-button.is-current {
+  border-color: light-dark(rgba(255, 255, 255, .60), rgba(255, 255, 255, .12));
+  background: light-dark(rgba(255, 255, 255, .52), rgba(255, 255, 255, .08));
+  color: var(--teal);
+  box-shadow: none;
+}
+.sidebar .sidebar-quit-button:hover { background: light-dark(rgba(235, 149, 120, .12), rgba(255, 107, 117, .1)); color: var(--orange); }
+.sidebar.is-collapsed .sidebar-footer { display: grid; grid-template-columns: 1fr; }
+.sidebar.is-collapsed .sidebar-footer-icon-button { width: 24px; flex-basis: 24px; }
+.app-shell[data-theme='amoled'] .sidebar {
+  background: #000;
+  border-right-color: #151918;
+  box-shadow: inset -1px 0 rgba(255, 255, 255, .04);
+}
+.app-shell[data-theme='amoled'] .sidebar-footer {
+  border-top-color: #151918;
+  background: linear-gradient(180deg, rgba(8, 11, 9, .98), #000);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04);
+}
 .settings-export-button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--ink); font: inherit; font-size: calc(11px * var(--text-scale, 1.18)); font-weight: 600; cursor: pointer; }
 .settings-export-button:hover { border-color: color-mix(in srgb, var(--teal) 40%, var(--line)); color: var(--teal); }
 
@@ -180,7 +250,8 @@
   .sidebar .brand-copy, .sidebar .nav-button > span, .sidebar .sidebar-progress { display: none; }
   .sidebar .nav-button { position: relative; justify-content: center; gap: 0; padding: 0; min-height: 34px; }
   .sidebar .nav-button em { position: absolute; top: 2px; right: 1px; min-width: 14px; height: 13px; padding: 0 3px; font-size: 8px; }
-  .sidebar .sidebar-footer { flex-direction: column; gap: 2px; margin: 0 -8px; padding: 6px 0 9px; }
+  .sidebar .sidebar-footer { display: grid; grid-template-columns: 1fr; justify-items: center; flex-direction: column; gap: 2px; margin: 0 -8px; padding: 6px 0 9px; }
+  .sidebar .sidebar-footer-icon-button { width: 24px; height: 28px; flex-basis: 24px; }
   .sidebar .sidebar-collapse-button { display: none; }
 }
 @media (max-width: 620px) {

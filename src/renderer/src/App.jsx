@@ -594,7 +594,7 @@ function SettingsPage({ theme, textScale, romajiMode, onThemeChange, onTextScale
       </div>
     </section>
     <section className="settings-section" aria-labelledby="readability-heading">
-      <div className="settings-section-heading"><div className="settings-section-icon"><Type size={18} /></div><div><h2 id="readability-heading">Text size</h2><p>Course explanations, labels, and controls scale together.</p></div></div>
+      <div className="settings-section-heading"><div className="settings-section-icon"><Type size={18} /></div><div><h2 id="readability-heading">Text size</h2><p>Supporting text and controls scale together; headings keep a steady size.</p></div></div>
       <div className="settings-choice-grid settings-size-grid" role="group" aria-labelledby="readability-heading">
         {sizeOptions.map((option) => <button type="button" aria-pressed={textScale === option.value} className={`settings-choice settings-size-choice ${textScale === option.value ? 'is-selected' : ''}`} key={option.value} onClick={() => onTextScaleChange(option.value)}>
           <span className="settings-choice-copy"><strong>{option.label}</strong><small>{option.detail}</small></span><span className="settings-radio-mark" aria-hidden="true" />
