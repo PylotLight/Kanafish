@@ -28,6 +28,19 @@ describe('TTS model registry and cache', () => {
       .toBe('c3eb91414d5ff8a7a239b7fe9e34e7e2bf8a8140d8375ffb14718b1c639325db')
   })
 
+  test('pins all ten Supertonic voice styles and counts them in the downloadable model pack', () => {
+    const model = getTtsModel('supertonic-3')
+    const styleFiles = model.files.filter((file) => file.path.startsWith('voice_styles/'))
+    expect(styleFiles.map((file) => file.path)).toEqual([
+      'voice_styles/M1.json', 'voice_styles/M2.json', 'voice_styles/M3.json', 'voice_styles/M4.json', 'voice_styles/M5.json',
+      'voice_styles/F1.json', 'voice_styles/F2.json', 'voice_styles/F3.json', 'voice_styles/F4.json', 'voice_styles/F5.json'
+    ])
+    expect(styleFiles.every((file) => file.size > 290_000 && file.size < 293_000)).toBe(true)
+    expect(model.files.reduce((sum, file) => sum + file.size, 0)).toBe(401_276_744)
+    expect(styleFiles.find((file) => file.path === 'voice_styles/M1.json').sha256)
+      .toBe('e35604687f5d23694b8e91593a93eec0e4eca6c0b02bb8ed69139ab2ea6b0a5b')
+  })
+
   test('pins the separate Irodori-Small-MF ONNX pack without the app-only encrypted decoder', () => {
     const model = getTtsModel('irodori-v4.1-small-mf')
     expect(model.revision).toBe('0701bc6758cbb364a9577d5799a90a45baa8ffa2')
@@ -44,6 +57,8 @@ describe('TTS model registry and cache', () => {
   test('serves only exact allow-listed relative model assets', () => {
     expect(isAllowedTtsAsset('supertonic-3', 'onnx/tts.json')).toBe(true)
     expect(isAllowedTtsAsset('supertonic-3', 'voice_styles/M1.json')).toBe(true)
+    expect(isAllowedTtsAsset('supertonic-3', 'voice_styles/F5.json')).toBe(true)
+    expect(isAllowedTtsAsset('supertonic-3', 'voice_styles/X1.json')).toBe(false)
     expect(isAllowedTtsAsset('supertonic-3', 'onnx/../voice_styles/M1.json')).toBe(false)
     expect(isAllowedTtsAsset('supertonic-3', '..\\secrets')).toBe(false)
     expect(isAllowedTtsAsset('unknown-model', 'onnx/tts.json')).toBe(false)

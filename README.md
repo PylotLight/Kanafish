@@ -10,7 +10,7 @@ Kanafish is a Japanese travel and conversation-learning app. The first desktop i
 - **Spaced retrieval:** previous-lesson recall, a changed-scene revisit in the first lesson of a week, longer-spaced weak-item recall in the third lesson, plus rated phrase/kana/kanji flashcards.
 - **Phrasebook and checkpoints:** searchable course language and fields for learner-entered milestone evidence and next practice targets.
 - **Local-first progress:** versioned progress stored on this device, with JSON export and a visible warning plus export action if device storage fails. Completion is freely self-recorded; it is not a fluency or automatic speaking score.
-- **Local TTS Voice Lab:** Supertonic 3 is the only engine currently enabled, using ONNX Runtime WebGPU with a WebAssembly CPU fallback and its fixed M1 voice preset. Its model is downloaded on request. Other integrated engines are hidden and disabled after the live setup showed that only Supertonic 3 works there; their code and research notes are retained for later re-validation.
+- **Local TTS Voice Lab:** Supertonic 3 is the only engine currently enabled, using ONNX Runtime WebGPU with a WebAssembly CPU fallback and all ten built-in voices (M1–M5/F1–F5). Learners can keep one voice, rotate by week or lesson, or shuffle each listen; the model downloads on request. Other integrated engines remain hidden pending live re-validation.
 - **Glass desktop shell:** Bun, Electron, React, and electron-vite, with native macOS vibrancy and motion that respects reduced-motion settings.
 
 ## Run and test

@@ -10,9 +10,9 @@ Comprehension and response choices give task-level explanations and can be retri
 
 ## Voice Lab
 
-Open **Voice Lab** from the sidebar to download Supertonic 3 and test a supplied or custom Japanese line. It is the only engine currently enabled; the other integrated engines are hidden and disabled pending live re-validation. Supertonic uses a fixed M1 voice preset, so there is no voice picker. The model is about 399 MB and is downloaded only when requested. Lessons use the same engine and do not silently switch to another one.
+Open **Voice Lab** from the sidebar to download Supertonic 3 and test a supplied or custom Japanese line. It is the only engine currently enabled; the other integrated engines are hidden and disabled pending live re-validation. Choose from its ten built-in voices and set the course pattern to keep one voice, rotate each week, rotate each lesson, or shuffle each listen. Lesson/week rotation is repeatable, and a full dialogue keeps the same voice throughout. The selected voice is previewed directly in Voice Lab; preferences stay on this device.
 
-Supertonic model weights are fetched only after setup is requested and are kept outside Git. It uses ONNX Runtime WebGPU when available, with a WebAssembly CPU fallback. The lesson dialogue can be played at normal speed or replayed at **0.85×**; single-line listening buttons use normal speed. There is no in-app voice, pitch, or synthesis-speed picker. The app does not record speech or score pronunciation.
+Supertonic model weights and all ten voice styles are fetched only after setup is requested and are kept outside Git; the full model is about **401 MB**. It uses ONNX Runtime WebGPU when available, with a WebAssembly CPU fallback. The lesson dialogue can be played at normal speed or replayed at **0.85×**; single-line listening buttons use normal speed. The app does not record speech or score pronunciation.
 
 Sandbox CPU timings and smoke-test results are summarized in the [runtime notes](tts-runtime.md); they show whether a pipeline generated audio, not how natural or accurate it sounds. The owner’s Mac and its Metal/MPS paths have not been tested. Do not treat performance on this sandbox as a prediction for a Mac.
 
