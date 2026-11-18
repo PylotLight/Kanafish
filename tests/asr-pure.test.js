@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { HAAS_ASR_MODEL, SPEECH_CPP_RELEASE, getHaasModelUrl, getSpeechCppAsset, getSpeechCppAssetUrl } from '../src/main/asr/haasRegistry.js'
+import { HAAS_ASR_MODEL, SILERO_VAD_MODEL, SPEECH_CPP_RELEASE, getHaasModelUrl, getVadModelUrl, getSpeechCppAsset, getSpeechCppAssetUrl } from '../src/main/asr/haasRegistry.js'
 import { isSafeZipEntryName, listZipEntries, readZipEntry } from '../src/main/asr/zipEntry.js'
 import { isAppOrigin, isAudioMediaPermissionCheck, isAudioOnlyMediaRequest } from '../src/main/asr/mediaPermissions.js'
 import { buildWorkerArgs, parsePcm16Wav, parseSpeechVersion, speechEnvironment } from '../src/main/asr/haasRuntime.js'
-import { ASR_SAMPLE_RATE, downmixToMono, encodeWav16, floatToPcm16, resampleLinear, trimToSeconds } from '../src/renderer/src/asr/audio.js'
+import { buildStreamingAsrArgs, createSpeechJsonLineSplitter } from '../src/main/asr/speechStream.js'
+import { ASR_SAMPLE_RATE, createPcm16FrameAccumulator, downmixToMono, encodeWav16, floatToPcm16, resampleLinear, trimToSeconds } from '../src/renderer/src/asr/audio.js'
 import { getAsrReadiness } from '../src/renderer/src/asr/readiness.js'
 import { katakanaToHiragana, levenshtein, normalizeForComparison, scoreSpokenLine } from '../src/renderer/src/asr/similarity.js'
 import { makeZip } from './asr-helpers.js'
@@ -39,6 +40,14 @@ describe('speech.cpp and Haas pins', () => {
     expect(getHaasModelUrl()).toBe('https://huggingface.co/sakasegawa/Haas-ja-v1.0-GGUF/resolve/6b965d5007ba780585de51549d57a8c1c0d67c7e/Haas-616M-ja-v1.0-Q8_0.gguf')
     expect(() => getHaasModelUrl({ ...HAAS_ASR_MODEL, revision: 'main' })).toThrow(/commit/)
   })
+
+  test('pins the small VAD model to the immutable file revision, size and LFS SHA-256', () => {
+    expect(SILERO_VAD_MODEL.revision).toBe('7fcb7aa2a70c312f8579fc987b3e1cdecf9321ca')
+    expect(SILERO_VAD_MODEL.file).toEqual({ path: 'silero-vad-309K-v6.2-F32.gguf', size: 1_238_624, sha256: '2fc312514e5fc4fa4ffd02b25c76a4853fa4130e8fb9777d01502183b01238cb' })
+    expect(SILERO_VAD_MODEL.license).toBe('MIT')
+    expect(getVadModelUrl()).toBe('https://huggingface.co/sakasegawa/silero-vad-GGUF/resolve/7fcb7aa2a70c312f8579fc987b3e1cdecf9321ca/silero-vad-309K-v6.2-F32.gguf')
+    expect(() => getVadModelUrl({ ...SILERO_VAD_MODEL, revision: 'main' })).toThrow(/commit/)
+  })
 })
 
 describe('ZIP entry reader', () => {
@@ -70,6 +79,23 @@ describe('speech command helpers', () => {
     expect(buildWorkerArgs('/data/Haas.gguf', { device: 'cpu', threads: 4, warmup: false })).toEqual(['worker', '/data/Haas.gguf', '--device', 'cpu', '--threads', '4', '--no-warmup'])
     expect(() => buildWorkerArgs('haas-ja-v1.0')).toThrow(/\.gguf/)
     expect(speechEnvironment({ PATH: '/bin' })).toEqual({ PATH: '/bin', SPEECH_NO_UPDATE_CHECK: '1', NO_COLOR: '1' })
+  })
+
+  test('builds app-managed live CLI arguments using local model files, VAD and rate-limited audio stdin', () => {
+    expect(buildStreamingAsrArgs('/app/Haas.gguf', '/app/silero.gguf', 16_000)).toEqual(['asr', '/app/Haas.gguf', '--format', 'json', '--vad', '/app/silero.gguf', '--rate', '16000', '--min-silence-duration-ms', '500', '--speech-pad-ms', '300', '-'])
+    expect(buildStreamingAsrArgs('/app/Haas.gguf', '/app/silero.gguf', 48_000, { device: 'cpu', threads: 4 }).slice(-5)).toEqual(['--device', 'cpu', '--threads', '4', '-'])
+    expect(() => buildStreamingAsrArgs('haas-ja-v1.0', '/app/vad.gguf', 16_000)).toThrow(/local Haas/)
+    expect(() => buildStreamingAsrArgs('/app/haas.gguf', 'silero-vad', 16_000)).toThrow(/local VAD/)
+    expect(() => buildStreamingAsrArgs('/app/haas.gguf', '/app/vad.gguf', 1000)).toThrow(/8–48/)
+  })
+
+  test('splits JSONL events safely when UTF-8 Japanese text spans output chunks', () => {
+    const events = []
+    const split = createSpeechJsonLineSplitter((event) => events.push(event))
+    const bytes = Buffer.from('{"type":"conversation.item.input_audio_transcription.delta","delta":"こんにちは"}\n', 'utf8')
+    split(bytes.subarray(0, bytes.length - 4))
+    split(bytes.subarray(bytes.length - 4))
+    expect(events).toEqual([{ type: 'conversation.item.input_audio_transcription.delta', delta: 'こんにちは' }])
   })
 
   test('only the exact packaged renderer or configured dev origin may request audio-only capture', () => {
@@ -119,6 +145,20 @@ describe('WAV encoding for recognition', () => {
     expect(resampleLinear(tone(1, 48_000), 48_000, 16_000).length).toBe(16_000)
     expect(resampleLinear(tone(1, 8_000), 8_000, 16_000).length).toBe(16_000)
     expect(trimToSeconds(tone(2), 16_000, 1).length).toBe(16_000)
+  })
+
+  test('frames PCM16LE across arbitrary AudioWorklet block boundaries and flushes a final partial frame', () => {
+    const framer = createPcm16FrameAccumulator(3)
+    const first = framer.push(Float32Array.from([1, -1]))
+    expect(first).toHaveLength(0)
+    const second = framer.push(Float32Array.from([0.5, Number.NaN, -0.5, 0]))
+    expect(second).toHaveLength(2)
+    expect(Array.from({ length: 3 }, (_, index) => new DataView(second[0].buffer).getInt16(index * 2, true))).toEqual([32767, -32767, 16384])
+    expect(Array.from({ length: 3 }, (_, index) => new DataView(second[1].buffer).getInt16(index * 2, true))).toEqual([0, -16383, 0])
+    expect(framer.pendingSamples).toBe(0)
+    expect(framer.flush()).toBeNull()
+    framer.push(Float32Array.from([0.25]))
+    expect(framer.flush().byteLength).toBe(2)
   })
 })
 

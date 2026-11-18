@@ -53,6 +53,39 @@ export function floatToPcm16(samples) {
   return pcm
 }
 
+// Collect AudioWorklet float blocks into bounded PCM16LE frames without losing samples at block boundaries.
+export function createPcm16FrameAccumulator(frameSamples) {
+  if (!Number.isInteger(frameSamples) || frameSamples < 1) throw new Error('A positive whole PCM frame size is required.')
+  let pending = new Int16Array(frameSamples)
+  let length = 0
+  const encode = (samples) => {
+    const bytes = new Uint8Array(samples.length * 2)
+    const view = new DataView(bytes.buffer)
+    for (let index = 0; index < samples.length; index += 1) view.setInt16(index * 2, samples[index], true)
+    return bytes
+  }
+  const drain = () => {
+    const frame = encode(pending.subarray(0, length))
+    pending = new Int16Array(frameSamples)
+    length = 0
+    return frame
+  }
+  return Object.freeze({
+    push(samples) {
+      const frames = []
+      for (let index = 0; index < samples.length; index += 1) {
+        const value = Math.max(-1, Math.min(1, Number.isFinite(samples[index]) ? samples[index] : 0))
+        pending[length] = Math.round(value * 32767)
+        length += 1
+        if (length === frameSamples) frames.push(drain())
+      }
+      return frames
+    },
+    flush() { return length ? drain() : null },
+    get pendingSamples() { return length }
+  })
+}
+
 export function encodeWav16(samples, sampleRate = ASR_SAMPLE_RATE) {
   if (!Number.isInteger(sampleRate) || sampleRate <= 0) throw new Error('A whole positive sample rate is required.')
   const pcm = samples instanceof Int16Array ? samples : floatToPcm16(samples)

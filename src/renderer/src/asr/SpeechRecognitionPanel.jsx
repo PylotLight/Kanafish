@@ -21,8 +21,9 @@ export default function SpeechRecognitionPanel() {
   const status = asr.status
   const progress = asr.progress
   const percent = progress?.totalBytes ? Math.min(100, Math.round(((progress.downloadedBytes || 0) / progress.totalBytes) * 100)) : 0
+  const vadPercent = progress?.kind === 'vad' && progress?.totalBytes ? Math.min(100, Math.round(((progress.downloadedBytes || 0) / progress.totalBytes) * 100)) : 0
   const ready = asr.readiness.ready
-  const busy = asr.settingUp || asr.downloading
+  const busy = asr.settingUp || asr.downloading || asr.vadDownloading
   const target = VOICE_LAB_SAMPLE_LINES[lineIndex]
   const score = mode === 'practice' && asr.result ? scoreSpokenLine(target, asr.result.text) : null
 
@@ -36,6 +37,11 @@ export default function SpeechRecognitionPanel() {
     void asr.removeRuntime().catch(() => {})
   }
 
+  function confirmRemoveVad() {
+    if (!window.confirm('Remove the small Silero VAD model used for live transcription? Buffered recognition will still work.')) return
+    void asr.removeVadModel().catch(() => {})
+  }
+
   function toggleRecording() {
     if (asr.recording) asr.stopRecording()
     else void asr.startRecording()
@@ -47,7 +53,7 @@ export default function SpeechRecognitionPanel() {
       <div><span className="eyebrow">ON-DEVICE SPEECH RECOGNITION</span><h2 id="asr-heading">Speech recognition</h2></div>
       <span className={`tts-status-tag ${ready ? 'status-runnable' : ''}`}>{ready ? 'Ready' : 'Setup required'}</span>
     </div>
-    <p className="voice-model-summary">Haas-ja-v1.0 (Japanese, with punctuation) running in a local speech.cpp worker. Your voice is recorded, converted to 16 kHz mono and recognized on this device; nothing is uploaded.</p>
+    <p className="voice-model-summary">Haas-ja-v1.0 recognizes Japanese locally. With the optional small VAD add-on, text appears while you speak and may change before the final transcript; without it, Kanafish uses the original buffered recognizer. Your audio stays on this device.</p>
 
     <div className="asr-layout">
       <div className="asr-setup">
@@ -60,6 +66,7 @@ export default function SpeechRecognitionPanel() {
         {asr.statusError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {asr.statusError}</div>}
         {asr.setupError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {asr.setupError}</div>}
         {asr.downloadError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {asr.downloadError}</div>}
+        {asr.vadDownloadError && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {asr.vadDownloadError}</div>}
 
         {status?.runtimeReady
           ? <div className="tts-ready-state" role="status"><Check size={15} /><span>speech.cpp {status.runtimeVersion} verified in app data</span></div>
@@ -88,14 +95,29 @@ export default function SpeechRecognitionPanel() {
               <span>About 656 MB · fetched only when requested{status?.downloadedBytes > 0 ? ` · ${formatBytes(status.downloadedBytes)} already here` : ''}</span>
             </div>}
 
-        {(status?.modelInstalled || status?.downloadedBytes > 0 || status?.runtimeReady) && <div className="irodori-cache-controls">
+        {status?.vadInstalled
+          ? <div className="tts-ready-state asr-gap" role="status"><Check size={15} /><span>Live transcription enabled · local Silero VAD · {formatBytes(status.vadTotalBytes)}</span></div>
+          : asr.vadDownloading
+            ? <div className="tts-download-state asr-gap" aria-live="polite">
+              <div className="tts-progress-copy"><span><Activity size={15} /> {progress?.kind === 'vad' ? progress.message : 'Downloading the small VAD model…'}</span><strong>{vadPercent}%</strong></div>
+              <div className="tts-progress-track"><span style={{ width: `${vadPercent}%` }} /></div>
+              <small>{formatBytes(progress?.kind === 'vad' ? progress.downloadedBytes || 0 : 0)} of {formatBytes(status?.vadTotalBytes || 1_238_624)}</small>
+              <div className="irodori-cache-controls"><button type="button" className="tts-cache-button" onClick={() => void asr.cancelVadDownload()}><X size={14} /> Cancel VAD download</button><small>The partial file is kept; retrying resumes.</small></div>
+            </div>
+            : <div className="tts-download-cta asr-gap">
+              <button className="primary-button" type="button" onClick={() => void asr.downloadVadModel().catch(() => {})} disabled={!ready || !status?.canDownloadVad || busy}><Activity size={15} /> {status?.vadDownloadedBytes > 0 ? 'Resume VAD download' : 'Enable live transcription'}</button>
+              <span>Optional · about 1.2 MB · app-private · fetched only when requested</span>
+            </div>}
+
+        {(status?.modelInstalled || status?.downloadedBytes > 0 || status?.vadInstalled || status?.runtimeReady) && <div className="irodori-cache-controls">
           {(status?.modelInstalled || status?.downloadedBytes > 0) && <button type="button" className="tts-cache-button" onClick={confirmRemoveModel} disabled={busy || asr.transcribing || asr.recording}><Trash2 size={14} /> Clear Haas model cache</button>}
+          {status?.vadInstalled && <button type="button" className="tts-cache-button" onClick={confirmRemoveVad} disabled={busy || asr.transcribing || asr.recording}><Trash2 size={14} /> Remove VAD cache</button>}
           {status?.runtimeReady && <button type="button" className="tts-cache-button" onClick={confirmRemoveRuntime} disabled={busy || asr.transcribing || asr.recording}><Trash2 size={14} /> Remove speech.cpp runtime</button>}
         </div>}
 
         <details className="magpie-runtime-help"><summary>Runtime, model pins and privacy</summary>
           <p>Kanafish downloads the pinned speech.cpp {status?.pinnedRuntimeVersion || '0.11.0'} release archive for this platform from GitHub, checks its SHA-256 against the release's <code>SHA256SUMS</code>, and extracts only the <code>speech</code> executable into Kanafish app data. It does not run the upstream installer or change your PATH.</p>
-          <p>The model is pinned to <code>{status?.modelRepo || 'sakasegawa/Haas-ja-v1.0-GGUF'}</code> revision <code>{(status?.modelRevision || '6b965d5007ba780585de51549d57a8c1c0d67c7e').slice(0, 12)}</code> and checked by size and SHA-256. A local <code>speech worker</code> loads it on your first recording and stops after five idle minutes or when Kanafish quits.</p>
+          <p>The model is pinned to <code>{status?.modelRepo || 'sakasegawa/Haas-ja-v1.0-GGUF'}</code> revision <code>{(status?.modelRevision || '6b965d5007ba780585de51549d57a8c1c0d67c7e').slice(0, 12)}</code> and checked by size and SHA-256. Live mode uses the pinned local Silero VAD file and speech.cpp CLI; the app stops the previous recognizer before loading either process, keeps the active one warm for five idle minutes, and never uploads audio.</p>
           <a href="https://github.com/nyosegawa/speech.cpp" target="_blank" rel="noreferrer">speech.cpp source <ExternalLink size={13} /></a>
           <a href="https://huggingface.co/third-intelligence/Haas-ja-v1.0" target="_blank" rel="noreferrer">Haas-ja-v1.0 model card <ExternalLink size={13} /></a>
         </details>
@@ -117,13 +139,14 @@ export default function SpeechRecognitionPanel() {
 
         <div className="asr-record-row">
           <button type="button" className={`primary-button asr-record-button ${asr.recording ? 'recording' : ''}`} onClick={toggleRecording} disabled={!ready || asr.starting || asr.transcribing || busy} aria-pressed={asr.recording}>
-            {asr.recording ? <><Square size={14} /> Stop · {asr.recordSeconds.toFixed(1)} s</> : <><Mic size={15} /> {asr.starting ? 'Starting…' : asr.transcribing ? 'Recognizing…' : 'Start recording'}</>}
+            {asr.recording ? <><Square size={14} /> {asr.streaming ? 'Stop · live text' : 'Stop'} · {asr.recordSeconds.toFixed(1)} s</> : <><Mic size={15} /> {asr.starting ? 'Starting…' : asr.transcribing ? 'Recognizing…' : 'Start recording'}</>}
           </button>
           {asr.recording && <button type="button" className="tts-cache-button" onClick={asr.cancelRecording}><X size={14} /> Discard</button>}
           {asr.transcribing && <button type="button" className="tts-cache-button" onClick={() => void asr.cancelTranscription()} disabled={asr.cancelling}><X size={14} /> {asr.cancelling ? 'Cancelling…' : 'Cancel recognition'}</button>}
           {!ready && <small className="voice-test-hint">{asr.readiness.message}</small>}
         </div>
         {asr.transcribing && progress?.kind === 'worker' && <div className="tts-engine-progress"><Activity size={14} /> {progress.message}</div>}
+        {asr.recording && asr.streaming && <div className="asr-live-preview" role="status" aria-live="polite"><span><Activity size={14} /> LIVE DRAFT · MAY CHANGE</span><p lang="ja">{asr.liveText || 'Listening…'}</p></div>}
         {asr.error && <div className="tts-inline-error" role="alert"><AlertCircle size={15} /> {asr.error}</div>}
 
         {asr.result && <div className="tts-result-card asr-result" role="status">

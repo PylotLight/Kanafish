@@ -67,9 +67,22 @@ contextBridge.exposeInMainWorld('kanafish', Object.freeze({
   cancelAsrRuntimeSetup: () => ipcRenderer.invoke('kanafish:asr-cancel-runtime-setup'),
   downloadAsrModel: () => ipcRenderer.invoke('kanafish:asr-download-model'),
   cancelAsrModelDownload: () => ipcRenderer.invoke('kanafish:asr-cancel-model-download'),
+  downloadAsrVadModel: () => ipcRenderer.invoke('kanafish:asr-download-vad-model'),
+  cancelAsrVadDownload: () => ipcRenderer.invoke('kanafish:asr-cancel-vad-download'),
+  removeAsrVadModel: () => ipcRenderer.invoke('kanafish:asr-remove-vad-model'),
   warmAsr: () => ipcRenderer.invoke('kanafish:asr-warm'),
   transcribeAsr: (request) => ipcRenderer.invoke('kanafish:asr-transcribe', request),
   cancelAsrTranscription: () => ipcRenderer.invoke('kanafish:asr-cancel-transcription'),
+  startAsrStream: (request) => ipcRenderer.invoke('kanafish:asr-stream-start', request),
+  sendAsrStreamFrame: (request) => ipcRenderer.invoke('kanafish:asr-stream-frame', request),
+  finishAsrStream: (request) => ipcRenderer.invoke('kanafish:asr-stream-finish', request),
+  cancelAsrStream: (request) => ipcRenderer.invoke('kanafish:asr-stream-cancel', request),
+  onAsrStreamEvent: (callback) => {
+    if (typeof callback !== 'function') return () => {}
+    const listener = (_event, update) => callback(update)
+    ipcRenderer.on('kanafish:asr-stream-event', listener)
+    return () => ipcRenderer.removeListener('kanafish:asr-stream-event', listener)
+  },
   removeAsrModel: () => ipcRenderer.invoke('kanafish:asr-remove-model'),
   removeAsrRuntime: () => ipcRenderer.invoke('kanafish:asr-remove-runtime'),
   requestMicrophoneAccess: () => ipcRenderer.invoke('kanafish:request-microphone-access'),

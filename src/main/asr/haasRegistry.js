@@ -55,6 +55,19 @@ export const HAAS_ASR_MODEL = Object.freeze({
   })
 })
 
+export const SILERO_VAD_MODEL = Object.freeze({
+  id: 'silero-vad-309k-v6.2-f32',
+  name: 'Silero VAD v6.2 F32',
+  repo: 'sakasegawa/silero-vad-GGUF',
+  revision: '7fcb7aa2a70c312f8579fc987b3e1cdecf9321ca',
+  license: 'MIT',
+  file: Object.freeze({
+    path: 'silero-vad-309K-v6.2-F32.gguf',
+    size: 1_238_624,
+    sha256: '2fc312514e5fc4fa4ffd02b25c76a4853fa4130e8fb9777d01502183b01238cb'
+  })
+})
+
 export function getSpeechCppAsset(platform = process.platform, arch = process.arch, release = SPEECH_CPP_RELEASE) {
   return release.assets[`${platform}-${arch}`] || null
 }
@@ -66,5 +79,10 @@ export function getSpeechCppAssetUrl(asset, release = SPEECH_CPP_RELEASE) {
 
 export function getHaasModelUrl(model = HAAS_ASR_MODEL) {
   if (!/^[0-9a-f]{40}$/.test(model.revision)) throw new Error('The Haas model must be pinned to a commit revision.')
+  return `https://huggingface.co/${model.repo}/resolve/${model.revision}/${encodeURIComponent(model.file.path)}`
+}
+
+export function getVadModelUrl(model = SILERO_VAD_MODEL) {
+  if (!/^[0-9a-f]{40}$/.test(model.revision)) throw new Error('The VAD model must be pinned to a commit revision.')
   return `https://huggingface.co/${model.repo}/resolve/${model.revision}/${encodeURIComponent(model.file.path)}`
 }

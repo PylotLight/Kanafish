@@ -5,9 +5,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { HAAS_ASR_MODEL, SPEECH_CPP_RELEASE } from '../src/main/asr/haasRegistry.js'
+import { HAAS_ASR_MODEL, SILERO_VAD_MODEL, SPEECH_CPP_RELEASE } from '../src/main/asr/haasRegistry.js'
 import { createHaasAsrRuntime } from '../src/main/asr/haasRuntime.js'
 import { buildTranscribeLines, createJsonLineSplitter, parseWorkerLine } from '../src/main/asr/speechWorker.js'
+import { buildStreamingAsrArgs, createSpeechJsonLineSplitter, createSpeechStreamClient } from '../src/main/asr/speechStream.js'
 import { encodeWav16 } from '../src/renderer/src/asr/audio.js'
 import { makeZip } from './asr-helpers.js'
 
@@ -32,12 +33,14 @@ function makeFixtures() {
   const binary = Buffer.from('fake speech executable\n'.repeat(20))
   const archive = makeZip([{ name: 'libspeech.so', data: 'libspeech.so.4', mode: 0o120777, store: true }, { name: 'speech', data: binary }, { name: 'speech.h', data: '/* api */' }])
   const modelBytes = Buffer.from('GGUF fake haas model payload')
+  const vadBytes = Buffer.from('GGUF fake silero vad payload')
   const release = {
     ...SPEECH_CPP_RELEASE,
     assets: { 'linux-x64': { platform: 'linux-x64-cpu', name: 'speech-0.11.0-linux-x64-cpu.zip', size: archive.length, sha256: sha256(archive), executable: 'speech', backend: 'CPU' } }
   }
   const model = { ...HAAS_ASR_MODEL, file: { path: HAAS_ASR_MODEL.file.path, size: modelBytes.length, sha256: sha256(modelBytes) } }
-  return { binary, archive, modelBytes, release, model }
+  const vadModel = { ...SILERO_VAD_MODEL, file: { ...SILERO_VAD_MODEL.file, size: vadBytes.length, sha256: sha256(vadBytes) } }
+  return { binary, archive, modelBytes, vadBytes, release, model, vadModel }
 }
 
 function commandChild({ stdout = '', stderr = '', code = 0 } = {}) {
@@ -97,16 +100,57 @@ function workerChild({ version = '0.11.0', fatal = null, text = '東京駅まで
   return child
 }
 
+function streamChild({ received = [], closeOnEnd = true } = {}) {
+  const child = new EventEmitter()
+  child.pid = 1234
+  child.stdin = new PassThrough()
+  child.stdout = new PassThrough()
+  child.stderr = new PassThrough()
+  let closed = false
+  let sawSpeech = false
+  let silenceBytes = 0
+  let finalized = false
+  const close = (code = 0, signal = null) => {
+    if (closed) return
+    closed = true
+    child.stdout.end()
+    child.emit('close', code, signal)
+  }
+  const send = (event) => child.stdout.write(`${JSON.stringify(event)}\n`)
+  child.kill = (signal) => { setImmediate(() => close(null, signal)); return true }
+  setImmediate(() => child.emit('spawn'))
+  child.stdin.on('data', (chunk) => {
+    received.push(Buffer.from(chunk))
+    const audible = chunk.some((byte) => byte !== 0)
+    if (audible && !sawSpeech) {
+      sawSpeech = true
+      send({ type: 'input_audio_buffer.speech_started', item_id: 'item-1', audio_start_ms: 0 })
+      send({ type: 'conversation.item.input_audio_transcription.delta', item_id: 'item-1', delta: 'こん' })
+    } else if (sawSpeech && !finalized && !audible) {
+      silenceBytes += chunk.length
+      if (silenceBytes >= 6_400) {
+        finalized = true
+        send({ type: 'input_audio_buffer.speech_stopped', item_id: 'item-1', audio_end_ms: 500 })
+        send({ type: 'conversation.item.input_audio_transcription.completed', item_id: 'item-1', transcript: 'こんにちは。' })
+      }
+    }
+  })
+  if (closeOnEnd) child.stdin.on('end', () => setImmediate(() => close(0)))
+  return child
+}
+
 function fakeSpawn({ version = '0.11.0', worker = {} } = {}) {
   const calls = []
   const received = []
+  const streamReceived = []
   const spawnImpl = (executable, args, options) => {
     calls.push({ executable, args, options })
     if (args[0] === '--version') return commandChild({ stdout: `speech.cpp ${version}, C API 4.2\n` })
     if (args[0] === 'worker') return workerChild({ version, received, ...worker })
+    if (args[0] === 'asr') return streamChild({ received: streamReceived })
     return commandChild({ stderr: 'unexpected command', code: 2 })
   }
-  return { spawnImpl, calls, received }
+  return { spawnImpl, calls, received, streamReceived }
 }
 
 function fakeDownloader(contentsByUrl) {
@@ -127,8 +171,9 @@ async function makeRuntime(overrides = {}) {
   const userDataDir = await makeTempDir()
   const fixtures = makeFixtures()
   const spawn = fakeSpawn(overrides.spawn)
-  const downloads = fakeDownloader((url) => url.endsWith('.zip') ? (overrides.archiveBytes || fixtures.archive) : fixtures.modelBytes)
+  const downloads = fakeDownloader((url) => url.endsWith('.zip') ? (overrides.archiveBytes || fixtures.archive) : url.includes('silero-vad') ? fixtures.vadBytes : fixtures.modelBytes)
   const progress = []
+  const streamEvents = []
   const runtime = createHaasAsrRuntime({
     userDataDir,
     platform: 'linux',
@@ -139,11 +184,13 @@ async function makeRuntime(overrides = {}) {
     getFilesystemStats: async () => ({ bavail: 1e9, bsize: 4096 }),
     release: fixtures.release,
     model: fixtures.model,
+    vadModel: fixtures.vadModel,
     idleStopMs: 0,
     onProgress: (event) => progress.push(event),
+    onStreamEvent: (event) => streamEvents.push(event),
     ...overrides.runtime
   })
-  return { runtime, userDataDir, fixtures, spawn, downloads, progress }
+  return { runtime, userDataDir, fixtures, spawn, downloads, progress, streamEvents }
 }
 
 describe('speech worker protocol helpers', () => {
@@ -168,6 +215,29 @@ describe('speech worker protocol helpers', () => {
     expect(lines[3]).toEqual({ type: 'transcribe', id: 'r1', sample_rate: 16_000, timestamps: true })
     expect(() => buildTranscribeLines('r', Buffer.alloc(3), 16_000)).toThrow(/16-bit/)
     expect(() => buildTranscribeLines('r', Buffer.alloc(4), 96_000)).toThrow(/8–48 kHz/)
+  })
+})
+
+describe('speech.cpp live-ASR CLI client', () => {
+  test('parses provisional and completed JSON events, writes PCM, and shuts down cleanly', async () => {
+    const events = []
+    const received = []
+    const child = streamChild({ received })
+    const client = createSpeechStreamClient({
+      spawnImpl: () => child,
+      executable: '/app/speech',
+      args: buildStreamingAsrArgs('/app/Haas.gguf', '/app/VAD.gguf', 16_000),
+      env: { SPEECH_NO_UPDATE_CHECK: '1' },
+      cwd: '/app',
+      onEvent: (event) => events.push(event)
+    })
+    await client.start()
+    await expect(client.write(Buffer.from([1, 0, 2]))).rejects.toThrow(/even-length PCM16LE/)
+    await client.write(Buffer.alloc(3_200, 1))
+    expect(events.map((event) => event.type)).toEqual(['input_audio_buffer.speech_started', 'conversation.item.input_audio_transcription.delta'])
+    expect(received[0]).toEqual(Buffer.alloc(3_200, 1))
+    await client.stop()
+    expect(client.running).toBe(false)
   })
 })
 
@@ -220,6 +290,50 @@ describe('Haas speech.cpp runtime', () => {
     await writeFile(modelPath, Buffer.alloc(fixtures.modelBytes.length, 7))
     expect((await runtime.getStatus()).modelInstalled).toBe(false)
     expect((await runtime.removeModelCache()).downloadedBytes).toBe(0)
+  })
+
+  test('downloads the explicit VAD add-on by pinned revision and rejects a corrupted cache', async () => {
+    const { runtime, userDataDir, fixtures, downloads, progress } = await makeRuntime()
+    expect((await runtime.getStatus()).vadInstalled).toBe(false)
+    const status = await runtime.downloadVadModel()
+    expect(status.vadInstalled).toBe(true)
+    expect(status.vadDownloadedBytes).toBe(fixtures.vadBytes.length)
+    const modelPath = join(userDataDir, 'asr-models', SILERO_VAD_MODEL.id, SILERO_VAD_MODEL.revision, SILERO_VAD_MODEL.file.path)
+    expect(downloads.calls[0]).toMatchObject({
+      url: `https://huggingface.co/${SILERO_VAD_MODEL.repo}/resolve/${SILERO_VAD_MODEL.revision}/${SILERO_VAD_MODEL.file.path}`,
+      path: modelPath,
+      partPath: `${modelPath}.part`,
+      file: fixtures.vadModel.file
+    })
+    expect(progress.some((event) => event.kind === 'vad' && event.state === 'complete')).toBe(true)
+    await rm(modelPath)
+    await writeFile(modelPath, Buffer.alloc(fixtures.vadBytes.length, 9))
+    expect((await runtime.getStatus()).vadInstalled).toBe(false)
+    expect((await runtime.removeVadModelCache()).vadInstalled).toBe(false)
+  })
+
+  test('cancels an in-flight VAD download while keeping the partial file for resume', async () => {
+    const userDataDir = await makeTempDir()
+    const fixtures = makeFixtures()
+    let started
+    const startedPromise = new Promise((resolvePromise) => { started = resolvePromise })
+    const runtime = createHaasAsrRuntime({
+      userDataDir, platform: 'linux', arch: 'x64', release: fixtures.release, model: fixtures.model, vadModel: fixtures.vadModel, spawnImpl: fakeSpawn().spawnImpl,
+      downloadFile: async ({ partPath, signal }) => {
+        await mkdir(join(partPath, '..'), { recursive: true })
+        await writeFile(partPath, fixtures.vadBytes.subarray(0, 5))
+        started()
+        await new Promise((_, rejectPromise) => signal.addEventListener('abort', () => rejectPromise(signal.reason), { once: true }))
+      }
+    })
+    const task = runtime.downloadVadModel()
+    await startedPromise
+    expect(runtime.cancelVadDownload()).toEqual({ cancelled: true })
+    await expect(task).rejects.toThrow(/cancelled/)
+    const status = await runtime.getStatus()
+    expect(status.vadInstalled).toBe(false)
+    expect(status.vadDownloadedBytes).toBe(5)
+    expect(runtime.cancelVadDownload()).toEqual({ cancelled: false })
   })
 
   test('cancels a model download and reports the partial bytes kept for resume', async () => {
@@ -287,6 +401,64 @@ describe('Haas speech.cpp runtime', () => {
     expect(result.loadSeconds).toBe(0)
     expect(spawn.calls.filter((call) => call.args[0] === 'worker')).toHaveLength(1)
     await runtime.stop()
+  })
+
+  test('streams bounded PCM into the local CLI, replaces provisional text with its final, and stops before buffered ASR', async () => {
+    const { runtime, userDataDir, spawn, streamEvents } = await makeRuntime()
+    await runtime.setupRuntime()
+    await runtime.downloadModel()
+    await runtime.downloadVadModel()
+    await runtime.warmWorker()
+    const session = await runtime.startStream(16_000)
+    expect(session).toMatchObject({ sampleRate: 16_000 })
+    expect(session.sessionId).toMatch(/^asr-live-/)
+    expect((await runtime.getStatus()).workerRunning).toBe(false)
+    expect((await runtime.getStatus()).streamProcessRunning).toBe(true)
+    const streamCall = spawn.calls.find((call) => call.args[0] === 'asr')
+    expect(streamCall.args).toEqual(['asr', join(userDataDir, 'asr-models', HAAS_ASR_MODEL.id, HAAS_ASR_MODEL.revision, HAAS_ASR_MODEL.file.path), '--format', 'json', '--vad', join(userDataDir, 'asr-models', SILERO_VAD_MODEL.id, SILERO_VAD_MODEL.revision, SILERO_VAD_MODEL.file.path), '--rate', '16000', '--min-silence-duration-ms', '500', '--speech-pad-ms', '300', '-'])
+    await expect(runtime.pushStreamFrame('wrong-session', Buffer.alloc(3200, 1))).rejects.toThrow(/no longer active/)
+    await expect(runtime.pushStreamFrame(session.sessionId, Buffer.alloc(64 * 1024 + 2))).rejects.toThrow(/64 KB/)
+    await runtime.pushStreamFrame(session.sessionId, Buffer.alloc(3_200, 1))
+    expect(streamEvents.some((event) => event.sessionId === session.sessionId && event.kind === 'partial' && event.text === 'こん')).toBe(true)
+    const result = await runtime.finishStream(session.sessionId)
+    expect(result).toMatchObject({ text: 'こんにちは。', final: true, needsFallback: false, hadSpeech: true, sampleRate: 16_000, modelId: HAAS_ASR_MODEL.id })
+    expect(streamEvents.some((event) => event.sessionId === session.sessionId && event.kind === 'final' && event.text === 'こんにちは。')).toBe(true)
+    expect((await runtime.getStatus()).streamProcessRunning).toBe(true)
+    const buffered = await runtime.transcribe(encodeWav16(tone(1)))
+    expect(buffered.text).toBe('東京駅までお願いします。')
+    expect((await runtime.getStatus()).streamProcessRunning).toBe(false)
+    expect((await runtime.getStatus()).workerRunning).toBe(true)
+    expect(spawn.calls.filter((call) => call.args[0] === 'asr')).toHaveLength(1)
+    await runtime.stop()
+  })
+
+  test('keeps buffered and live models mutually exclusive and cancels a live session without leaking its process', async () => {
+    const { runtime } = await makeRuntime()
+    await runtime.setupRuntime()
+    await runtime.downloadModel()
+    await runtime.downloadVadModel()
+    await runtime.warmWorker()
+    const session = await runtime.startStream(16_000)
+    expect(await runtime.warmWorker()).toMatchObject({ ready: true, alreadyInUse: true })
+    await expect(runtime.transcribe(encodeWav16(tone(1)))).rejects.toThrow(/Live speech recognition is already running/)
+    await expect(runtime.downloadModel()).rejects.toThrow(/Wait for recognition to finish/)
+    await runtime.pushStreamFrame(session.sessionId, Buffer.alloc(3_200, 1))
+    expect(await runtime.cancelStream(session.sessionId)).toEqual({ cancelled: true })
+    expect((await runtime.getStatus()).streamProcessRunning).toBe(false)
+    await expect(runtime.pushStreamFrame(session.sessionId, Buffer.alloc(3200, 1))).rejects.toThrow(/no longer active/)
+    expect(await runtime.cancelStream(session.sessionId)).toEqual({ cancelled: false })
+    await runtime.stop()
+  })
+
+  test('buffers a stream startup lock so concurrent requests cannot launch duplicate CLI processes', async () => {
+    const { runtime, spawn } = await makeRuntime()
+    await runtime.setupRuntime()
+    await runtime.downloadModel()
+    await runtime.downloadVadModel()
+    const first = await runtime.startStream(16_000)
+    await expect(runtime.startStream(16_000)).rejects.toThrow(/already running/)
+    expect(spawn.calls.filter((call) => call.args[0] === 'asr')).toHaveLength(1)
+    await runtime.cancelStream(first.sessionId)
   })
 
   test('cancels an in-flight transcription through the worker protocol', async () => {
