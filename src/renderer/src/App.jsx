@@ -18,6 +18,9 @@ import { extractGreetings, extractJapanesePhrases, scoreSayTask } from './asr/sa
 import { useTts } from './tts/useTts.js'
 import VoiceLabPage from './tts/VoiceLabPage.jsx'
 import { getLessonSpeechTargets, getTtsEngineReadiness, isJapanesePracticeText } from './tts/readiness.js'
+import SoundPrimer from './components/SoundPrimer.jsx'
+import InteractiveExchange from './components/InteractiveExchange.jsx'
+import GuidedSubstitution from './components/GuidedSubstitution.jsx'
 
 const STORAGE_KEY = 'kanafish-progress-v1'
 const todayISO = () => {
@@ -153,7 +156,7 @@ function App() {
       <main className="main-area">
         <header className="topbar">
           <div className="breadcrumb"><span>Japanese travel course</span><ChevronRight size={14} /><strong>{viewTitle(view, selected?.lesson)}</strong></div>
-          <div className="topbar-right"><span className="offline-pill"><span className={tts.isPlaying ? "playing" : ""} /> On-device speech · optional</span><span className="topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())}</span></div>
+          <div className="topbar-right"><button type="button" className="offline-pill offline-pill-btn" onClick={() => navigate('voice-lab')} title="Open local speech and model settings in Voice Lab"><span className={tts.isPlaying ? "playing" : ""} /> On-device speech · Voice Lab</button><span className="topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())}</span></div>
         </header>
         {persistenceError && <div className="save-warning" role="alert"><span>{persistenceError}</span><button onClick={exportProgress}><Download size={14} /> Export progress</button></div>}
         {tts.error && <div className="tts-app-error" role="alert"><span>Local speech: {tts.error}</span><button type="button" onClick={tts.clearError}>Dismiss</button></div>}
@@ -169,7 +172,7 @@ function App() {
           {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} progress={progress} romajiMode={preferences.romajiMode} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'voice-lab' && <VoiceLabPage tts={tts} voiceSettings={preferences.supertonicVoice} onVoiceSettingsChange={(supertonicVoice) => updatePreferences({ supertonicVoice })} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
-          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} romajiMode={preferences.romajiMode} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} onRomajiModeChange={(romajiMode) => updatePreferences({ romajiMode })} onExport={exportProgress} />}
+          {view === 'settings' && <SettingsPage theme={preferences.theme} textScale={preferences.textScale} romajiMode={preferences.romajiMode} onThemeChange={(theme) => updatePreferences({ theme })} onTextScaleChange={(textScale) => updatePreferences({ textScale })} onRomajiModeChange={(romajiMode) => updatePreferences({ romajiMode })} onExport={exportProgress} onOpenVoiceLab={() => navigate('voice-lab')} />}
         </div>
       </main>
     </div>
@@ -317,6 +320,7 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
   const lessonNumber = course.weeks.flatMap((item) => item.lessons).findIndex((item) => item.id === lesson.id) + 1
   const voiceContext = { weekNumber: week.week, lessonNumber }
   const [step, setStep] = useState(session.step || 0)
+  const [sceneMode, setSceneMode] = useState('exchange')
   const [showMeaning, setShowMeaning] = useState(false)
   const [showPhrases, setShowPhrases] = useState(false)
   const [listenChoice, setListenChoice] = useState(session.listenChoice ?? null)
@@ -404,6 +408,7 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
       {step === 0 && !hasWarmup && <section className="practice-card guided-card orientation-card">
         <p className="guide-overline">{firstLesson ? 'Welcome · no preparation needed' : 'A fresh step forward'}</p><h2 ref={stepHeadingRef} tabIndex={-1}>{firstLesson ? 'We’ll start with one small conversation.' : 'Here’s the plan for today.'}</h2>
         <p className="practice-intro">{firstLesson ? 'You do not need to know any Japanese yet. We’ll learn a few sounds first, then meet a short, useful scene and try a reply together.' : 'There is no revisit due from lessons you have completed. We’ll learn a new scene, practise a useful reply, and make it your own.'}</p>
+        {firstLesson && <SoundPrimer tts={tts} voiceContext={voiceContext} initiallyExpanded={true} />}
         {firstLesson && week.kanaFocus?.length > 0 && <div className="orientation-kana"><span className="orientation-kana-label">First sounds</span><div className="orientation-kana-rows">{week.kanaFocus.slice(0, 2).map((group) => <span className="orientation-kana-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to the kana group ${group}`} compact voiceContext={voiceContext} /></span>)}</div><p className="orientation-kana-hint">Just recognise and say them — no pressure to remember yet.</p></div>}
         <div className="orientation-goal"><span>TODA’S GOAL</span><strong>{lesson.goal}</strong></div>
         <div className="orientation-flow" aria-label="What today feels like"><div><span>01</span><strong>Meet the scene</strong><small>Read it or listen</small></div><div><span>02</span><strong>Try a reply</strong><small>With helpful clues</small></div><div><span>03</span><strong>Make it yours</strong><small>At your own pace</small></div></div>
@@ -421,15 +426,80 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
       {step === 1 && <section className="practice-card guided-card">
         <p className="guide-overline">A real-life situation · read or listen</p><h2 ref={stepHeadingRef} tabIndex={-1}>Meet the scene</h2><p className="practice-intro">{lesson.goal} Read the Japanese and meanings below, or listen if audio is ready. Either way, you can follow along.</p>
         <div className="scene-banner"><Compass size={18} /><span>{lesson.scene}</span></div>
-        <div className="listen-first-panel guided-listen-panel"><div className="listen-first-copy"><strong>Listen to the conversation</strong><span>{tts.activeEngineStatus?.modelName || 'Optional local audio'}{tts.activeEngineStatus?.ready ? ' · audio stays on this device' : ' · reading works without audio setup'}</span></div><button type="button" className="primary-button" onClick={() => playDialogue(1)} disabled={!tts.activeEngineStatus?.ready || tts.busy} aria-label="Listen to the whole dialogue at normal speed"><Volume2 size={16} /> {tts.activeEngineStatus?.ready ? 'Play audio' : 'Audio not set up'}</button><div className="listen-playback-status" role="status">{tts.isPlaying ? 'Playing the conversation…' : tts.busy ? 'Preparing local speech…' : 'Audio is optional. The written scene is ready below.'}</div></div>
         <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
-        <div className="scene-reading"><div className="scene-reading-header"><div><span className="guide-overline">THE CONVERSATION</span><strong>Read along at your pace</strong></div><button type="button" className="outline-button" onClick={() => setShowMeaning((visible) => !visible)}>{showMeaning ? 'Hide English' : 'Show English meanings'}</button></div>
-          <div className="dialogue-list">{speechTargets.dialogue.map((line, index) => <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}><div className="speaker-label">{labelSpeaker(line.speaker)}</div><div className="dialogue-bubble"><strong lang="ja">{line.ja}</strong><RomajiText text={line.ja} progress={progress} mode={romajiMode} />{showMeaning && <span className="dialogue-meaning">{line.en}</span>}</div></div>)}</div>
+
+        <div className="scene-view-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={sceneMode === 'exchange'}
+            className={`scene-tab-btn ${sceneMode === 'exchange' ? 'is-active' : ''}`}
+            onClick={() => setSceneMode('exchange')}
+          >
+            <Sparkles size={14} /> Interactive Exchange
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={sceneMode === 'script'}
+            className={`scene-tab-btn ${sceneMode === 'script' ? 'is-active' : ''}`}
+            onClick={() => setSceneMode('script')}
+          >
+            <BookOpen size={14} /> Full Script & Phrases
+          </button>
         </div>
-        <details className="guide-support"><summary>Audio options and useful phrases</summary><div className="guide-support-body">
-          <div className="guide-support-actions"><button type="button" className="outline-button" onClick={() => playDialogue(0.85)} disabled={!tts.activeEngineStatus?.ready || tts.busy}><Volume2 size={14} /> Replay more slowly</button><button type="button" className="outline-button" onClick={() => setShowPhrases((visible) => !visible)}>{showPhrases ? 'Hide useful phrases' : 'Show useful phrases'}</button></div>
-          {showPhrases && <div className="phrase-bank-inline">{speechTargets.phrases.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><div><strong lang="ja">{item.ja}</strong><RomajiText text={item.ja} progress={progress} mode={romajiMode} /></div><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact voiceContext={voiceContext} /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
-        </div></details>
+
+        {sceneMode === 'exchange' ? (
+          <InteractiveExchange
+            dialogue={speechTargets.dialogue}
+            tts={tts}
+            voiceContext={voiceContext}
+            progress={progress}
+            romajiMode={romajiMode}
+            onOpenVoiceLab={onOpenVoiceLab}
+            onFinish={() => goStep(2)}
+          />
+        ) : (
+          <>
+            <div className="listen-first-panel guided-listen-panel">
+              <div className="listen-first-copy">
+                <strong>Listen to the whole conversation</strong>
+                <span>{tts.activeEngineStatus?.modelName || 'Optional local audio'}{tts.activeEngineStatus?.ready ? ' · audio stays on this device' : ' · reading works without audio setup'}</span>
+              </div>
+              <button type="button" className="primary-button" onClick={() => playDialogue(1)} disabled={!tts.activeEngineStatus?.ready || tts.busy} aria-label="Listen to the whole dialogue at normal speed">
+                <Volume2 size={16} /> {tts.activeEngineStatus?.ready ? 'Play full audio' : 'Audio not set up'}
+              </button>
+              <div className="listen-playback-status" role="status">
+                {tts.isPlaying ? 'Playing the conversation…' : tts.busy ? 'Preparing local speech…' : 'Audio is optional. The written scene is ready below.'}
+              </div>
+            </div>
+            <div className="scene-reading">
+              <div className="scene-reading-header">
+                <div><span className="guide-overline">THE CONVERSATION</span><strong>Read along at your pace</strong></div>
+                <button type="button" className="outline-button" onClick={() => setShowMeaning((visible) => !visible)}>{showMeaning ? 'Hide English' : 'Show English meanings'}</button>
+              </div>
+              <div className="dialogue-list">
+                {speechTargets.dialogue.map((line, index) => (
+                  <div className={`dialogue-line ${line.speaker.toLowerCase().includes('traveller') || line.speaker === 'visitor' ? 'dialogue-own' : ''}`} key={`${index}-${line.ja}`}>
+                    <div className="dialogue-line-header">
+                      <div className="speaker-label">{labelSpeaker(line.speaker)}</div>
+                      <SpeechButton text={line.ja} tts={tts} label={`Listen to ${line.ja}`} compact voiceContext={voiceContext} className="dialogue-line-listen" />
+                    </div>
+                    <div className="dialogue-bubble">
+                      <strong lang="ja">{line.ja}</strong>
+                      <RomajiText text={line.ja} progress={progress} mode={romajiMode} />
+                      {showMeaning && <span className="dialogue-meaning">{line.en}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <details className="guide-support"><summary>Audio options and useful phrases</summary><div className="guide-support-body">
+              <div className="guide-support-actions"><button type="button" className="outline-button" onClick={() => playDialogue(0.85)} disabled={!tts.activeEngineStatus?.ready || tts.busy}><Volume2 size={14} /> Replay more slowly</button><button type="button" className="outline-button" onClick={() => setShowPhrases((visible) => !visible)}>{showPhrases ? 'Hide useful phrases' : 'Show useful phrases'}</button></div>
+              {showPhrases && <div className="phrase-bank-inline">{speechTargets.phrases.map((item, index) => <div className="phrase-bank-item" key={`${item.ja}-${index}`}><div className="phrase-bank-line"><div><strong lang="ja">{item.ja}</strong><RomajiText text={item.ja} progress={progress} mode={romajiMode} /></div><SpeechButton text={item.ja} tts={tts} label={`Listen to phrase ${item.ja}`} compact voiceContext={voiceContext} /></div><span>{item.en}</span><small>{item.use}</small></div>)}</div>}
+            </div></details>
+          </>
+        )}
         <div className="practice-footer guide-footer"><button type="button" className="guide-back-button" onClick={() => goStep(0)}><ArrowLeft size={15} /> Back</button><button className="primary-button" onClick={() => goStep(2)}>What did I notice? <ArrowRight size={15} /></button></div>
       </section>}
       {step === 2 && <QuestionCard number="03" label="LISTENING CHECK" title="What happened in the scene?" prompt={lesson.listenCheck.question} choices={lesson.listenCheck.choices} meanings={lesson.listenCheck.meanings} value={listenChoice} setValue={(value) => { setListenChoice(value); setShowListenFeedback(false); onPatch({ listenChoice: value, listenSubmitted: false }) }} submitted={showListenFeedback} correct={listenCorrect} feedback={listenCorrect ? 'That matches the key detail in the scene.' : 'Look for the detail that answers the question, then try again.'} onSubmit={() => submitCheck('listen')} onNext={() => goStep(3)} onBack={() => goStep(1)} headingRef={stepHeadingRef} />}
@@ -438,6 +508,7 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
       {step === 4 && <section className="practice-card guided-card">
         <p className="guide-overline">Bring it into your own words</p><h2 ref={stepHeadingRef} tabIndex={-1}>Make the exchange yours.</h2><p className="practice-intro">Change one detail or add a follow-up. Try it aloud, with a partner, or as a short written response.</p>
         <div className="adapt-prompt"><span className="adapt-prompt-icon"><Sparkles size={17} /></span><div><span>YOUR ADAPTATION</span><strong>{lesson.adaptation}</strong></div></div>
+        <GuidedSubstitution weekNumber={week.week} tts={tts} voiceContext={voiceContext} onSelectPhrase={(phrase) => updateAdaptation(phrase)} />
         <div className="say-task"><div className="say-task-head"><Mic size={16} /><strong>Speak it</strong><span>Record yourself; Kanafish listens locally</span></div><p>{lesson.sayTask}</p><SayTaskPractice sayTask={lesson.sayTask} greetingTargets={sayTaskGreetingTargets} instructionPhrases={sayTaskPhrases} successChecks={lesson.successChecks} tts={tts} voiceContext={voiceContext} progress={progress} romajiMode={romajiMode} onPatch={onPatch} onOpenVoiceLab={onOpenVoiceLab} session={session} /></div>
         <label className="field-label" htmlFor="adaptation-note">What did you change? <span>optional reflection</span></label><textarea id="adaptation-note" className="reflection-input" rows="3" placeholder="A new place, item, time, or follow-up…" value={adaptation} onChange={(event) => updateAdaptation(event.target.value)} />
         <div className="guide-speaking-toggle"><button type="button" className="outline-button" onClick={() => setShowSpeakingPractice((visible) => !visible)} aria-expanded={showSpeakingPractice} aria-controls="optional-speaking-practice"><Volume2 size={15} />{showSpeakingPractice ? 'Close speaking practice' : 'Optional: practise speaking'}</button></div>
@@ -566,7 +637,7 @@ function MilestonesPage({ weeks, progress, onSave }) {
   </div>
 }
 
-function SettingsPage({ theme, textScale, romajiMode, onThemeChange, onTextScaleChange, onRomajiModeChange, onExport }) {
+function SettingsPage({ theme, textScale, romajiMode, onThemeChange, onTextScaleChange, onRomajiModeChange, onExport, onOpenVoiceLab }) {
   const themeOptions = [
     { value: 'light', label: 'Light', detail: 'Soft paper and green glass.', icon: <Sun size={19} /> },
     { value: 'dark', label: 'Dark', detail: 'A calm, low-light palette.', icon: <Moon size={19} /> },
@@ -608,6 +679,10 @@ function SettingsPage({ theme, textScale, romajiMode, onThemeChange, onTextScale
           <span className="settings-choice-copy"><strong>{option.label}</strong><small>{option.detail}</small></span><span className="settings-radio-mark" aria-hidden="true" />
         </button>)}
       </div>
+    </section>
+    <section className="settings-section" aria-labelledby="speech-heading">
+      <div className="settings-section-heading"><div className="settings-section-icon"><Volume2 size={18} /></div><div><h2 id="speech-heading">Speech & Voice Lab</h2><p>Configure Supertonic 3 voice presets, on-device speech recognition, and speech models.</p></div></div>
+      <button type="button" className="settings-export-button" onClick={onOpenVoiceLab}><Volume2 size={15} /><span>Open Voice Lab</span></button>
     </section>
     <section className="settings-section" aria-labelledby="data-heading">
       <div className="settings-section-heading"><div className="settings-section-icon"><LockKeyhole size={18} /></div><div><h2 id="data-heading">Your data</h2><p>Settings and learning progress stay on this device. Export a copy any time.</p></div></div>

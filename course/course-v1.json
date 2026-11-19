@@ -134,17 +134,17 @@
             }
           ],
           "listenCheck": {
-            "question": "Which greeting can you use to answer the receptionist?",
+            "question": "What greeting does the hotel receptionist use to welcome you?",
             "choices": [
-              "こんにちは。",
-              "さようなら。",
-              "おやすみなさい。"
+              "こんにちは。いらっしゃいませ。",
+              "おやすみなさい。",
+              "さようなら。"
             ],
             "answer": 0,
             "meanings": [
-              "Hello / good afternoon.",
-              "Goodbye.",
-              "Good night."
+              "Hello. Welcome.",
+              "Good night.",
+              "Goodbye."
             ]
           },
           "responsePractice": {
