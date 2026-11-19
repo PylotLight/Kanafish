@@ -95,3 +95,67 @@ describe('GuidedSubstitution component', () => {
     expect(html).toContain('Practice this situation')
   })
 })
+
+
+import DailyPhraseWidget from '../src/renderer/src/components/DailyPhraseWidget.jsx'
+import WeeklyTimelineWidget from '../src/renderer/src/components/WeeklyTimelineWidget.jsx'
+import QuickSoundboardWidget from '../src/renderer/src/components/QuickSoundboardWidget.jsx'
+
+describe('DailyPhraseWidget component', () => {
+  test('renders survival phrase with audio button and travel tip', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(DailyPhraseWidget, {
+        tts: { playText: async () => {}, busy: false },
+        voiceContext: {}
+      })
+    )
+    expect(html).toContain('TRAVEL SURVIVAL PHRASE')
+    expect(html).toContain('Listen to phrase audio')
+  })
+})
+
+describe('WeeklyTimelineWidget component', () => {
+  const sampleWeek = {
+    week: 1,
+    title: 'Open a conversation',
+    canDo: 'Greet someone politely.',
+    lessons: [
+      { id: 'W01-L1', title: 'Greet and open politely', stage: 'recognize', goal: 'Say hello back' },
+      { id: 'W01-L2', title: 'Give your name', stage: 'supported-response', goal: 'State name' },
+      { id: 'W01-L3', title: 'Check in smoothly', stage: 'adapt', goal: 'Exchange details' }
+    ]
+  }
+
+  test('renders week timeline with lesson nodes and stages', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(WeeklyTimelineWidget, {
+        week: sampleWeek,
+        progress: { completedLessonIds: ['W01-L1'], lessonSessions: {} },
+        onOpenLesson: () => {}
+      })
+    )
+    expect(html).toContain('Week 01: Open a conversation')
+    expect(html).toContain('1/3 done')
+    expect(html).toContain('Greet and open politely')
+    expect(html).toContain('Notice')
+    expect(html).toContain('Practice')
+    expect(html).toContain('Adapt')
+  })
+})
+
+describe('QuickSoundboardWidget component', () => {
+  test('renders 5 vowel quick soundboard buttons', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(QuickSoundboardWidget, {
+        tts: { playText: async () => {} },
+        voiceContext: {}
+      })
+    )
+    expect(html).toContain('5 Pure Japanese Vowels')
+    expect(html).toContain('あ')
+    expect(html).toContain('い')
+    expect(html).toContain('う')
+    expect(html).toContain('え')
+    expect(html).toContain('お')
+  })
+})

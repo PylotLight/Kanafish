@@ -21,6 +21,9 @@ import { getLessonSpeechTargets, getTtsEngineReadiness, isJapanesePracticeText }
 import SoundPrimer from './components/SoundPrimer.jsx'
 import InteractiveExchange from './components/InteractiveExchange.jsx'
 import GuidedSubstitution from './components/GuidedSubstitution.jsx'
+import DailyPhraseWidget from './components/DailyPhraseWidget.jsx'
+import WeeklyTimelineWidget from './components/WeeklyTimelineWidget.jsx'
+import QuickSoundboardWidget from './components/QuickSoundboardWidget.jsx'
 
 const STORAGE_KEY = 'kanafish-progress-v1'
 const todayISO = () => {
@@ -161,7 +164,7 @@ function App() {
         {persistenceError && <div className="save-warning" role="alert"><span>{persistenceError}</span><button onClick={exportProgress}><Download size={14} /> Export progress</button></div>}
         {tts.error && <div className="tts-app-error" role="alert"><span>Local speech: {tts.error}</span><button type="button" onClick={tts.clearError}>Dismiss</button></div>}
         <div className={`page-content ${view === 'lesson' ? 'page-content-lesson' : ''}`}>
-          {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} />}
+          {view === 'today' && <TodayPage course={course} stats={stats} dueCount={dueCards.length} onOpenLesson={openLesson} onReview={() => navigate('review')} onCourse={() => navigate('course')} progress={progress} tts={tts} onOpenVoiceLab={() => navigate('voice-lab')} />}
           {view === 'course' && <CoursePage course={course} progress={progress} romajiMode={preferences.romajiMode} expandedWeeks={expandedWeeks} setExpandedWeeks={setExpandedWeeks} onOpenLesson={openLesson} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'lesson' && selected && selectedWeek && <LessonPage key={selected.lesson.id} week={selectedWeek} lesson={selected.lesson} course={course} progress={progress} tts={tts} onPatch={patchLesson} onComplete={() => {
             updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO(), cards))
@@ -219,41 +222,186 @@ function viewTitle(view, lesson) {
   return ({ today: 'Today', course: 'Course path', review: 'Review cards', phrasebook: 'Phrasebook', 'voice-lab': 'Voice Lab', milestones: 'Milestones', settings: 'Settings' })[view] || 'Today'
 }
 
-function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, progress }) {
+function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, progress, tts }) {
   const next = stats.nextLesson
   const nextLessonId = next?.lesson?.id
   const week = next ? course.weeks.find((item) => item.week === next.week) : null
   const completed = stats.completedLessons === stats.totalLessons
   const startedCount = Object.keys(progress.lessonSessions || {}).length
   const firstSession = !stats.completedLessons && !startedCount
-  const milestone = stats.milestones.find((item) => !item.completed)
   const currentPhase = next && course.learningPath.find((phase) => phase.weeks.includes(next.week))
+
+  // Find target phrase from next lesson
+  const firstDialogueLine = next?.lesson?.dialogue?.[0]
+  const targetPhraseJa = firstDialogueLine?.ja || 'こんにちは。いらっしゃいませ。'
+  const targetPhraseEn = firstDialogueLine?.en || 'Hello. Welcome.'
+  const lessonNumber = next ? course.weeks.flatMap((item) => item.lessons).findIndex((item) => item.id === next.lesson.id) + 1 : 1
+  const voiceContext = { weekNumber: week?.week || 1, lessonNumber }
+
+  // Next Milestone checkpoint
+  const nextMilestone = course.weeks.find((w) => w.milestone && !progress.milestones?.[w.milestone.id]?.completed)?.milestone
+  const milestoneWeek = nextMilestone ? course.weeks.find((w) => w.milestone?.id === nextMilestone.id) : null
+
   return (
     <div className="today-page page-enter">
       <div className="welcome-row">
-        <div><div className="eyebrow"><span className="eyebrow-line" /> {firstSession ? 'YOUR FIRST JAPANESE LESSON' : 'YOUR JAPANESE PATH'}</div><h1>{firstSession ? 'Let’s start with a hello' : completed ? 'A journey worth revisiting' : 'Welcome back'}<span className="title-period">.</span></h1><p className="welcome-subtitle">{firstSession ? 'No previous Japanese needed. Learn one useful conversation at a time, at your own pace.' : 'Short, connected conversations help you build confidence step by step.'}</p></div>
-        <div className="streak-card"><div className="streak-icon"><Flame size={19} /></div><div><strong>{progress.lastStudyDate === todayISO() ? 'Practised today' : firstSession ? 'A fresh start' : 'Pick up where you left off'}</strong><small>{firstSession ? 'Listen, read, or practise without audio' : `${stats.completedLessons} of ${stats.totalLessons} lessons practised`}</small></div></div>
+        <div>
+          <div className="eyebrow"><span className="eyebrow-line" /> {firstSession ? 'JAPANESE TRAVEL & CONVERSATION' : 'YOUR JAPANESE JOURNEY'}</div>
+          <h1>{firstSession ? 'Let’s start with a hello' : completed ? 'A journey worth revisiting' : 'Welcome back'}<span className="title-period">.</span></h1>
+          <p className="welcome-subtitle">
+            {firstSession
+              ? 'No prior Japanese needed. Learn real travel conversations turn by turn with local speech.'
+              : 'Short, practical conversations to build speaking and listening confidence step by step.'}
+          </p>
+        </div>
+        <div className="streak-card">
+          <div className="streak-icon"><Flame size={19} /></div>
+          <div>
+            <strong>{progress.lastStudyDate === todayISO() ? 'Practised today' : firstSession ? 'Ready to begin' : 'Pick up where you left off'}</strong>
+            <small>{stats.completedLessons} of {stats.totalLessons} lessons practised</small>
+          </div>
+        </div>
       </div>
-      <div className="today-grid">
-        <section className="feature-card lesson-feature">
-          <div className="feature-topline"><span className="badge badge-dark"><Sparkles size={13} /> {firstSession ? 'BEGIN HERE · NO EXPERIENCE NEEDED' : 'NEXT IN YOUR COURSE'}</span><span className="duration"><Clock3 size={14} /> 12–20 min</span></div>
-          {completed ? <>
-            <div className="lesson-number">COURSE COMPLETE</div><h2>You’ve worked through all 36 lessons.</h2><p>Return to review cards or revisit any scene when you want to keep practising.</p><button className="primary-button" onClick={onReview}>Review useful phrases <ArrowRight size={16} /></button>
-          </> : <>
-            <div className="lesson-number">WEEK {String(week.week).padStart(2, '0')} <span>·</span> LESSON {next.lesson.id.split('-L')[1]}{currentPhase ? <><span>·</span> {currentPhase.title}</> : null}</div><h2>{next.lesson.title}</h2><p className="today-lesson-goal"><strong>Today you’ll be able to:</strong> {next.lesson.goal}</p>
-            <div className="lesson-scene"><span className="scene-icon"><Compass size={17} /></span><span>{next.lesson.scene}</span></div>
-            <button className="primary-button" onClick={() => onOpenLesson(nextLessonId)}>{progress.lessonSessions[nextLessonId]?.step > 0 ? 'Continue lesson' : firstSession ? 'Start with the scene' : 'Start next lesson'} <ArrowRight size={16} /></button>
-          </>}
-          <div className="feature-decoration"><span>あ</span><span>話</span></div>
-        </section>
-        <section className="today-strip">
-          {dueCount > 0 && <button className="review-card" onClick={onReview}>
-            <div className="review-card-icon"><RotateCcw size={18} /></div><div className="review-card-body"><span className="eyebrow">READY TO REVIEW</span><strong>{`${dueCount} phrase${dueCount === 1 ? '' : 's'} to revisit`}</strong><small>From lessons you’ve already completed.</small></div><ArrowRight size={17} className="review-arrow" />
-          </button>}
-          <div className="today-progress"><ProgressBar value={stats.percent} /><div className="today-progress-meta"><strong>{stats.completedLessons}<span>/{stats.totalLessons}</span></strong><small>lessons practised · {stats.completedWeeks}/{stats.totalWeeks} weeks</small></div><button className="text-link" onClick={onCourse}>See the full path <ArrowRight size={14} /></button></div>
-        </section>
+
+      <div className="today-dashboard-grid">
+        {/* Main Left Column */}
+        <div className="today-main-column">
+          <section className="feature-card lesson-feature">
+            <div className="feature-topline">
+              <span className="badge badge-dark">
+                <Sparkles size={13} /> {firstSession ? 'START HERE · NO JAPANESE NEEDED' : 'PRIMARY CONVERSATION QUEST'}
+              </span>
+              <span className="duration"><Clock3 size={14} /> 12–20 min</span>
+            </div>
+
+            {completed ? (
+              <>
+                <div className="lesson-number">COURSE COMPLETE</div>
+                <h2>You’ve worked through all 36 lessons.</h2>
+                <p>Return to review cards or revisit any scene when you want to keep practising.</p>
+                <button className="primary-button" onClick={onReview}>Review useful phrases <ArrowRight size={16} /></button>
+              </>
+            ) : (
+              <>
+                <div className="lesson-number">
+                  WEEK {String(week.week).padStart(2, '0')} <span>·</span> LESSON {next.lesson.id.split('-L')[1]}
+                  {currentPhase ? <><span>·</span> {currentPhase.title}</> : null}
+                </div>
+                <h2>{next.lesson.title}</h2>
+                <p className="today-lesson-goal"><strong>Goal:</strong> {next.lesson.goal}</p>
+
+                {/* Key target phrase banner with 1-tap audio */}
+                <div className="hero-target-banner">
+                  <div className="hero-target-head">
+                    <span className="hero-target-label">KEY CONVERSATION PHRASE</span>
+                    <SpeechButton
+                      text={targetPhraseJa}
+                      tts={tts}
+                      compact
+                      label={`Listen to ${targetPhraseJa}`}
+                      voiceContext={voiceContext}
+                    />
+                  </div>
+                  <strong className="hero-target-ja" lang="ja">{targetPhraseJa}</strong>
+                  <small className="hero-target-en">{targetPhraseEn}</small>
+                </div>
+
+                <div className="lesson-scene">
+                  <span className="scene-icon"><Compass size={17} /></span>
+                  <span>{next.lesson.scene}</span>
+                </div>
+
+                <div className="hero-actions">
+                  <button className="primary-button hero-cta" onClick={() => onOpenLesson(nextLessonId)}>
+                    {progress.lessonSessions[nextLessonId]?.step > 0 ? 'Continue lesson' : firstSession ? 'Start conversation' : 'Start next lesson'} <ArrowRight size={16} />
+                  </button>
+                </div>
+              </>
+            )}
+            <div className="feature-decoration"><span>あ</span><span>話</span></div>
+          </section>
+
+          {/* Weekly Timeline Roadmap */}
+          {week && (
+            <WeeklyTimelineWidget
+              week={week}
+              progress={progress}
+              onOpenLesson={onOpenLesson}
+            />
+          )}
+
+          {/* Next Milestone Passport Stamp Teaser */}
+          {nextMilestone && milestoneWeek && (
+            <div className="milestone-teaser-card" onClick={onCourse}>
+              <div className="milestone-teaser-icon">
+                <Target size={18} />
+              </div>
+              <div className="milestone-teaser-body">
+                <span className="eyebrow">UPCOMING TRAVEL CHECKPOINT · WEEK {String(milestoneWeek.week).padStart(2, '0')}</span>
+                <strong>{nextMilestone.title}</strong>
+                <p>{nextMilestone.task}</p>
+              </div>
+              <ArrowRight size={16} className="teaser-arrow" />
+            </div>
+          )}
+        </div>
+
+        {/* Right Sidebar Column */}
+        <div className="today-sidebar-column">
+          {/* Daily Survival Travel Phrase with TTS + Mic practice */}
+          <DailyPhraseWidget tts={tts} voiceContext={voiceContext} />
+
+          {/* 5-Vowel Quick Ear-Tuning Soundboard */}
+          <QuickSoundboardWidget tts={tts} voiceContext={voiceContext} />
+
+          {/* Spaced Review Deck Widget */}
+          <div className="today-widget review-widget">
+            <div className="widget-header">
+              <span className="widget-tag"><RotateCcw size={13} /> SPACED RETRIEVAL</span>
+              <span className="widget-count">{dueCount} due</span>
+            </div>
+            {dueCount > 0 ? (
+              <>
+                <strong className="widget-title">{dueCount} phrase{dueCount === 1 ? '' : 's'} ready to revisit</strong>
+                <p className="widget-desc">Spaced recall from completed lessons keeps conversation phrases fresh.</p>
+                <button type="button" className="primary-button widget-action" onClick={onReview}>
+                  Start 5-min review <ArrowRight size={14} />
+                </button>
+              </>
+            ) : (
+              <>
+                <strong className="widget-title">Review deck caught up</strong>
+                <p className="widget-desc">No cards due right now. Complete new lessons or browse the travel phrasebook.</p>
+                <button type="button" className="outline-button widget-action" onClick={onReview}>
+                  Browse review cards <ArrowRight size={14} />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Course Progress Card */}
+          <div className="today-widget progress-widget">
+            <div className="widget-header">
+              <span className="widget-tag"><GraduationCap size={13} /> OVERALL PROGRESS</span>
+              <span className="widget-count">{stats.percent}%</span>
+            </div>
+            <div className="progress-widget-stats">
+              <strong>{stats.completedLessons} <span>/ {stats.totalLessons}</span></strong>
+              <small>lessons completed across {stats.completedWeeks} / {stats.totalWeeks} weeks</small>
+            </div>
+            <ProgressBar value={stats.percent} />
+            <button type="button" className="text-link progress-link" onClick={onCourse}>
+              Explore full 12-week travel route <ArrowRight size={13} />
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="today-footer"><span>Go at your own pace</span><span className="footer-dot" /> Beginner foundations first; more independent travel conversations later.</div>
+
+      <div className="today-footer">
+        <span>Go at your own pace</span>
+        <span className="footer-dot" />
+        <span>Travel conversation foundations first; independent dialogue later. All speech runs locally on your device.</span>
+      </div>
     </div>
   )
 }
@@ -621,19 +769,44 @@ function PhrasebookPage({ cards, search, setSearch, progress, romajiMode, tts, o
 function MilestonesPage({ weeks, progress, onSave }) {
   const milestones = weeks.filter((week) => week.milestone)
   return <div className="content-page page-enter">
-    <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> CHECKPOINTS, NOT EXAMS</div><h1>Milestones<span className="title-period">.</span></h1><p>Record what you tried, what support helped, and what you want to practise next. These checkpoints are learner evidence, not a fluency rating.</p></div>
+    <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> TRAVEL PASSPORT · CHECKPOINTS</div><h1>Travel Checkpoints<span className="title-period">.</span></h1><p>Record your conversational accomplishments and collect travel seals. These checkpoints reflect what you can do in real Japanese situations.</p></div>
     <div className="milestone-list">{milestones.map((week) => {
       const item = week.milestone
       const saved = progress.milestones?.[item.id] || {}
       const evidence = saved.evidenceNotes || {}
       return <section className={`milestone-card ${saved.completed ? 'milestone-complete' : ''}`} key={item.id}>
-        <div className="milestone-card-head"><div className={`milestone-week-icon ${saved.completed ? 'milestone-week-done' : ''}`}>{saved.completed ? <Check size={17} /> : String(week.week).padStart(2, '0')}</div><div className="milestone-heading"><span>END OF WEEK {String(week.week).padStart(2, '0')}</span><h2>{item.title}</h2></div><span className={`milestone-state ${saved.completed ? 'milestone-state-done' : ''}`}>{saved.completed ? 'Evidence saved' : 'Ready when you are'}</span></div>
-        <p className="milestone-task">{item.task}</p><div className="evidence-fields"><span className="eyebrow">EVIDENCE TO RECORD</span>{item.evidence.map((prompt, index) => <label className="evidence-field" key={`${item.id}-${index}`}><span>{prompt}</span><textarea rows="2" value={evidence[index] || ''} placeholder="Add a short note about what you tried…" onChange={(event) => onSave(item.id, { evidenceNotes: { ...evidence, [index]: event.target.value }, completed: false })} /></label>)}</div>
-        <label className="field-label" htmlFor={`reflection-${item.id}`}>Next practice target <span>reflection</span></label><textarea className="reflection-input" id={`reflection-${item.id}`} rows="2" value={saved.nextTarget || ''} placeholder="What would you like to try again?" onChange={(event) => onSave(item.id, { nextTarget: event.target.value, completed: false })} />
-        <div className="milestone-actions"><span className="muted-caption">Your notes remain on this device.</span><button className={`outline-button ${saved.completed ? 'tool-on' : ''}`} onClick={() => onSave(item.id, { completed: !saved.completed, savedAt: !saved.completed ? new Date().toISOString() : null })}>{saved.completed ? <Check size={15} /> : <CircleCheck size={15} />}{saved.completed ? 'Checkpoint recorded' : 'Record this checkpoint'}</button></div>
+        <div className="milestone-card-head">
+          <div className={`milestone-week-icon ${saved.completed ? 'milestone-week-done' : ''}`}>{saved.completed ? <Check size={17} /> : String(week.week).padStart(2, '0')}</div>
+          <div className="milestone-heading"><span>END OF WEEK {String(week.week).padStart(2, '0')}</span><h2>{item.title}</h2></div>
+          {saved.completed ? (
+            <div className="passport-stamp" aria-label="Checkpoint Cleared Stamp">
+              <div className="stamp-ring">
+                <span className="stamp-kanji">修了</span>
+                <strong className="stamp-status">CLEARED</strong>
+                <small className="stamp-sub">WK {String(week.week).padStart(2, '0')}</small>
+              </div>
+            </div>
+          ) : (
+            <span className="milestone-state">Ready when you are</span>
+          )}
+        </div>
+        <p className="milestone-task">{item.task}</p>
+        <div className="evidence-fields">
+          <span className="eyebrow">WHAT HAPPENED IN YOUR PRACTICE</span>
+          {item.evidence.map((prompt, index) => <label className="evidence-field" key={`${item.id}-${index}`}><span>{prompt}</span><textarea rows="2" value={evidence[index] || ''} placeholder="Add a short note about what you tried…" onChange={(event) => onSave(item.id, { evidenceNotes: { ...evidence, [index]: event.target.value }, completed: false })} /></label>)}
+        </div>
+        <label className="field-label" htmlFor={`reflection-${item.id}`}>Next practice target <span>reflection</span></label>
+        <textarea className="reflection-input" id={`reflection-${item.id}`} rows="2" value={saved.nextTarget || ''} placeholder="What would you like to try again?" onChange={(event) => onSave(item.id, { nextTarget: event.target.value, completed: false })} />
+        <div className="milestone-actions">
+          <span className="muted-caption">Your notes remain on this device.</span>
+          <button className={`outline-button ${saved.completed ? 'tool-on' : ''}`} onClick={() => onSave(item.id, { completed: !saved.completed, savedAt: !saved.completed ? new Date().toISOString() : null })}>
+            {saved.completed ? <Check size={15} /> : <CircleCheck size={15} />}
+            {saved.completed ? 'Checkpoint stamped' : 'Stamp this checkpoint'}
+          </button>
+        </div>
       </section>
     })}</div>
-    <div className="milestone-note"><Lightbulb size={16} /><span>Checkpoint tasks and thresholds are preserved from the course draft. They’re intended to be tuned in a learner pilot.</span></div>
+    <div className="milestone-note"><Lightbulb size={16} /><span>Checkpoint tasks and thresholds reflect real conversation goals. They celebrate what you tried and what support helped.</span></div>
   </div>
 }
 
