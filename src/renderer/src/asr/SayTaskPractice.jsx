@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Activity, AlertCircle, Check, Mic, RotateCcw, X } from 'lucide-react'
+import { Activity, AlertCircle, Check, Mic, RotateCcw, Volume2, X } from 'lucide-react'
 import { useAsr } from './useAsr.js'
 import { extractJapanesePhrases, extractGreetings, scoreSayTask } from './sayTask.js'
+import { kanaToRomaji } from '../../romaji.js'
 
-// Replaces the old "Attempt noted" checkbox on the "Make it yours" step (step 4). It records the learner
-// speaking the say task, then scores the transcript against the key phrases the task names (a greeting +
-// the polite opener). Falls back to an "I said it aloud" self-rate when local recognition is not set up.
+// Records the learner speaking the say task, then scores the transcript against the key phrases
+// the task names (a greeting + the polite opener), providing real-time audio and pronunciation support.
 export default function SayTaskPractice({
   sayTask,
   greetingTargets,
@@ -20,7 +20,6 @@ export default function SayTaskPractice({
   session
 }) {
   const asr = useAsr()
-  const [selfAttempted, setSelfAttempted] = useState(!!session?.sayTaskAttempted)
   const [warmFailed, setWarmFailed] = useState(false)
   const warmStarted = useRef(false)
 
@@ -46,18 +45,82 @@ export default function SayTaskPractice({
 
   function retry() {
     asr.clearResult()
-    setSelfAttempted(false)
   }
 
-  function selfTry() {
-    setSelfAttempted(true)
-    onPatch?.({ sayTaskAttempted: true })
-  }
-
-  const attempted = selfAttempted || Boolean(scored)
+  const attempted = Boolean(scored)
   const passed = scored?.passed === true
 
-  // ---- render helpers (block body avoids the ternary-with-JSX build quirk) ----
+  function playTarget(text) {
+    if (!tts?.playText || tts.busy) return
+    void tts.playText(text, voiceContext).catch(() => {})
+  }
+
+  // ---- render helpers ----
+  function renderPracticeTargets() {
+    const targets = []
+    const seen = new Set()
+
+    for (const g of greetingTargets || []) {
+      if (g.ja && !seen.has(g.ja)) {
+        seen.add(g.ja)
+        targets.push({
+          ja: g.ja,
+          romaji: kanaToRomaji(g.ja),
+          meaning: g.meaning || 'Greeting'
+        })
+      }
+    }
+
+    for (const phrase of instructionPhrases || []) {
+      if (phrase && !seen.has(phrase)) {
+        seen.add(phrase)
+        const commonMeaning = {
+          'すみません': 'Excuse me / Sorry',
+          'みせん': 'Excuse me',
+          'こんにちは': 'Hello / Good afternoon',
+          'はじめまして': 'Nice to meet you',
+          'よろしくおねがいします': 'Pleased to meet you',
+          'これはなんですか': 'What is this?',
+          'ホットですか、アイスですか': 'Hot or iced?'
+        }[phrase] || null
+        targets.push({
+          ja: phrase,
+          romaji: kanaToRomaji(phrase),
+          meaning: commonMeaning
+        })
+      }
+    }
+
+    if (targets.length === 0) return null
+
+    return (
+      <div className="say-task-target-scaffold">
+        <span className="target-scaffold-label">PHRASES TO PRACTICE (LISTEN BEFORE SPEAKING):</span>
+        <div className="target-scaffold-pills">
+          {targets.map((item) => (
+            <div key={item.ja} className="target-scaffold-chip">
+              <div className="target-scaffold-text">
+                <strong lang="ja">{item.ja}</strong>
+                <small className="target-scaffold-romaji">{item.romaji}</small>
+                {item.meaning && <span className="target-scaffold-en">&quot;{item.meaning}&quot;</span>}
+              </div>
+              <button
+                type="button"
+                className="target-scaffold-audio-btn"
+                onClick={() => playTarget(item.ja)}
+                disabled={tts?.busy}
+                title={`Listen to ${item.ja} (${item.romaji})`}
+                aria-label={`Listen to ${item.ja}`}
+              >
+                <Volume2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   function renderRecordButtonLabel() {
     if (asr.recording) return <><X size={14} /> Stop · {asr.recordSeconds.toFixed(1)} s</>
     if (asr.warming) return <><Mic size={15} /> Warming…</>
@@ -84,7 +147,7 @@ export default function SayTaskPractice({
   function renderNotReady() {
     if (asrReady) return null
     return <div className="say-task-setup" role="status">
-      <div><strong>Recording is optional</strong><span>{asr.readiness.message} You can still practise aloud and mark it tried without setting up recognition.</span></div>
+      <div><strong>Recording is optional</strong><span>{asr.readiness.message} You can still practise aloud with the audio buttons above without setting up recognition.</span></div>
       <button type="button" className="text-link" onClick={onOpenVoiceLab}>Set up local speech <span aria-hidden="true">→</span></button>
     </div>
   }
@@ -95,7 +158,13 @@ export default function SayTaskPractice({
     return <div className="say-task-checks" aria-label={labels.length ? '' : 'What this practice invited you to say'}>
       <span className="eyebrow">WHAT THIS PRACTICE INVITED YOU TO SAY</span>
       {scored.checks.map((check) => <div key={check.id} className={`say-task-check ${check.ok ? 'is-pass' : 'is-pending'}`}>
-        <Check size={14} aria-hidden="true" /><span><strong lang="ja">{check.detail}</strong>{check.meaning ? <small>{check.meaning}</small> : null}</span>{check.ok ? <span className="say-task-check-status">said it</span> : <span className="say-task-check-status">say it again</span>}
+        <Check size={14} aria-hidden="true" />
+        <div className="check-detail-box">
+          <strong lang="ja">{check.detail}</strong>
+          <small className="check-romaji">{kanaToRomaji(check.detail)}</small>
+          {check.meaning ? <small className="check-meaning">{check.meaning}</small> : null}
+        </div>
+        {check.ok ? <span className="say-task-check-status">said it</span> : <span className="say-task-check-status">say it again</span>}
       </div>)}
     </div>
   }
@@ -116,12 +185,12 @@ export default function SayTaskPractice({
   }
 
   return <section className="say-task-practice" aria-label="Speak the conversation">
+    {renderPracticeTargets()}
     {renderRecorder()}
     {renderNotReady()}
     {asr.error && <div className="tts-inline-error" role="alert"><AlertCircle size={14} /> {asr.error}</div>}
     {renderResult()}
     {renderChecks()}
-    {!attempted && <button type="button" className="text-link say-task-self-try" onClick={selfTry}>I said it aloud</button>}
     {renderDone()}
   </section>
 }

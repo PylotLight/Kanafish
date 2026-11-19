@@ -33,6 +33,22 @@ const localDateISO = (value) => {
   return date.toISOString().slice(0, 10)
 }
 const todayISO = () => localDateISO(new Date())
+function formatSayTaskPrompt(text) {
+  if (!text) return null
+  const parts = text.split(/([\u3040-\u30ff\u3400-\u9fff]{2,})/gu)
+  return parts.map((part, index) => {
+    if (/[\u3040-\u30ff\u3400-\u9fff]{2,}/u.test(part)) {
+      const romaji = kanaToRomaji(part)
+      return (
+        <span key={`${index}-${part}`} className="inline-ja-badge">
+          <strong lang="ja">{part}</strong>
+          <small className="inline-ja-romaji">{romaji}</small>
+        </span>
+      )
+    }
+    return part
+  })
+}
 const labelSpeaker = (speaker) => ({
   staff: 'Staff', traveller: 'You', travellerA: 'Traveller A', travellerB: 'Traveller B',
   guest: 'Guest', host: 'Host', visitor: 'Visitor', friend: 'Friend', guide: 'Guide',
@@ -248,6 +264,7 @@ function viewTitle(view, lesson) {
 }
 
 function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, progress, tts }) {
+  const [activeDrill, setActiveDrill] = useState('phrase')
   const next = stats.nextLesson
   const nextLessonId = next?.lesson?.id
   const week = next ? course.weeks.find((item) => item.week === next.week) : null
@@ -263,169 +280,205 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
   const lessonNumber = next ? course.weeks.flatMap((item) => item.lessons).findIndex((item) => item.id === next.lesson.id) + 1 : 1
   const voiceContext = { weekNumber: week?.week || 1, lessonNumber }
 
-  // Next Milestone checkpoint
+  // Next Milestone checkpoint (from pulled origin/main)
   const nextMilestone = course.weeks.find((w) => w.milestone && !progress.milestones?.[w.milestone.id]?.completed)?.milestone
   const milestoneWeek = nextMilestone ? course.weeks.find((w) => w.milestone?.id === nextMilestone.id) : null
 
   return (
-    <div className="today-page page-enter">
-      <div className="welcome-row">
-        <div>
-          <div className="eyebrow"><span className="eyebrow-line" /> {firstSession ? 'JAPANESE TRAVEL & CONVERSATION' : 'YOUR JAPANESE JOURNEY'}</div>
+    <div className="today-page zen-today-page page-enter">
+      {/* 1. Calm, Focused Header */}
+      <div className="zen-welcome-header">
+        <div className="zen-welcome-meta">
+          <div className="eyebrow">
+            <span className="eyebrow-line" />
+            {firstSession ? 'JAPANESE TRAVEL & CONVERSATION' : `WEEK ${String(week?.week || 1).padStart(2, '0')}${currentPhase ? ` · ${currentPhase.title.toUpperCase()}` : ''}`}
+          </div>
           <h1>{firstSession ? 'Let’s start with a hello' : completed ? 'A journey worth revisiting' : 'Welcome back'}<span className="title-period">.</span></h1>
           <p className="welcome-subtitle">
             {firstSession
-              ? 'No prior Japanese needed. Learn real travel conversations turn by turn with local speech.'
-              : 'Short, practical conversations to build speaking and listening confidence step by step.'}
+              ? 'No prior Japanese needed. Learn real travel conversations step by step with local audio.'
+              : 'Short, practical conversations to build speaking and listening confidence.'}
           </p>
         </div>
-        <div className="streak-card">
-          <div className="streak-icon"><Flame size={19} /></div>
-          <div>
-            <strong>{progress.lastStudyDate === todayISO() ? 'Practised today' : firstSession ? 'Ready to begin' : 'Pick up where you left off'}</strong>
-            <small>{stats.completedLessons} of {stats.totalLessons} lessons practised</small>
-          </div>
+        <div className="zen-streak-pill" title={`${stats.completedLessons} of ${stats.totalLessons} lessons practised`}>
+          <Flame size={16} className="zen-streak-icon" />
+          <span>{progress.lastStudyDate === todayISO() ? 'Practised today' : firstSession ? 'Ready to begin' : `${stats.completedLessons}/${stats.totalLessons} done`}</span>
         </div>
       </div>
 
-      <div className="today-dashboard-grid">
-        {/* Main Left Column */}
-        <div className="today-main-column">
-          <section className="feature-card lesson-feature">
-            <div className="feature-topline">
-              <span className="badge badge-dark">
-                <Sparkles size={13} /> {firstSession ? 'START HERE · NO JAPANESE NEEDED' : 'PRIMARY CONVERSATION QUEST'}
-              </span>
-              <span className="duration"><Clock3 size={14} /> 12–20 min</span>
-            </div>
-
-            {completed ? (
-              <>
-                <div className="lesson-number">COURSE COMPLETE</div>
-                <h2>You’ve worked through all 36 lessons.</h2>
-                <p>Return to review cards or revisit any scene when you want to keep practising.</p>
-                <button className="primary-button" onClick={onReview}>Review useful phrases <ArrowRight size={16} /></button>
-              </>
-            ) : (
-              <>
-                <div className="lesson-number">
-                  WEEK {String(week.week).padStart(2, '0')} <span>·</span> LESSON {next.lesson.id.split('-L')[1]}
-                  {currentPhase ? <><span>·</span> {currentPhase.title}</> : null}
-                </div>
-                <h2>{next.lesson.title}</h2>
-                <p className="today-lesson-goal"><strong>Goal:</strong> {next.lesson.goal}</p>
-
-                {/* Key target phrase banner with 1-tap audio */}
-                <div className="hero-target-banner">
-                  <div className="hero-target-head">
-                    <span className="hero-target-label">KEY CONVERSATION PHRASE</span>
-                    <SpeechButton
-                      text={targetPhraseJa}
-                      tts={tts}
-                      compact
-                      label={`Listen to ${targetPhraseJa}`}
-                      voiceContext={voiceContext}
-                    />
-                  </div>
-                  <strong className="hero-target-ja" lang="ja">{targetPhraseJa}</strong>
-                  <small className="hero-target-en">{targetPhraseEn}</small>
-                </div>
-
-                <div className="lesson-scene">
-                  <span className="scene-icon"><Compass size={17} /></span>
-                  <span>{next.lesson.scene}</span>
-                </div>
-
-                <div className="hero-actions">
-                  <button className="primary-button hero-cta" onClick={() => onOpenLesson(nextLessonId)}>
-                    {progress.lessonSessions[nextLessonId]?.step > 0 ? 'Continue lesson' : firstSession ? 'Start conversation' : 'Start next lesson'} <ArrowRight size={16} />
-                  </button>
-                </div>
-              </>
-            )}
-            <div className="feature-decoration"><span>あ</span><span>話</span></div>
-          </section>
-
-          {/* Weekly Timeline Roadmap */}
-          {week && (
-            <WeeklyTimelineWidget
-              week={week}
-              progress={progress}
-              onOpenLesson={onOpenLesson}
-            />
-          )}
-
-          {/* Next Milestone Passport Stamp Teaser */}
-          {nextMilestone && milestoneWeek && (
-            <div className="milestone-teaser-card" onClick={onCourse}>
-              <div className="milestone-teaser-icon">
-                <Target size={18} />
-              </div>
-              <div className="milestone-teaser-body">
-                <span className="eyebrow">UPCOMING TRAVEL CHECKPOINT · WEEK {String(milestoneWeek.week).padStart(2, '0')}</span>
-                <strong>{nextMilestone.title}</strong>
-                <p>{nextMilestone.task}</p>
-              </div>
-              <ArrowRight size={16} className="teaser-arrow" />
-            </div>
-          )}
+      {/* 2. Hero Conversation Stage */}
+      <section className="zen-hero-card">
+        <div className="zen-hero-topline">
+          <span className="zen-hero-badge">
+            <Sparkles size={12} /> {firstSession ? 'START HERE · NO JAPANESE NEEDED' : `WEEK ${String(week?.week || 1).padStart(2, '0')} · LESSON ${next?.lesson?.id?.split('-L')[1] || '1'}`}
+          </span>
+          <span className="zen-duration"><Clock3 size={13} /> 12–15 min</span>
         </div>
 
-        {/* Right Sidebar Column */}
-        <div className="today-sidebar-column">
-          {/* Daily Survival Travel Phrase with TTS + Mic practice */}
-          <DailyPhraseWidget tts={tts} voiceContext={voiceContext} />
-
-          {/* 5-Vowel Quick Ear-Tuning Soundboard */}
-          <QuickSoundboardWidget tts={tts} voiceContext={voiceContext} />
-
-          {/* Spaced Review Deck Widget */}
-          <div className="today-widget review-widget">
-            <div className="widget-header">
-              <span className="widget-tag"><RotateCcw size={13} /> SPACED RETRIEVAL</span>
-              <span className="widget-count">{dueCount} due</span>
-            </div>
-            {dueCount > 0 ? (
-              <>
-                <strong className="widget-title">{dueCount} phrase{dueCount === 1 ? '' : 's'} ready to revisit</strong>
-                <p className="widget-desc">Spaced recall from completed lessons keeps conversation phrases fresh.</p>
-                <button type="button" className="primary-button widget-action" onClick={onReview}>
-                  Start 5-min review <ArrowRight size={14} />
-                </button>
-              </>
-            ) : (
-              <>
-                <strong className="widget-title">Review deck caught up</strong>
-                <p className="widget-desc">No cards due right now. Complete new lessons or browse the travel phrasebook.</p>
-                <button type="button" className="outline-button widget-action" onClick={onReview}>
-                  Browse review cards <ArrowRight size={14} />
-                </button>
-              </>
-            )}
+        {completed ? (
+          <div className="zen-hero-complete">
+            <h2>You’ve worked through all 36 lessons.</h2>
+            <p>Return to review cards or revisit any travel scene when you want to keep practising.</p>
+            <button type="button" className="primary-button zen-cta-btn" onClick={onReview}>
+              Review useful phrases <ArrowRight size={15} />
+            </button>
           </div>
+        ) : (
+          <div className="zen-hero-body">
+            <div className="zen-hero-titles">
+              <h2>{next?.lesson?.title}</h2>
+              <p className="zen-hero-goal">{next?.lesson?.goal}</p>
+            </div>
 
-          {/* Course Progress Card */}
-          <div className="today-widget progress-widget">
-            <div className="widget-header">
-              <span className="widget-tag"><GraduationCap size={13} /> OVERALL PROGRESS</span>
-              <span className="widget-count">{stats.percent}%</span>
+            {/* Target Core Phrase Stage with 1-tap Audio & Beginner Pronunciation Guide */}
+            <div className="zen-target-phrase-box">
+              <div className="zen-target-phrase-content">
+                <strong className="zen-target-ja" lang="ja">{targetPhraseJa}</strong>
+                <span className="zen-target-romaji">{kanaToRomaji(targetPhraseJa)}</span>
+                <span className="zen-target-en">{targetPhraseEn}</span>
+                {firstSession && (
+                  <div className="zen-beginner-guide">
+                    <span className="beginner-guide-tag">HOW TO PRONOUNCE</span>
+                    <span className="beginner-guide-text">
+                      <strong>kon · ni · chi · wa</strong> &nbsp;·&nbsp; <strong>i · ras · shai · ma · se</strong> (pure, even vowels)
+                    </span>
+                  </div>
+                )}
+              </div>
+              <SpeechButton
+                text={targetPhraseJa}
+                tts={tts}
+                compact
+                label={`Listen to ${targetPhraseJa}`}
+                voiceContext={voiceContext}
+                className="zen-target-listen-btn"
+              />
             </div>
-            <div className="progress-widget-stats">
-              <strong>{stats.completedLessons} <span>/ {stats.totalLessons}</span></strong>
-              <small>lessons completed across {stats.completedWeeks} / {stats.totalWeeks} weeks</small>
+
+            <div className="zen-hero-actions-row">
+              <button
+                type="button"
+                className="primary-button zen-cta-btn"
+                onClick={() => onOpenLesson(nextLessonId)}
+              >
+                {progress.lessonSessions[nextLessonId]?.step > 0 ? 'Continue lesson' : firstSession ? 'Start conversation' : 'Start next lesson'} <ArrowRight size={15} />
+              </button>
+
+              {next?.lesson?.scene && (
+                <div className="zen-scene-pill">
+                  <Compass size={13} />
+                  <span>{next.lesson.scene}</span>
+                </div>
+              )}
             </div>
-            <ProgressBar value={stats.percent} />
-            <button type="button" className="text-link progress-link" onClick={onCourse}>
-              Explore the 12-week conversation course <ArrowRight size={13} />
+          </div>
+        )}
+      </section>
+
+      {/* Course Progress Card (from pulled origin/main) */}
+      <div className="today-widget progress-widget">
+        <div className="widget-header">
+          <span className="widget-tag"><GraduationCap size={13} /> OVERALL PROGRESS</span>
+          <span className="widget-count">{stats.percent}%</span>
+        </div>
+        <div className="progress-widget-stats">
+          <strong>{stats.completedLessons} <span>/{stats.totalLessons}</span></strong>
+          <small>lessons completed across {stats.completedWeeks} / {stats.totalWeeks} weeks</small>
+        </div>
+        <ProgressBar value={stats.percent} />
+        <button type="button" className="text-link progress-link" onClick={onCourse}>
+          Explore the 12-week conversation course <ArrowRight size={13} />
+        </button>
+      </div>
+
+      {/* Next Milestone Passport Stamp Teaser (from pulled origin/main) */}
+      {nextMilestone && milestoneWeek && (
+        <div className="milestone-teaser-card" onClick={onCourse}>
+          <div className="milestone-teaser-icon">
+            <Target size={18} />
+          </div>
+          <div className="milestone-teaser-body">
+            <span className="eyebrow">UPCOMING TRAVEL CHECKPOINT · WEEK {String(milestoneWeek.week).padStart(2, '0')}</span>
+            <strong>{nextMilestone.title}</strong>
+            <p>{nextMilestone.task}</p>
+          </div>
+          <ArrowRight size={16} className="teaser-arrow" />
+        </div>
+      )}
+
+      {/* 3. Weekly Step Rhythm */}
+      {week && (
+        <WeeklyTimelineWidget
+          week={week}
+          progress={progress}
+          onOpenLesson={onOpenLesson}
+        />
+      )}
+
+      {/* 4. Daily Drills Horizon Shelf */}
+      <div className="zen-drills-shelf">
+        <div className="zen-drills-header">
+          <span className="zen-drills-label">DAILY MICRO-PRACTICE</span>
+          <div className="zen-drills-nav" role="tablist" aria-label="Choose daily micro practice">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeDrill === 'phrase'}
+              className={`zen-drill-tab ${activeDrill === 'phrase' ? 'is-active' : ''}`}
+              onClick={() => setActiveDrill('phrase')}
+            >
+              <Sparkles size={13} />
+              <span>Survival phrase</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeDrill === 'vowels'}
+              className={`zen-drill-tab ${activeDrill === 'vowels' ? 'is-active' : ''}`}
+              onClick={() => setActiveDrill('vowels')}
+            >
+              <Volume2 size={13} />
+              <span>5 pure vowels</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeDrill === 'review'}
+              className={`zen-drill-tab ${activeDrill === 'review' ? 'is-active' : ''}`}
+              onClick={() => setActiveDrill('review')}
+            >
+              <RotateCcw size={13} />
+              <span>Spaced review {dueCount > 0 ? `(${dueCount})` : ''}</span>
             </button>
           </div>
         </div>
+
+        <div className="zen-drill-content">
+          {activeDrill === 'phrase' && (
+            <DailyPhraseWidget tts={tts} voiceContext={voiceContext} />
+          )}
+          {activeDrill === 'vowels' && (
+            <QuickSoundboardWidget tts={tts} voiceContext={voiceContext} />
+          )}
+          {activeDrill === 'review' && (
+            <div className="zen-review-quick-box">
+              <div className="zen-review-quick-copy">
+                <strong>{dueCount > 0 ? `${dueCount} phrase${dueCount === 1 ? '' : 's'} ready to revisit` : 'Review deck is caught up'}</strong>
+                <p>{dueCount > 0 ? 'Spaced recall from completed lessons keeps conversation phrases fresh in your mind.' : 'No cards due right now. Complete more lessons or explore the phrasebook.'}</p>
+              </div>
+              <button type="button" className="primary-button" onClick={onReview}>
+                {dueCount > 0 ? 'Start 5-min review' : 'Browse review cards'} <ArrowRight size={14} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="today-footer">
+      <div className="today-footer zen-footer">
         <span>Go at your own pace</span>
         <span className="footer-dot" />
         <span>Conversation foundations first; more independent dialogue later. All speech runs locally on your device.</span>
+        <span>Local on-device audio & speech recognition · Private and offline-ready</span>
       </div>
     </div>
   )
@@ -680,17 +733,126 @@ function LessonPage({ week, lesson, course, progress, romajiMode, tts, onPatch, 
       {step === 2 && <QuestionCard number="03" label="LISTENING CHECK" title="What happened in the scene?" prompt={lesson.listenCheck.question} choices={lesson.listenCheck.choices} meanings={lesson.listenCheck.meanings} value={listenChoice} setValue={(value) => { setListenChoice(value); setShowListenFeedback(false); onPatch({ listenChoice: value, listenSubmitted: false }) }} submitted={showListenFeedback} correct={listenCorrect} feedback={listenCorrect ? 'That matches the key detail in the scene.' : 'Look for the detail that answers the question, then try again.'} onSubmit={() => submitCheck('listen')} onNext={() => goStep(3)} onBack={() => goStep(1)} headingRef={stepHeadingRef} />}
       {step === 3 && isOpenEndedResponse && <OpenResponseCard prompt={lesson.responsePractice.prompt} guidance={lesson.responsePractice.why} phraseBank={speechTargets.phrases} tts={tts} voiceContext={voiceContext} value={openResponse} submitted={showResponseFeedback} setValue={(value) => { setOpenResponse(value); setShowResponseFeedback(false); onPatch({ openResponse: value, responseSubmitted: false }) }} onSubmit={() => { setShowResponseFeedback(true); onPatch({ openResponse, responseSubmitted: true }) }} onNext={() => goStep(4)} onBack={() => goStep(2)} headingRef={stepHeadingRef} />}
       {step === 3 && !isOpenEndedResponse && <QuestionCard number="04" label="YOUR REPLY" title="Choose a natural reply." prompt={lesson.responsePractice.prompt} choices={lesson.responsePractice.choices} meanings={lesson.responsePractice.meanings} value={responseChoice} setValue={(value) => { setResponseChoice(value); setShowResponseFeedback(false); onPatch({ responseChoice: value, responseSubmitted: false }) }} submitted={showResponseFeedback} correct={responseCorrect} feedback={responseCorrect ? lesson.responsePractice.why : 'Not quite in this situation. Try another option, then read why the best fit works.'} onSubmit={() => submitCheck('response')} onNext={() => goStep(4)} onBack={() => goStep(2)} headingRef={stepHeadingRef} why={lesson.responsePractice.why} />}
-      {step === 4 && <section className="practice-card guided-card">
-        <p className="guide-overline">Bring it into your own words</p><h2 ref={stepHeadingRef} tabIndex={-1}>Make the exchange yours.</h2><p className="practice-intro">Change one detail or add a follow-up. Try it aloud, with a partner, or as a short written response.</p>
-        <div className="adapt-prompt"><span className="adapt-prompt-icon"><Sparkles size={17} /></span><div><span>YOUR ADAPTATION</span><strong>{lesson.adaptation}</strong></div></div>
-        <GuidedSubstitution weekNumber={week.week} tts={tts} voiceContext={voiceContext} onSelectPhrase={(phrase) => updateAdaptation(phrase)} />
-        <div className="say-task"><div className="say-task-head"><Mic size={16} /><strong>Speak it</strong><span>Record yourself; Kanafish listens locally</span></div><p>{lesson.sayTask}</p><SayTaskPractice sayTask={lesson.sayTask} greetingTargets={sayTaskGreetingTargets} instructionPhrases={sayTaskPhrases} successChecks={lesson.successChecks} tts={tts} voiceContext={voiceContext} progress={progress} romajiMode={romajiMode} onPatch={onPatch} onOpenVoiceLab={onOpenVoiceLab} session={session} /></div>
-        <label className="field-label" htmlFor="adaptation-note">What did you change? <span>optional reflection</span></label><textarea id="adaptation-note" className="reflection-input" rows="3" placeholder="A new place, item, time, or follow-up…" value={adaptation} onChange={(event) => updateAdaptation(event.target.value)} />
-        <div className="guide-speaking-toggle"><button type="button" className="outline-button" onClick={() => setShowSpeakingPractice((visible) => !visible)} aria-expanded={showSpeakingPractice} aria-controls="optional-speaking-practice"><Volume2 size={15} />{showSpeakingPractice ? 'Close speaking practice' : 'Optional: practise speaking'}</button></div>
-        {showSpeakingPractice && <div id="optional-speaking-practice"><LessonSpeakingPractice targets={speakingTargets} tts={tts} voiceContext={voiceContext} progress={progress} romajiMode={romajiMode} onRate={onRateCard} onOpenVoiceLab={onOpenVoiceLab} /></div>}
-        {priorFunctionWeek && <div className="checkpoint-revisit"><div className="checkpoint-revisit-icon"><Target size={15} /></div><div><span>Checkpoint revisit · Week {String(priorFunctionWeek.week).padStart(2, '0')}</span><strong>Mix in this earlier function: {priorFunctionWeek.canDo}</strong></div></div>}
-        <details className="guide-support guide-wrap-up"><summary>See kana, kanji and practice goals</summary><div className="guide-support-body"><div className="context-learning"><div className="context-head"><BookOpen size={16} /><strong>Notice the writing</strong></div><div className="kana-groups">{speechTargets.kanaFocus.map((group) => <span className="kana-audio-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={voiceContext} /></span>)}</div>{speechTargets.kanjiReadings.length > 0 && <div className="kanji-card-row">{speechTargets.kanjiReadings.map((item) => <div className="mini-kanji-card" key={item.kanji}><strong lang="ja">{item.kanji}</strong><span lang="ja">{item.reading} · {item.meaning}</span><SpeechButton text={item.reading} tts={tts} label={`Listen to the reading ${item.reading}`} compact voiceContext={voiceContext} /><RomajiText text={item.reading} progress={progress} mode={romajiMode} /><small>{item.whyHere}</small></div>)}</div>}</div><div className="success-checks"><span className="eyebrow">WHAT THIS PRACTICE INVITED YOU TO TRY</span>{lesson.successChecks.map((item, index) => <div key={`${index}-${item}`}><CircleCheck size={14} /><span>{item}</span></div>)}</div></div></details>
-        <div className="practice-footer complete-footer guide-footer"><button type="button" className="guide-back-button" onClick={() => goStep(3)}><ArrowLeft size={15} /> Back</button><button className="primary-button" onClick={complete}>{isComplete ? 'Back to today' : 'Mark my practice complete'} <Check size={15} /></button></div>
+      {step === 4 && <section className="practice-card guided-card modern-studio-card">
+        <div className="studio-card-head">
+          <p className="guide-overline">STEP 05 · ACTIVE CONVERSATION STUDIO</p>
+          <h2 ref={stepHeadingRef} tabIndex={-1}>Make the exchange yours.</h2>
+          <p className="practice-intro">Adapt what you learned to a real travel situation, then practice speaking it aloud.</p>
+        </div>
+
+        {/* 1. Interactive Situation Adaptor with Segmented Switcher & Active Stage */}
+        <GuidedSubstitution
+          weekNumber={week.week}
+          tts={tts}
+          voiceContext={voiceContext}
+          onSelectPhrase={(phrase) => updateAdaptation(phrase)}
+        />
+
+        {/* 2. Focused Speaking Practice */}
+        <div className="say-task-studio-wrap">
+          <div className="say-task-studio-header">
+            <Mic size={16} className="say-mic-icon" />
+            <div>
+              <strong>Speak your phrase aloud</strong>
+              <small>Kanafish evaluates pronunciation locally on your device</small>
+            </div>
+          </div>
+          <p className="say-task-prompt-line">{formatSayTaskPrompt(lesson.sayTask)}</p>
+          <SayTaskPractice
+            sayTask={lesson.sayTask}
+            greetingTargets={sayTaskGreetingTargets}
+            instructionPhrases={sayTaskPhrases}
+            successChecks={lesson.successChecks}
+            tts={tts}
+            voiceContext={voiceContext}
+            progress={progress}
+            romajiMode={romajiMode}
+            onPatch={onPatch}
+            onOpenVoiceLab={onOpenVoiceLab}
+            session={session}
+          />
+        </div>
+
+        {/* 3. Progressive Disclosure for Reflections & Extra Drills */}
+        <div className="studio-extra-accordion">
+          <details className="studio-details-drawer">
+            <summary>
+              <span>Add personal note or custom variation (optional)</span>
+            </summary>
+            <div className="studio-drawer-content">
+              <label className="field-label" htmlFor="adaptation-note">
+                What did you customize? <span>reflection</span>
+              </label>
+              <textarea
+                id="adaptation-note"
+                className="reflection-input"
+                rows="2"
+                placeholder="A different place, item, time, or your own observation…"
+                value={adaptation}
+                onChange={(event) => updateAdaptation(event.target.value)}
+              />
+              <div className="guide-speaking-toggle" style={{ marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="outline-button"
+                  onClick={() => setShowSpeakingPractice((visible) => !visible)}
+                  aria-expanded={showSpeakingPractice}
+                  aria-controls="optional-speaking-practice"
+                >
+                  <Volume2 size={14} />
+                  {showSpeakingPractice ? 'Close extra sentence practice' : 'Practice extra dialogue lines'}
+                </button>
+              </div>
+              {showSpeakingPractice && (
+                <div id="optional-speaking-practice" style={{ marginTop: '12px' }}>
+                  <LessonSpeakingPractice
+                    targets={speakingTargets}
+                    tts={tts}
+                    voiceContext={voiceContext}
+                    progress={progress}
+                    romajiMode={romajiMode}
+                    onRate={onRateCard}
+                    onOpenVoiceLab={onOpenVoiceLab}
+                  />
+                </div>
+              )}
+            </div>
+          </details>
+
+          <details className="studio-details-drawer">
+            <summary>
+              <span>Writing notes & kanji check</span>
+            </summary>
+            <div className="studio-drawer-content">
+              <div className="context-learning">
+                <div className="context-head"><BookOpen size={15} /><strong>Notice the writing</strong></div>
+                <div className="kana-groups">{speechTargets.kanaFocus.map((group) => <span className="kana-audio-chip" key={group}><span lang="ja">{group}</span><SpeechButton text={group} tts={tts} label={`Listen to kana group ${group}`} compact voiceContext={voiceContext} /></span>)}</div>
+                {speechTargets.kanjiReadings.length > 0 && <div className="kanji-card-row">{speechTargets.kanjiReadings.map((item) => <div className="mini-kanji-card" key={item.kanji}><strong lang="ja">{item.kanji}</strong><span lang="ja">{item.reading} · {item.meaning}</span><SpeechButton text={item.reading} tts={tts} label={`Listen to the reading ${item.reading}`} compact voiceContext={voiceContext} /><RomajiText text={item.reading} progress={progress} mode={romajiMode} /><small>{item.whyHere}</small></div>)}</div>}
+              </div>
+              <div className="success-checks">
+                <span className="eyebrow">WHAT THIS PRACTICE INVITED YOU TO TRY</span>
+                {lesson.successChecks.map((item, index) => <div key={`${index}-${item}`}><CircleCheck size={14} /><span>{item}</span></div>)}
+              </div>
+            </div>
+          </details>
+        </div>
+
+        {priorFunctionWeek && (
+          <div className="checkpoint-revisit">
+            <div className="checkpoint-revisit-icon"><Target size={15} /></div>
+            <div><span>Checkpoint revisit · Week {String(priorFunctionWeek.week).padStart(2, '0')}</span><strong>Mix in this earlier function: {priorFunctionWeek.canDo}</strong></div>
+          </div>
+        )}
+
+        {/* 4. Complete footer */}
+        <div className="practice-footer complete-footer guide-footer">
+          <button type="button" className="guide-back-button" onClick={() => goStep(3)}>
+            <ArrowLeft size={15} /> Back
+          </button>
+          <button className="primary-button" onClick={complete}>
+            {isComplete ? 'Back to today' : 'Mark my practice complete'} <Check size={15} />
+          </button>
+        </div>
         <p className="guide-note">This records practice only — not a proficiency score.</p>
       </section>}
     </div></div>
