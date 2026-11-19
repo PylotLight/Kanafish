@@ -6,11 +6,11 @@ export default function WeeklyTimelineWidget({ week, progress, onOpenLesson }) {
   const doneCount = week.lessons.filter((l) => completed.has(l.id)).length
 
   return (
-    <div className="weekly-timeline-card">
+    <div className="weekly-timeline-card modern-timeline">
       <div className="weekly-timeline-header">
         <div className="weekly-timeline-title">
-          <Compass size={15} className="timeline-icon" />
-          <div>
+          <Compass size={14} className="timeline-icon" />
+          <div className="timeline-title-meta">
             <strong>Week {String(week.week).padStart(2, '0')}: {week.title}</strong>
             <small>{week.canDo}</small>
           </div>
@@ -34,13 +34,13 @@ export default function WeeklyTimelineWidget({ week, progress, onOpenLesson }) {
               title={`${lesson.title} - ${lesson.goal}`}
             >
               <div className="node-marker">
-                {isDone ? <Check size={12} /> : idx + 1}
+                {isDone ? <Check size={11} /> : idx + 1}
               </div>
               <div className="node-info">
                 <span className="node-stage">{stageLabel}</span>
                 <strong className="node-title">{lesson.title}</strong>
               </div>
-              <ArrowRight size={13} className="node-arrow" />
+              <ArrowRight size={12} className="node-arrow" />
             </button>
           )
         })}
