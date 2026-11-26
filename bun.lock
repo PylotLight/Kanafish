@@ -13,7 +13,7 @@
       },
       "devDependencies": {
         "@vitejs/plugin-react": "^6.3.0",
-        "electron": "46.0.0-alpha.12",
+        "electron": "46.0.0-alpha.13",
         "electron-vite": "^6.0.0",
         "vite": "^8.4.0",
       },
@@ -154,7 +154,7 @@
 
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
 
-    "electron": ["electron@46.0.0-alpha.12", "", { "dependencies": { "@electron-internal/extract-zip": "^1.0.1", "@electron/get": "^5.0.0", "@types/node": "^26.6.5" }, "bin": { "electron": "cli.js", "install-electron": "install.js" } }, "sha512-inXI/OQmXFqZlXzpkpoD19LUaF/8Y11BrW+rCoozepPteUITh3ZFFOzmbD/a7Xpp4n5v3//pU8r0wIucKNpG7Q=="],
+    "electron": ["electron@46.0.0-alpha.13", "", { "dependencies": { "@electron-internal/extract-zip": "^1.0.1", "@electron/get": "^5.0.0", "@types/node": "^26.6.5" }, "bin": { "electron": "cli.js", "install-electron": "install.js" } }, "sha512-o/b2KoQP+7CttaZP9EtLqy7XlyJqLx23fDZdCqJ5+kyVJy/aJP4Jk9JSIHqAZZVRmhTBdlQfktUFKJqZVFpR1A=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.494", "", {}, "sha512-Tph7ohL4Xc0ft3DXElYEIVTmPI3H0MtPCTdgtz5AwWGZG6q+vMiT3IzJ3RJX/HJQ8pYzeimQyvi6SsBTOS0nyQ=="],
 
