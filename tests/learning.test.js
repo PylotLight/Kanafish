@@ -32,7 +32,7 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
   });
   test('a brand-new learner has no recall prompt and the opening lesson has a concrete goal', () => {
     expect(getRetrievalPrompt(course, createInitialProgress(), 'W01-L1')).toBeNull();
-    expect(lessons[0].lesson.goal).toBe("Say hello back when someone greets you, and learn one polite way to get attention.");
+    expect(lessons[0].lesson.goal).toBe('Say hello back when someone greets you, then offer your name in a short first meeting.');
     expect(course.weeks[0].lessons[0].scene).toContain('You do not need to understand every word yet');
   });
   test('starting a lesson without completing it does not create a recall prompt', () => {
@@ -112,9 +112,9 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
   });
   test('long-spaced review chooses a weak phrase from two to four weeks earlier', () => {
     let state = markLessonComplete(createInitialProgress(), 'W02-L2', '2026-11-17');
-    state = rateCard(state, 'w2-phrase-3', 'again', '2026-11-17');
+    state = rateCard(state, 'w2-phrase-6', 'again', '2026-11-17');
     const prompt = getRetrievalPrompt(course, state, 'W05-L3');
-    expect(prompt).toMatchObject({ type: 'spaced', week: 2, phrase: course.weeks[1].phraseBank[2] });
+    expect(prompt).toMatchObject({ type: 'spaced', week: 2, phrase: course.weeks[1].phraseBank[5] });
   });
   test('a phrase missed in response practice is prioritized at the next lesson recall', () => {
     let state = saveLessonSession(createInitialProgress(), 'W01-L1', { weakCardIds: ['w1-phrase-2'] });

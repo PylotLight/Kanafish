@@ -165,6 +165,9 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .course-overview-progress strong { display: block; color: light-dark(#4a7669, #c7d8d3); font-size: calc(16px * var(--text-scale, 1.18)); text-align: right; }
 .course-overview-progress strong span { color: light-dark(#98aaa0, #c4ccc8); font-size: calc(11px * var(--text-scale, 1.18)); font-weight: 400; }
 .course-overview-progress small { display: block; margin-top: 2px; color: light-dark(#8d9b92, #c7ccc9); font-size: max(11px, calc(8px * var(--text-scale, 1.18))); }
+.course-alignment-note { display: flex; align-items: flex-start; gap: 9px; margin: -6px 0 17px; padding: 10px 13px; border: 1px solid light-dark(#e3e9df, #454b40); border-radius: 8px; background: light-dark(#f7f8f3, #1b1c15); color: light-dark(#718178, #c9cfcb); }
+.course-alignment-note svg { flex: 0 0 auto; margin-top: 2px; color: light-dark(#638174, #c4d4cc); }
+.course-alignment-note p { margin: 0; font-size: calc(10px * var(--text-scale, 1.18)); line-height: 1.5; }
 .week-list { display: grid; gap: 8px; }
 .week-row { overflow: hidden; border: 1px solid light-dark(#e7e8e1, #4b4c43); border-radius: 10px; background: light-dark(rgba(255,255,252,.66), rgba(38, 38, 4, .66)); transition: border-color .15s; }
 .week-open { border-color: light-dark(#d7e3d8, #404d41); background: light-dark(#fffefa, #261f04); }
@@ -178,6 +181,11 @@ h1 { margin: 8px 0 7px; font-family: var(--serif); font-size: calc(clamp(31px, 3
 .week-status svg { transition: transform .16s ease; }
 .week-status .chevron-rotated { transform: rotate(180deg); }
 .week-body { padding: 0 15px 14px 67px; border-top: 1px solid light-dark(#eff0eb, #4c4f44); }
+.week-curriculum { margin: 12px 0 5px; padding: 10px 12px; border: 1px solid light-dark(#e6ebe2, #45483d); border-radius: 8px; background: light-dark(#f7f8f4, #202017); }
+.week-curriculum > span { display: block; color: light-dark(#73897a, #c5d0c8); font-size: max(11px, calc(8px * var(--text-scale, 1.18))); font-weight: 700; letter-spacing: .65px; text-transform: uppercase; }
+.week-curriculum > strong { display: block; margin-top: 4px; color: light-dark(#455f50, #cedad3); font-size: calc(11px * var(--text-scale, 1.18)); font-weight: 650; }
+.week-curriculum ul { display: grid; gap: 4px; margin: 7px 0 0; padding-left: 18px; }
+.week-curriculum li { color: light-dark(#65776a, #c4cdc7); font-size: calc(11px * var(--text-scale, 1.18)); line-height: 1.45; }
 .week-lessons { display: grid; }
 .lesson-row { min-height: 49px; display: flex; align-items: center; gap: 11px; padding: 6px 4px; border: 0; border-bottom: 1px solid light-dark(#f0f0ec, #4e4e45); background: transparent; text-align: left; cursor: pointer; }
 .lesson-row:hover .lesson-row-main strong { color: light-dark(#287067, #c2e3df); }

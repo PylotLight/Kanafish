@@ -158,7 +158,7 @@ function App() {
 
       <main className="main-area">
         <header className="topbar">
-          <div className="breadcrumb"><span>Japanese travel course</span><ChevronRight size={14} /><strong>{viewTitle(view, selected?.lesson)}</strong></div>
+          <div className="breadcrumb"><span>Japanese conversation course</span><ChevronRight size={14} /><strong>{viewTitle(view, selected?.lesson)}</strong></div>
           <div className="topbar-right"><button type="button" className="offline-pill offline-pill-btn" onClick={() => navigate('voice-lab')} title="Open local speech and model settings in Voice Lab"><span className={tts.isPlaying ? "playing" : ""} /> On-device speech · Voice Lab</button><span className="topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date())}</span></div>
         </header>
         {persistenceError && <div className="save-warning" role="alert"><span>{persistenceError}</span><button onClick={exportProgress}><Download size={14} /> Export progress</button></div>}
@@ -391,7 +391,7 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
             </div>
             <ProgressBar value={stats.percent} />
             <button type="button" className="text-link progress-link" onClick={onCourse}>
-              Explore full 12-week travel route <ArrowRight size={13} />
+              Explore the 12-week conversation course <ArrowRight size={13} />
             </button>
           </div>
         </div>
@@ -400,7 +400,7 @@ function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, 
       <div className="today-footer">
         <span>Go at your own pace</span>
         <span className="footer-dot" />
-        <span>Travel conversation foundations first; independent dialogue later. All speech runs locally on your device.</span>
+        <span>Conversation foundations first; more independent dialogue later. All speech runs locally on your device.</span>
       </div>
     </div>
   )
@@ -430,6 +430,7 @@ function CoursePage({ course, progress, romajiMode, expandedWeeks, setExpandedWe
         <div className="week-status"><span>{completeCount}/{week.lessons.length}</span><ChevronDown size={17} className={isOpen ? 'chevron-rotated' : ''} /></div>
       </button>
       {isOpen && <div className="week-body">
+        <div className="week-curriculum"><span>{week.curriculumUnit}</span><strong>What you’ll learn</strong><ul>{week.learningTargets.map((target) => <li key={target}>{target}</li>)}</ul></div>
         <div className="week-lessons">{week.lessons.map((lesson, index) => {
           const isDone = completed.has(lesson.id)
           const started = (progress.lessonSessions?.[lesson.id]?.step ?? 0) > 0
@@ -446,8 +447,9 @@ function CoursePage({ course, progress, romajiMode, expandedWeeks, setExpandedWe
   }
   return (
     <div className="content-page page-enter course-page">
-      <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> THE LEARNING ROUTE</div><h1>Course path<span className="title-period">.</span></h1><p>Four connected stages take you from your first greeting to more independent travel conversations. The 12-week timing is a suggestion, not a deadline.</p></div>
-      <div className="course-overview"><div className="course-overview-mark"><GraduationCap size={23} /></div><div className="course-overview-copy"><strong>Japanese Travel & Conversation</strong><span>4 stages · 36 short lessons · go at your own pace</span></div><div className="course-overview-progress"><strong>{done}<span>/{total}</span></strong><small>lessons practised</small></div><div className="course-overview-meter"><ProgressBar value={total ? (done / total) * 100 : 0} /></div></div>
+      <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> THE LEARNING ROUTE</div><h1>Course path<span className="title-period">.</span></h1><p>Four connected stages take you from your first greeting to more independent everyday conversations. The 12-week timing is a suggestion, not a deadline.</p></div>
+      <div className="course-overview"><div className="course-overview-mark"><GraduationCap size={23} /></div><div className="course-overview-copy"><strong>Japanese Conversation & Kana</strong><span>4 stages · 36 original lessons · go at your own pace</span></div><div className="course-overview-progress"><strong>{done}<span>/{total}</span></strong><small>lessons practised</small></div><div className="course-overview-meter"><ProgressBar value={total ? (done / total) * 100 : 0} /></div></div>
+      <div className="course-alignment-note"><BookOpen size={15} /><p>{course.courseAlignment}</p></div>
       <div className="course-sequence-note"><span className="sequence-chip">Notice</span><ArrowRight size={14} /><span className="sequence-chip">Practise with support</span><ArrowRight size={14} /><span className="sequence-chip">Adapt</span><span className="sequence-explainer">Each week follows the same predictable learning rhythm.</span></div>
       <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
       <div className="phase-list">{learningPath.map((phase, phaseIndex) => {
