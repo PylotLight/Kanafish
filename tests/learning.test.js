@@ -6,6 +6,7 @@ import {
   isKanaMastered, shouldShowRomaji,
 } from '../src/renderer/learning.js';
 import { kanaToRomaji } from '../src/renderer/romaji.js';
+import { isKanaItemMastered } from '../src/renderer/kana-curriculum.js';
 
 const course = JSON.parse(readFileSync(new URL('../course/course-v1.json', import.meta.url), 'utf8'));
 const lessons = getLessons(course);
@@ -14,7 +15,7 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
  describe('learning state', () => {
   test('initial state and normalized course preserve all 36 lesson IDs and six milestones', () => {
     const initial = createInitialProgress();
-    expect(initial).toEqual({ version: 3, completedLessonIds: [], lessonSessions: {}, milestones: {}, flashcards: {}, kanaMastery: {}, lastStudyDate: null });
+    expect(initial).toEqual({ version: 4, completedLessonIds: [], lessonSessions: {}, milestones: {}, flashcards: {}, kanaMastery: {}, kanaRecall: {}, lastStudyDate: null });
     const normalized = normalizeProgress({ completedLessonIds: lessons.map(({ lesson }) => lesson.id), milestones: Object.fromEntries(milestoneIds.map((id) => [id, { completed: true }])) });
     expect(normalized.completedLessonIds).toHaveLength(36);
     expect(normalized.completedLessonIds).toEqual(lessons.map(({ lesson }) => lesson.id));
@@ -22,17 +23,22 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
   });
   test('migrates legacy progress without losing lesson, checkpoint, or card history', () => {
     const migrated = normalizeProgress({ version: 1, completedLessonIds: ['W01-L1'], lessonSessions: { 'W01-L1': { step: 4 } }, milestones: { checkpoint: { completed: true } }, flashcards: { 'w1-phrase-1': { intervalDays: 3, dueDate: '2026-11-20', repetitions: 1, lastReviewed: '2026-11-17', lastRating: 'good' } }, lastStudyDate: '2026-11-17' });
-    expect(migrated).toMatchObject({ version: 3, completedLessonIds: ['W01-L1'], lessonSessions: { 'W01-L1': { step: 4 } }, milestones: { checkpoint: { completed: true } }, lastStudyDate: '2026-11-17' });
+    expect(migrated).toMatchObject({ version: 4, completedLessonIds: ['W01-L1'], lessonSessions: { 'W01-L1': { step: 4 } }, milestones: { checkpoint: { completed: true } }, kanaRecall: {}, lastStudyDate: '2026-11-17' });
     expect(migrated.flashcards['w1-phrase-1']).toMatchObject({ intervalDays: 3, dueDate: '2026-11-20', repetitions: 1, lastRating: 'good', easeFactor: 2.5, lapses: 0 });
   });
   test('migrates version-two progress while preserving completed lessons and review schedules', () => {
     const migrated = normalizeProgress({ version: 2, completedLessonIds: ['W01-L1'], lessonSessions: { 'W01-L1': { step: 3, warmup: 'remembered' } }, milestones: { 'M02-introductions': { completed: true, note: 'done' } }, flashcards: { 'w1-phrase-1': { intervalDays: 3, dueDate: '2026-11-20', repetitions: 1, lastReviewed: '2026-11-17', lastRating: 'good' } }, lastStudyDate: '2026-11-17' });
-    expect(migrated).toMatchObject({ version: 3, completedLessonIds: ['W01-L1'], lessonSessions: { 'W01-L1': { step: 3, warmup: 'remembered' } }, milestones: { 'M02-introductions': { completed: true, note: 'done' } }, lastStudyDate: '2026-11-17' });
+    expect(migrated).toMatchObject({ version: 4, completedLessonIds: ['W01-L1'], lessonSessions: { 'W01-L1': { step: 3, warmup: 'remembered' } }, milestones: { 'M02-introductions': { completed: true, note: 'done' } }, kanaRecall: {}, lastStudyDate: '2026-11-17' });
     expect(migrated.flashcards['w1-phrase-1']).toMatchObject({ intervalDays: 3, dueDate: '2026-11-20', repetitions: 1, lastReviewed: '2026-11-17', introducedAt: null, lastRating: 'good' });
+  });
+  test('migrates version-three group kana history without treating it as item-level mastery', () => {
+    const migrated = normalizeProgress({ version: 3, completedLessonIds: ['W01-L1'], kanaMastery: { 'あ': { successfulDays: ['2026-11-17'] } }, flashcards: { 'w1-phrase-1': { intervalDays: 2, dueDate: '2026-11-19', repetitions: 1, lastReviewed: '2026-11-17', lastRating: 'good' } } });
+    expect(migrated).toMatchObject({ version: 4, completedLessonIds: ['W01-L1'], kanaMastery: { 'あ': { successfulDays: ['2026-11-17'] } }, kanaRecall: {} });
+    expect(migrated.flashcards['w1-phrase-1']).toMatchObject({ intervalDays: 2, dueDate: '2026-11-19', lastRating: 'good' });
   });
   test('a brand-new learner has no recall prompt and the opening lesson has a concrete goal', () => {
     expect(getRetrievalPrompt(course, createInitialProgress(), 'W01-L1')).toBeNull();
-    expect(lessons[0].lesson.goal).toBe("Say hello back when someone greets you, and learn one polite way to get attention.");
+    expect(lessons[0].lesson.goal).toBe('Say hello back when someone greets you, then offer your name in a short first meeting.');
     expect(course.weeks[0].lessons[0].scene).toContain('You do not need to understand every word yet');
   });
   test('starting a lesson without completing it does not create a recall prompt', () => {
@@ -66,6 +72,43 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
     expect(kanji.front).toBe('人'); expect(kanji.back).toContain('ひと'); expect(kanji.back).toContain('person'); expect(kanji.detail).toContain('signs');
     expect(cards.find((c) => c.id === 'W01-L1-line-1')).toMatchObject({ type: 'dialogue', front: course.weeks[0].lessons[0].dialogue[0].ja });
   });
+  test('individual kana ratings use the shared SRS and require distinct-day recall without completing a conversation lesson', () => {
+    const cards = getFlashcards(course);
+    const card = cards.find((item) => item.id === 'kana-hira-vowels-k-3042');
+    expect(card).toMatchObject({ type: 'kana', kanaItem: true, srsOnly: true, front: 'あ', back: 'a', lessonIds: ['W01-L1'] });
+    expect(getCourseStats(course, createInitialProgress()).completedLessons).toBe(0);
+    expect(getDueCards([card], createInitialProgress(), '2026-11-17')).toEqual([]);
+
+    let state = rateCard(createInitialProgress(), card.id, 'good', '2026-11-17', card);
+    expect(state.kanaRecall[card.id]).toMatchObject({ attempts: 1, correct: 1, successfulDays: ['2026-11-17'], lastPracticed: '2026-11-17' });
+    expect(isKanaItemMastered(state, { id: card.id })).toBe(false);
+    expect(getDueCards([card], state, '2026-11-19')).toEqual([]);
+    expect(getDueCards([card], state, '2026-11-20')).toEqual([card]);
+
+    state = rateCard(state, card.id, 'easy', '2026-11-17', card);
+    expect(state.kanaRecall[card.id].successfulDays).toEqual(['2026-11-17']);
+    state = rateCard(state, card.id, 'good', '2026-11-20', card);
+    expect(isKanaItemMastered(state, { id: card.id })).toBe(true);
+    expect(getCourseStats(course, state).completedLessons).toBe(0);
+  });
+  test('kanji review cards include reciprocal meaning prompts, contextual readings, and lesson-based SRS introduction', () => {
+    const cards = getFlashcards(course);
+    const recognition = cards.find((card) => card.type === 'kanji' && !card.srsOnly);
+    const production = cards.find((card) => card.id === `${recognition.id}-meaning`);
+    expect(recognition.lessonIds.length).toBeGreaterThan(0);
+    expect(recognition).toMatchObject({ type: 'kanji', front: '人', reading: 'ひと', back: 'ひと — person' });
+    expect(recognition.detail).not.toBe('');
+    expect(production).toMatchObject({ type: 'kanji', front: recognition.back.split(' — ').at(-1), back: recognition.front, reading: recognition.reading, srsOnly: true, recallDirection: 'produce' });
+    expect(production.lessonIds).toEqual(recognition.lessonIds);
+
+    const lessonId = recognition.lessonIds[0];
+    const introduced = markLessonComplete(createInitialProgress(), lessonId, '2026-11-17', cards);
+    expect(introduced.flashcards[recognition.id].introducedAt).toBe('2026-11-17');
+    expect(introduced.flashcards[production.id].introducedAt).toBe('2026-11-17');
+    const due = getDueCards(cards, introduced, '2026-11-18');
+    expect(due).toContain(recognition);
+    expect(due).toContain(production);
+  });
   test('untouched cards are not due and reviewed cards return on their scheduled day', () => {
     const cards = getFlashcards(course).slice(0, 4);
     const state = rateCard(createInitialProgress(), cards[0].id, 'good', '2026-11-17', cards[0]);
@@ -80,7 +123,7 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
     expect(introduced.length).toBeGreaterThan(0);
     expect(introduced.every((card) => card.lessonId === 'W01-L1' || card.lessonIds?.includes('W01-L1'))).toBe(true);
     expect(getDueCards(cards, state, '2026-11-17')).toEqual([]);
-    expect(getDueCards(cards, state, '2026-11-18')).toEqual(introduced);
+    expect(getDueCards(cards, state, '2026-11-18', 1000)).toEqual(introduced);
     expect(introduced.some((card) => card.id === 'W01-L2-line-1')).toBe(false);
   });
   test('version-two completed lessons remain review-eligible without exposing uncompleted lessons', () => {
@@ -112,9 +155,9 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
   });
   test('long-spaced review chooses a weak phrase from two to four weeks earlier', () => {
     let state = markLessonComplete(createInitialProgress(), 'W02-L2', '2026-11-17');
-    state = rateCard(state, 'w2-phrase-3', 'again', '2026-11-17');
+    state = rateCard(state, 'w2-phrase-6', 'again', '2026-11-17');
     const prompt = getRetrievalPrompt(course, state, 'W05-L3');
-    expect(prompt).toMatchObject({ type: 'spaced', week: 2, phrase: course.weeks[1].phraseBank[2] });
+    expect(prompt).toMatchObject({ type: 'spaced', week: 2, phrase: course.weeks[1].phraseBank[5] });
   });
   test('a phrase missed in response practice is prioritized at the next lesson recall', () => {
     let state = saveLessonSession(createInitialProgress(), 'W01-L1', { weakCardIds: ['w1-phrase-2'] });
@@ -182,7 +225,7 @@ const milestoneIds = course.weeks.flatMap((w) => w.milestone ? [w.milestone.id] 
   });
   test('malformed state falls back safely while retaining valid records', () => {
     const state = normalizeProgress({ completedLessonIds: ['W01-L1', '', 2, 'W01-L1'], lessonSessions: { x: { cursor: 2 }, bad: null }, milestones: [], flashcards: { ok: { intervalDays: -2, dueDate: 'not-date', repetitions: -1, lastRating: 'wat' }, nope: 3 }, lastStudyDate: '2025-02-30', version: 900 });
-    expect(state).toEqual({ version: 3, completedLessonIds: ['W01-L1'], lessonSessions: { x: { cursor: 2 } }, milestones: {}, flashcards: { ok: { intervalDays: 0, dueDate: null, repetitions: 0, lastReviewed: null, introducedAt: null, lastRating: null, easeFactor: 2.5, lapses: 0 } }, kanaMastery: {}, lastStudyDate: null });
+    expect(state).toEqual({ version: 4, completedLessonIds: ['W01-L1'], lessonSessions: { x: { cursor: 2 } }, milestones: {}, flashcards: { ok: { intervalDays: 0, dueDate: null, repetitions: 0, lastReviewed: null, introducedAt: null, lastRating: null, easeFactor: 2.5, lapses: 0 } }, kanaMastery: {}, kanaRecall: {}, lastStudyDate: null });
     expect(normalizeProgress(null)).toEqual(createInitialProgress());
   });
   test('malformed weak-item IDs are discarded without breaking lesson recall', () => {

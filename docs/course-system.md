@@ -1,12 +1,12 @@
 # Kanafish course system
 
-Kanafish's first complete course is a practical, beginner-to-intermediate Japanese journey: **12 weeks, three short lessons per week, and six observable can-do checkpoints**. Its aim is not to finish a grammar list. It is to help a traveller understand and take part in familiar exchanges, recover when a detail is missed, and see what they can do next.
+Kanafish's first complete course is an original, practical beginner-to-low-intermediate Japanese companion: **12 weeks, three short lessons per week, and six observable can-do checkpoints**. It broadly follows the scope and sequence of *GENKI I* (Third Edition), while using original Kanafish scenes, explanations, prompts, and dialogues. It is not affiliated with the publisher and does not reproduce textbook text, exercises, dialogues, or audio. Its aim is to help a learner take part in familiar exchanges, recover when a detail is missed, and see what to practise next.
 
 The app-ready course content lives in [`course/course-v1.json`](../course/course-v1.json), with its structure in [`course/course.schema.json`](../course/course.schema.json). The existing [12-week outline](12-week-plan.md) remains the high-level sequence and milestone reference.
 
 ## The learner's route
 
-The path is grouped into four connected phases: **Find your first words** (weeks 1–3), **Handle everyday needs** (weeks 4–6), **Get around** (weeks 7–8), and **Keep the conversation moving** (weeks 9–12). The route starts from zero and builds toward familiar travel exchanges with less scripting. It is a beginner-to-intermediate travel course; advanced Japanese is intentionally reserved for a later course. The 12-week pace is a suggestion, not a deadline.
+The path is grouped into four connected phases: **Meet people and find your first words** (weeks 1–3), **Describe, travel, and connect actions** (weeks 4–6), **Talk about people and share stories** (weeks 7–8), and **Make plans, share experiences, and get help** (weeks 9–12). The route starts from zero and builds toward everyday and travel conversations with less scripting. Advanced Japanese is intentionally reserved for a later course. The 12-week pace is a suggestion, not a deadline.
 
 ## The learning loop
 
@@ -28,7 +28,7 @@ Lesson misses and learner ratings guide what to revisit, not a pronunciation sco
 
 ## Script support
 
-Japanese dialogue is written primarily in kana so learners can connect the written line with what they hear and say. Useful kanji appear separately as small recognition cards with readings and a reason they matter in the current topic. Script recognition is not a gate for joining a conversation.
+Japanese dialogue is written primarily in kana so learners can connect the written line with what they hear and say. Week 1 introduces the complete core hiragana set and Week 2 the core katakana set alongside first conversations and shopping, as a first pass rather than a one-week mastery deadline. Learners practise a few audible kana groups per session and revisit them later; voiced sounds, common contracted combinations, small っ/ッ, and the long-vowel mark are included. Useful kanji appear separately as small recognition cards with readings and a reason they matter in the current topic. Script recognition is never a gate for joining a conversation.
 
 Romaji is a configurable scaffold, not the course's main writing system. In adaptive mode it is shown beneath kana and kana readings until all characters in the item have been recalled comfortably (Good or Easy) on two different calendar days. It then hides in dialogue, phrasebook, course, and review views. A later Hard or Again kana review resets that mastery cue, so the support can return. Learners may instead always show or hide romaji in Settings. The app preserves progress from older versions when this preference is introduced.
 
@@ -36,16 +36,12 @@ Romaji is a configurable scaffold, not the course's main writing system. In adap
 
 | Weeks | Conversation goal | Script support |
 |---|---|---|
-| 1–2 | Open a conversation; introduce yourself and answer familiar questions | Start hiragana; learn only the most useful person/name recognition items |
-| 3 | Ask what or where; ask someone to repeat or slow down | Complete core hiragana patterns and voiced sounds |
-| 4–5 | Order, confirm a choice, and pay for a simple item | Begin katakana with menus, drinks, quantities, and checkout words; recognize 円 |
-| 6 | State a preference, ask for a recommendation, and describe a food limitation | Continue practical katakana; recognize 好き in context |
-| 7–8 | Ask for directions, follow two steps, and agree on a time | Practise signs and common place names; recognize 駅, 入口/出口, 時/時間 |
-| 9 | Tell a short two-event travel story | Review time words and short kana passages; recognize 今日/明日 as whole words |
-| 10 | Explain a problem and request help or repetition | Reuse useful signs and repair phrases; recognize 交番 |
-| 11–12 | Combine familiar functions and recover from one changed or missed detail | Mixed kana and travel-text review; no new kanji burden |
+| 1–3 | Introductions, things and shopping, routines, and invitations | First pass through the complete core hiragana set in Week 1 and katakana in Week 2; revisit both as conversation vocabulary grows |
+| 4–6 | Places and past events, descriptions and preferences, requests and permission | Read kana-first scenes, with selective kanji cards and readings where useful |
+| 7–9 | Describe people, chat casually, and retell a story | Reuse kana in new scenes; keep dialogue readable and reviewable |
+| 10–12 | Compare options, share experiences, and get help | Mixed kana review and selective recognition; no handwriting prerequisite |
 
-The script targets are a lightweight path, not an exam prerequisite. Lessons revisit old sounds in new contexts, including menu words, place names, times, and signs.
+Kana learning is a parallel track, not an exam prerequisite. The first two weeks pair the full core scripts with conversation practice; later lessons revisit them in new contexts such as times, places, travel, and health. The detailed sequence is in the [12-week plan](12-week-plan.md).
 
 ## What every lesson contains
 

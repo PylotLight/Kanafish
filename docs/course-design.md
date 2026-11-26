@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Teach beginner-to-basic Japanese for practical travel and everyday conversation. Speaking and listening are the center of the course; reading and writing support those interactions. Kanafish should turn this course into short interactive practice, not replace it with a generic vocabulary or grammar syllabus.
+Teach beginner-to-low-intermediate Japanese for practical everyday conversation, including travel. Speaking and listening are the center of the course; reading and writing support those interactions. Kanafish should turn this course into short interactive practice, not replace it with a generic vocabulary or grammar syllabus.
 
 ## Functional categories
 
@@ -17,7 +17,7 @@ Teach beginner-to-basic Japanese for practical travel and everyday conversation.
 
 ## Beginner course route
 
-The 12-week course is grouped into four visible phases: **Find your first words** (weeks 1–3), **Handle everyday needs** (weeks 4–6), **Get around** (weeks 7–8), and **Keep the conversation moving** (weeks 9–12). The first phase assumes no prior Japanese. Every lesson states one practical goal and builds toward familiar travel exchanges with gradually less scripting. This is a beginner-to-intermediate travel path, not an advanced-Japanese course; advanced grammar, specialist vocabulary, and open-ended study are deliberately left for a later course.
+The 12-week course is an original, independent companion broadly aligned to the scope and sequence of *GENKI I* (Third Edition), not a reproduction of its text, exercises, dialogues, or audio. It is grouped into four visible phases: **Meet people and find your first words** (weeks 1–3), **Describe, travel, and connect actions** (weeks 4–6), **Talk about people and share stories** (weeks 7–8), and **Make plans, share experiences, and get help** (weeks 9–12). The first phase assumes no prior Japanese. Every lesson states one practical goal and builds toward familiar everyday conversations with gradually less scripting. The course remains beginner-to-low-intermediate; advanced grammar and specialist vocabulary are left for later study.
 
 The three-lesson rhythm is predictable: notice a scene and its meaning, practise a supported reply, then adapt the exchange. Phase names describe the learner's broader journey; the lesson rhythm describes what happens inside each week.
 
@@ -32,7 +32,8 @@ Each functional category should recur across stages. The learner should revisit 
 
 ## Kana and kanji
 
-- Introduce hiragana and katakana alongside the phrases and vocabulary learners actually say or hear. Short recognition and reading activities should reinforce each week's speaking goal.
+- Introduce the complete core hiragana set in Week 1 and katakana in Week 2, alongside greetings, introductions, objects, and shopping. Treat these as first passes, not one-week mastery deadlines; practise a few groups per session and revisit them later. Add common voiced sounds, contracted combinations, small っ/ッ, and the katakana long-vowel mark in context.
+- Introduce kana alongside the phrases and vocabulary learners actually say or hear. Short, repeated recognition and reading activities should reinforce each week's speaking goal, and the learner should use kana in the same conversation they are practising.
 - Use kana as a pronunciation and reading aid, not as a reason to delay conversation practice.
 - Teach katakana with useful travel words and loanwords (for example, menu and drink vocabulary).
 - Use kanji selectively for practical recognition: include only characters or compounds that help in a particular section, such as **人 / 名前**, **円**, **駅**, **時間**, or **入口 / 出口**.

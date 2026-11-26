@@ -10,7 +10,7 @@ const speechTargets = getLessonSpeechTargets(week1, lesson1)
 const greetingTargets = extractGreetings(speechTargets)
 const instructionPhrases = extractJapanesePhrases(sayTask)
 
-// W01-L1 names one phrase (みせん) and week 1 offers one greeting (こんにちは). Build realistic
+// W01-L1 names one opener (すみません) and week 1 offers a greeting. Build realistic
 // transcripts from the actual extracted phrases so the tests do not hard-code Japanese literals.
 const firstGreeting = greetingTargets[0]?.ja || ''
 const firstOpener = instructionPhrases[0] || ''
@@ -22,7 +22,7 @@ describe('say-task phrase extraction', () => {
   test('pulls the embedded Japanese instruction phrases from the (English) instruction', () => {
     expect(typeof sayTask).toBe('string')
     expect(instructionPhrases.length).toBeGreaterThanOrEqual(1)
-    // The W01-L1 instruction names すみせん ("get the receptionist's attention").
+    // The W01-L1 instruction keeps すみません available for a polite first meeting.
     expect(instructionPhrases.some((phrase) => phrase.includes('せん'))).toBe(true)
   })
 

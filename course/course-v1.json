@@ -1,9 +1,9 @@
 {
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "courseId": "kanafish-ja-travel-a1",
-  "title": "Japanese Travel & Conversation — Beginner Course",
+  "title": "Japanese Conversation & Kana — Beginner Course",
   "language": "ja-JP",
-  "learnerLevel": "beginner",
+  "learnerLevel": "beginner-to-low-intermediate",
   "durationWeeks": 12,
   "sessionsPerWeek": 3,
   "lessonLengthMinutes": "12-20",
@@ -13,7 +13,9 @@
     "Dialogue and phrase text use kana-first Japanese. Do not require romaji; keep it as an optional temporary scaffold.",
     "The three weekly lessons build from noticing meaning, to supported replies, to adapting a conversation.",
     "Local speech, reading, a partner, or self-led practice are alternatives; speech setup never gates a lesson.",
-    "Completion records practice and observable evidence, never a claim of fluency or automated speech accuracy."
+    "Completion records practice and observable evidence, never a claim of fluency or automated speech accuracy.",
+    "Follow the broad beginner-to-low-intermediate progression of GENKI I while writing all Kanafish teaching content independently; do not reproduce textbook passages, dialogues, exercises, or audio.",
+    "Introduce all core hiragana in Week 1 and katakana in Week 2 as a first pass alongside useful spoken exchanges; practise a few groups at a time and revisit them later. Neither script is a prerequisite for conversation or progress."
   ],
   "lessonArc": [
     "recognize",
@@ -30,39 +32,39 @@
   "learningPath": [
     {
       "id": "first-conversations",
-      "title": "Find your first words",
+      "title": "Meet people and find your first words",
       "level": "Start here",
       "weeks": [
         1,
         2,
         3
       ],
-      "outcome": "Greet someone, introduce yourself, ask simple what/where questions, and request repetition when you miss something."
+      "outcome": "Practise greetings, identity, objects, shopping, routines, and invitations while making a first pass through hiragana and katakana alongside the conversations."
     },
     {
-      "id": "everyday-needs",
-      "title": "Handle everyday needs",
+      "id": "describe-and-travel",
+      "title": "Describe, travel, and connect actions",
       "level": "Beginner",
       "weeks": [
         4,
         5,
         6
       ],
-      "outcome": "Make a café or shop request, handle a simple transaction, and share preferences or food needs."
+      "outcome": "Talk about places and past events, describe choices, make simple requests, connect actions, and ask or offer help."
     },
     {
-      "id": "get-around",
-      "title": "Get around",
+      "id": "people-and-stories",
+      "title": "Talk about people and share stories",
       "level": "Beginner",
       "weeks": [
         7,
         8
       ],
-      "outcome": "Ask for directions, follow a short route, make a simple plan, and confirm time and place."
+      "outcome": "Describe people and current activities, then use casual conversation to share preferences and opinions."
     },
     {
-      "id": "keep-conversations-going",
-      "title": "Keep the conversation moving",
+      "id": "plans-experiences-and-care",
+      "title": "Make plans, share experiences, and get help",
       "level": "More independent practice",
       "weeks": [
         9,
@@ -70,15 +72,15 @@
         11,
         12
       ],
-      "outcome": "Tell a short travel story, ask for help, handle a changed detail, and combine familiar exchanges with less scripting."
+      "outcome": "Retell past events, compare options, discuss plans and experiences, and explain a health concern with less scripting."
     }
   ],
-  "kanaPolicy": "Every Japanese dialogue line and phrase is written in kana. Topic-specific kanji are shown separately with a kana reading and practical recognition goal. Script practice appears in the scene that uses it and never gates speaking or course progress.",
+  "kanaPolicy": "Japanese dialogue and phrase text is kana-first. Introduce the full core hiragana set alongside first conversations in Week 1 and the full core katakana set alongside everyday shopping in Week 2 as a first pass, not a one-week mastery deadline. Practise a few groups at a time and revisit them later, including voiced sounds, common contracted combinations, small っ, and the long-vowel mark. Keep kana visible with speech; script recognition never gates a lesson. Topic-specific kanji remain selective recognition cards with kana readings, not handwriting tests.",
   "weeks": [
     {
       "week": 1,
-      "title": "Open a conversation",
-      "canDo": "Greet someone, get their attention politely, thank them, and close a brief exchange.",
+      "title": "Meet people and introduce yourself",
+      "canDo": "Return a greeting, give a short introduction, and exchange a few facts about name, role, origin, and time.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -100,187 +102,212 @@
           "ja": "お願いします。",
           "en": "Please / I'd appreciate it.",
           "use": "A polite request or handover."
+        },
+        {
+          "ja": "わたしは [なまえ] です。",
+          "en": "I'm [name].",
+          "use": "Give your name in a polite introduction."
+        },
+        {
+          "ja": "[くに]じんです。",
+          "en": "I'm [nationality].",
+          "use": "Say your nationality in an introduction."
         }
       ],
       "kanaFocus": [
         "あいうえお",
         "かきくけこ",
         "さしすせそ",
-        "たちつてと"
+        "たちつてと",
+        "なにぬねの・はひふへほ",
+        "まみむめも・やゆよ",
+        "らりるれろ・わをん",
+        "がぎぐげご・ざじずぜぞ",
+        "だぢづでど・ばびぶべぼ・ぱぴぷぺぽ",
+        "きゃ・きゅ・きょ / しゃ・しゅ・しょ / ちゃ・ちゅ・ちょ",
+        "にゃ・にゅ・にょ / ひゃ・ひゅ・ひょ / みゃ・みゅ・みょ / りゃ・りゅ・りょ",
+        "っ・ふ・を・ん: small and less familiar kana in words",
+        "ぎゃ・ぎゅ・ぎょ / じゃ・じゅ・じょ / びゃ・びゅ・びょ / ぴゃ・ぴゅ・ぴょ"
       ],
       "kanjiCards": [],
       "lessons": [
         {
           "id": "W01-L1",
-          "title": "Greet and open politely",
+          "title": "Greet and give your name",
           "stage": "recognize",
-          "goal": "Say hello back when someone greets you, and learn one polite way to get attention.",
-          "scene": "You enter a small hotel. The receptionist welcomes you and asks a longer reservation question; today, focus on greeting them back and opening politely. You do not need to understand every word yet.",
+          "goal": "Say hello back when someone greets you, then offer your name in a short first meeting.",
+          "scene": "You meet a new classmate at a community Japanese group. You do not need to understand every word yet; notice the greeting and the names first.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "こんにちは。いらっしゃいませ。",
-              "en": "Hello. Welcome."
+              "speaker": "classmate",
+              "ja": "こんにちは。わたしはゆきです。",
+              "en": "Hello. I'm Yuki."
             },
             {
               "speaker": "traveller",
-              "ja": "こんにちは。",
-              "en": "Hello."
+              "ja": "こんにちは。わたしはサムです。",
+              "en": "Hello. I'm Sam."
             },
             {
-              "speaker": "staff",
-              "ja": "ごよやくのおなまえをおねがいします。",
-              "en": "May I have the name on the reservation?"
+              "speaker": "classmate",
+              "ja": "はじめまして。",
+              "en": "Nice to meet you."
             }
           ],
           "listenCheck": {
-            "question": "What greeting does the hotel receptionist use to welcome you?",
+            "question": "Which person gives the name Yuki?",
             "choices": [
-              "こんにちは。いらっしゃいませ。",
-              "おやすみなさい。",
-              "さようなら。"
+              "The classmate",
+              "Sam",
+              "A teacher"
             ],
-            "answer": 0,
-            "meanings": [
-              "Hello. Welcome.",
-              "Good night.",
-              "Goodbye."
-            ]
+            "answer": 0
           },
           "responsePractice": {
-            "prompt": "The staff member says こんにちは. Choose a suitable reply.",
+            "prompt": "You have just shared your name. Choose a suitable next line.",
             "choices": [
-              "こんにちは。",
-              "さようなら。",
-              "おやすみなさい。"
+              "はじめまして。",
+              "おやすみなさい。",
+              "いくらですか。"
+            ],
+            "meanings": [
+              "Nice to meet you.",
+              "Good night.",
+              "How much is it?"
             ],
             "answer": 0,
-            "why": "A daytime greeting can be returned with the same greeting.",
-            "meanings": [
-              "Hello / good afternoon.",
-              "Goodbye.",
-              "Good night."
-            ]
+            "why": "A first meeting is a natural place to say はじめまして."
           },
-          "sayTask": "Say a greeting, then say すみません to get the receptionist's attention.",
-          "adaptation": "Change the hotel to a shop or station. Return the greeting, then use すみません to get the person’s attention.",
+          "sayTask": "Return the greeting, say your name, and try a first-meeting phrase once without looking at the English. If you need a moment, use すみません before asking the other person’s name. As a short daily companion practice, read two or three hiragana groups from this week aloud, then find one of those sounds in the conversation.",
+          "adaptation": "Change the name and meeting place. Keep the greeting and introduction, then ask the other person’s name.",
           "successChecks": [
-            "Recognizes a greeting",
-            "Chooses a polite greeting in return",
-            "Uses すみません to open a request"
+            "Returns a greeting",
+            "Says a name clearly",
+            "Recognizes a first-meeting phrase"
           ]
         },
         {
           "id": "W01-L2",
-          "title": "Thank and respond",
+          "title": "Ask who someone is",
           "stage": "supported-response",
-          "goal": "Ask where a useful place is, understand a short reply, and thank the helper.",
-          "scene": "Someone at a station points you toward the ticket machines.",
+          "goal": "Ask a new friend a polite yes/no question and give a short positive or negative answer.",
+          "scene": "Two people at the group share where they are from and what they do.",
           "dialogue": [
             {
               "speaker": "traveller",
-              "ja": "すみません。きっぷうりばはどこですか。",
-              "en": "Excuse me. Where is the ticket counter?"
+              "ja": "ゆきさんはがくせいですか。",
+              "en": "Yuki, are you a student?"
             },
             {
-              "speaker": "staff",
-              "ja": "あちらです。",
-              "en": "It's over there."
+              "speaker": "classmate",
+              "ja": "いいえ、かいしゃいんです。",
+              "en": "No, I'm an office worker."
             },
             {
               "speaker": "traveller",
-              "ja": "ありがとうございます。",
-              "en": "Thank you very much."
+              "ja": "そうですか。わたしもかいしゃいんです。",
+              "en": "I see. I'm an office worker too."
             }
           ],
           "listenCheck": {
-            "question": "What does the traveller say after getting help?",
+            "question": "What is Yuki’s role?",
             "choices": [
-              "Thank you",
-              "Good night",
-              "I'm sorry"
+              "She is an office worker",
+              "She is a student",
+              "She is a teacher"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Someone helps you and says nothing more. What is a polite response?",
+            "prompt": "You are not a student. Choose the simple polite answer.",
             "choices": [
-              "ありがとうございます。",
-              "おはようございます。",
-              "またね。"
+              "いいえ、がくせいじゃないです。",
+              "はい、がくせいです。",
+              "がくせいはどこですか。"
+            ],
+            "meanings": [
+              "No, I am not a student.",
+              "Yes, I am a student.",
+              "Where is the student?"
             ],
             "answer": 0,
-            "why": "ありがとうございます is a polite way to show thanks."
+            "why": "じゃないです gives a simple polite negative answer."
           },
-          "sayTask": "Practise the request with a partner. Take the traveller role and finish with thanks.",
-          "adaptation": "Replace the ticket counter with a restroom, then repeat the exchange.",
+          "sayTask": "Ask whether your partner is a student, then answer with your real or imagined role. As a short daily companion practice, read two or three hiragana groups from this week aloud, then find one of those sounds in the conversation.",
+          "adaptation": "Swap student for a job or nationality and use も if the same detail fits both people.",
           "successChecks": [
-            "Opens with すみません",
-            "Asks a short question",
-            "Thanks the helper"
+            "Recognizes a yes/no question",
+            "Gives a positive or negative answer",
+            "Understands も as “also”"
           ]
         },
         {
           "id": "W01-L3",
-          "title": "Adapt a brief exchange",
+          "title": "Share one more detail",
           "stage": "adapt",
-          "goal": "Respond to an offer and adapt your answer when the situation changes.",
-          "scene": "A shop worker hands you a bag and checks whether you need anything else.",
+          "goal": "Use a simple relationship phrase and catch a number or time in a short exchange.",
+          "scene": "A classmate asks about your language class and when it starts.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "ふくろをどうぞ。",
-              "en": "Here's your bag."
+              "speaker": "classmate",
+              "ja": "にほんごのクラスはなんじですか。",
+              "en": "What time is Japanese class?"
             },
             {
               "speaker": "traveller",
-              "ja": "ありがとうございます。",
-              "en": "Thank you very much."
+              "ja": "ごごいちじです。",
+              "en": "It is at one in the afternoon."
             },
             {
-              "speaker": "staff",
-              "ja": "ほかにごようけんはありますか。",
-              "en": "Is there anything else you need?"
-            },
-            {
-              "speaker": "traveller",
-              "ja": "いいえ、だいじょうぶです。",
-              "en": "No, I'm all set."
+              "speaker": "classmate",
+              "ja": "わたしのクラスもごごいちじです。",
+              "en": "My class is at one in the afternoon too."
             }
           ],
           "listenCheck": {
-            "question": "Does the traveller need another item?",
+            "question": "When does the class start?",
             "choices": [
-              "No",
-              "Yes, a bag",
-              "Yes, a receipt"
+              "At 1 p.m.",
+              "At 3 p.m.",
+              "In the morning"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "A staff member asks if you need anything else. You do not. Choose a polite reply.",
+            "prompt": "Say your class is at 10 in the morning.",
             "choices": [
-              "いいえ、だいじょうぶです。",
-              "はい、こんにちは。",
-              "どこですか。"
+              "ごぜんじゅうじです。",
+              "ごごいちじです。",
+              "なんじですか。"
+            ],
+            "meanings": [
+              "It is at 10 a.m.",
+              "It is at 1 p.m.",
+              "What time is it?"
             ],
             "answer": 0,
-            "why": "This politely signals that you are fine and do not need more."
+            "why": "A short time answer is enough; listen for ごぜん or ごご and the number."
           },
-          "sayTask": "Do a four-turn shop exchange without looking at the English meanings.",
-          "adaptation": "Change the final answer so you do need one more item; ask for it politely.",
+          "sayTask": "Give one detail about a class, interest, or role, then add a simple time or number. As a short daily companion practice, read two or three hiragana groups from this week aloud, then find one of those sounds in the conversation.",
+          "adaptation": "Ask a new question about your partner and use one detail with の or も.",
           "successChecks": [
-            "Understands whether help is being offered",
-            "Responds clearly",
-            "Adds a changed detail without losing politeness"
+            "Catches the time of day",
+            "Uses one simple detail phrase",
+            "Keeps the introduction going"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 1 · First conversations",
+      "learningTargets": [
+        "Use polite です sentences, yes/no questions, and simple negative replies to introduce yourself and ask who someone is.",
+        "Connect people and details with は・の・も; listen for names, roles, numbers, and a simple time.",
+        "Take a first pass through core hiragana; practise a few groups per session and revisit them later. Voiced and contracted sounds are early exposure, not a mastery deadline."
       ]
     },
     {
       "week": 2,
-      "title": "Introduce yourself",
-      "canDo": "Give a short self-introduction, say where you are from, and answer a few simple personal questions.",
+      "title": "Ask about things and shop",
+      "canDo": "Point out an item, ask about its price or owner, and understand a simple location answer.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -295,13 +322,23 @@
         },
         {
           "ja": "[くに] からきました。",
-          "en": "I came from [country].",
+          "en": "I'm from [country].",
           "use": "Say where you are from."
         },
         {
           "ja": "よろしくおねがいします。",
           "en": "Pleased to meet you / I look forward to it.",
           "use": "Common polite closing for introductions."
+        },
+        {
+          "ja": "これはいくらですか。",
+          "en": "How much is this?",
+          "use": "Ask about the price of an item near you."
+        },
+        {
+          "ja": "この [もの] はだれのですか。",
+          "en": "Whose [item] is this?",
+          "use": "Ask who owns a specific item."
         }
       ],
       "kanaFocus": [
@@ -310,7 +347,18 @@
         "まみむめも",
         "やゆよ",
         "らりるれろ",
-        "わをん"
+        "わをん",
+        "アイウエオ・カキクケコ・サシスセソ",
+        "タチツテト・ナニヌネノ・ハヒフヘホ",
+        "マミムメモ・ヤユヨ・ラリルレロ・ワヲン",
+        "ガギグゲゴ・ザジズゼゾ・ダヂヅデド",
+        "バビブベボ・パピプペポ",
+        "キャ・キュ・キョ / シャ・シュ・ショ / チャ・チュ・チョ",
+        "ニャ・ニュ・ニョ / ヒャ・ヒュ・ヒョ / ミャ・ミュ・ミョ / リャ・リュ・リョ",
+        "ッ・ー: small ッ and the long-vowel mark",
+        "ティ・ディ・ファ・フィ・フェ・フォ・ウィ・ウェ・ウォ: common foreign-word sounds",
+        "ギャ・ギュ・ギョ / ジャ・ジュ・ジョ / ビャ・ビュ・ビョ / ピャ・ピュ・ピョ",
+        "ァ・ィ・ゥ・ェ・ォ: small kana used in foreign-word spelling"
       ],
       "kanjiCards": [
         {
@@ -324,15 +372,27 @@
           "reading": "なまえ",
           "meaning": "name",
           "whyHere": "A practical word likely to appear in an introduction or reservation form."
+        },
+        {
+          "kanji": "本",
+          "reading": "ほん",
+          "meaning": "book",
+          "whyHere": "Recognize a common object label while practising demonstratives."
+        },
+        {
+          "kanji": "店",
+          "reading": "みせ",
+          "meaning": "shop",
+          "whyHere": "A useful whole-word recognition item in a shopping scene."
         }
       ],
       "milestone": {
         "id": "M02-introductions",
-        "title": "Introduction checkpoint",
-        "task": "Give a 30-second self-introduction and answer three familiar personal questions. From five slow, clear questions, identify the key information in at least four.",
+        "title": "First conversation checkpoint",
+        "task": "Give a short self-introduction, ask two familiar questions, and handle one simple object or price question. From five slow, clear prompts, identify the key information in at least four.",
         "evidence": [
-          "Self-introduction delivered",
-          "Answers to three questions",
+          "Self-introduction and replies",
+          "Two questions attempted",
           "Listening result out of five",
           "Support used and next practice target"
         ]
@@ -340,165 +400,181 @@
       "lessons": [
         {
           "id": "W02-L1",
-          "title": "Hear a first introduction",
+          "title": "Choose an item nearby",
           "stage": "recognize",
-          "goal": "Introduce yourself with your name and a polite first-meeting closing.",
-          "scene": "You meet another traveller at a guesthouse.",
+          "goal": "Use a pointing word to ask about an unfamiliar item and understand its price.",
+          "scene": "At a small stationery shop, you point to a notebook on the counter and ask how much it costs.",
           "dialogue": [
             {
-              "speaker": "travellerA",
-              "ja": "はじめまして。あきです。",
-              "en": "Nice to meet you. I'm Aki."
+              "speaker": "traveller",
+              "ja": "これはいくらですか。",
+              "en": "How much is this?"
             },
             {
-              "speaker": "travellerB",
-              "ja": "はじめまして。けんです。",
-              "en": "Nice to meet you. I'm Ken."
+              "speaker": "clerk",
+              "ja": "それはさんびゃくえんです。",
+              "en": "That one is 300 yen."
             },
             {
-              "speaker": "travellerA",
-              "ja": "よろしくおねがいします。",
-              "en": "Pleased to meet you."
+              "speaker": "traveller",
+              "ja": "じゃあ、それをください。",
+              "en": "Then I’ll take that, please."
             }
           ],
           "listenCheck": {
-            "question": "What is traveller A's name?",
+            "question": "How much is the notebook?",
             "choices": [
-              "Aki",
-              "Ken",
-              "Yuki"
+              "300 yen",
+              "500 yen",
+              "800 yen"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You have just been introduced. Which line fits best?",
+            "prompt": "The item is next to the clerk as they listen to you. Which pointing word fits?",
             "choices": [
-              "はじめまして。",
-              "おやすみなさい。",
-              "いくらですか。"
+              "それをください。",
+              "これをください。",
+              "どこからきましたか。"
+            ],
+            "meanings": [
+              "That one, please.",
+              "This one, please.",
+              "Where did you come from?"
             ],
             "answer": 0,
-            "why": "はじめまして is used when meeting someone for the first time."
+            "why": "それ refers to an item near the other person."
           },
-          "sayTask": "Say はじめまして, your name, then よろしくおねがいします.",
-          "adaptation": "Repeat with a different name and greet a second person.",
+          "sayTask": "Ask the price of one nearby object and choose it or ask about another one. As a short daily companion practice, read two or three katakana groups from this week aloud, then spot one in the shopping conversation.",
+          "adaptation": "Change the item and the price. Use これ for something by you and それ for something by the other person.",
           "successChecks": [
-            "Recognizes who is introducing themself",
-            "Says their own name clearly",
-            "Uses a first-meeting closing"
+            "Matches a pointing word to the scene",
+            "Catches a price",
+            "Makes a clear choice"
           ]
         },
         {
           "id": "W02-L2",
-          "title": "Where are you from?",
+          "title": "Ask whose item it is",
           "stage": "supported-response",
-          "goal": "Say where you are from and ask the same question back.",
-          "scene": "A fellow guest asks where you came from.",
+          "goal": "Ask about a specific item and say who owns it.",
+          "scene": "A friend sees a patterned umbrella beside your chair and asks about it.",
           "dialogue": [
             {
-              "speaker": "guest",
-              "ja": "どちらからきましたか。",
-              "en": "Where are you from?"
+              "speaker": "friend",
+              "ja": "このかさはだれのですか。",
+              "en": "Whose umbrella is this?"
             },
             {
               "speaker": "traveller",
-              "ja": "オーストラリアからきました。",
-              "en": "I came from Australia."
+              "ja": "わたしのです。",
+              "en": "It is mine."
             },
             {
-              "speaker": "guest",
-              "ja": "そうですか。",
-              "en": "I see."
+              "speaker": "friend",
+              "ja": "あそこにかばんもありますよ。",
+              "en": "There is a bag over there too."
             }
           ],
           "listenCheck": {
-            "question": "Which country does the traveller name?",
+            "question": "What belongs to the traveller?",
             "choices": [
-              "Australia",
-              "Canada",
-              "Japan"
+              "The umbrella",
+              "The bag",
+              "The chair"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Someone asks どちらからきましたか. Complete the answer with a place you choose.",
+            "prompt": "A friend asks whose book this is. Choose your answer.",
             "choices": [
-              "[くに] からきました。",
-              "[じかん] です。",
-              "これをください。"
+              "わたしのです。",
+              "このほんはいくらですか。",
+              "あそこです。"
+            ],
+            "meanings": [
+              "It is mine.",
+              "How much is this book?",
+              "It is over there."
             ],
             "answer": 0,
-            "why": "The question asks about where you came from; name a place before からきました."
+            "why": "の can show a simple possession relationship."
           },
-          "sayTask": "Answer the question with your own country or city. Repeat once without the phrase bank.",
-          "adaptation": "Ask the same question back after answering.",
+          "sayTask": "Ask about one object with この and answer using わたしのです or another owner. As a short daily companion practice, read two or three katakana groups from this week aloud, then spot one in the shopping conversation.",
+          "adaptation": "Move the object farther away and change この to あの or その as needed.",
           "successChecks": [
-            "Understands a question about origin",
-            "Gives a place in the answer",
-            "Returns the question or adds a follow-up"
+            "Asks about a specific noun",
+            "Identifies an owner",
+            "Understands a simple location word"
           ]
         },
         {
           "id": "W02-L3",
-          "title": "Answer questions and follow up",
+          "title": "Compare two choices",
           "stage": "adapt",
-          "goal": "Answer familiar personal questions and keep the exchange going with a follow-up.",
-          "scene": "A host asks a visitor their name, country, and whether it is their first visit.",
+          "goal": "Ask which item fits your need and respond to a short shop suggestion.",
+          "scene": "A shop assistant points out two bags and recommends one with a helpful comment.",
           "dialogue": [
             {
-              "speaker": "host",
-              "ja": "おなまえはなんですか。",
-              "en": "What's your name?"
+              "speaker": "clerk",
+              "ja": "どのかばんがいいですか。",
+              "en": "Which bag would you like?"
             },
             {
-              "speaker": "visitor",
-              "ja": "さきです。",
-              "en": "I'm Saki."
+              "speaker": "traveller",
+              "ja": "このかばんがいいです。",
+              "en": "I like this bag."
             },
             {
-              "speaker": "host",
-              "ja": "にほんははじめてですか。",
-              "en": "Is this your first time in Japan?"
-            },
-            {
-              "speaker": "visitor",
-              "ja": "はい、はじめてです。",
-              "en": "Yes, it's my first time."
+              "speaker": "clerk",
+              "ja": "そのかばん、かるいですよ。",
+              "en": "That bag is light, you know."
             }
           ],
           "listenCheck": {
-            "question": "Is this the visitor's first time in Japan?",
+            "question": "Which bag does the traveller choose?",
             "choices": [
-              "Yes",
-              "No",
-              "The dialogue doesn't say"
+              "The one nearby",
+              "The one far away",
+              "No bag"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Answer にほんははじめてですか truthfully.",
+            "prompt": "You agree that a suggested item looks good. Choose a natural response.",
             "choices": [
-              "はい、はじめてです。",
-              "おすすめはなんですか。",
-              "まっすぐです。"
+              "そうですね。",
+              "それはだれのですか。",
+              "ごごいちじです。"
+            ],
+            "meanings": [
+              "That’s right / I agree.",
+              "Whose is that?",
+              "It is 1 p.m."
             ],
             "answer": 0,
-            "why": "This is a yes-answer to a question about a first visit."
+            "why": "A short agreement keeps a simple shopping exchange moving."
           },
-          "sayTask": "Complete the three-part checkpoint with your name, home country, and whether this is your first visit.",
-          "adaptation": "Ask one of the questions to your partner, listen to the answer, and respond with そうですか or a follow-up.",
+          "sayTask": "Choose between two things and give one short reason or reaction. As a short daily companion practice, read two or three katakana groups from this week aloud, then spot one in the shopping conversation.",
+          "adaptation": "Change the item and choose between これ・それ・あれ or この・その・あの.",
           "successChecks": [
-            "Answers at least two familiar questions",
-            "Can identify a name or place from a clear question",
-            "Keeps the exchange going with a follow-up"
+            "Understands a choice question",
+            "Selects an item",
+            "Catches a short comment with よ"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 2 · Things around you",
+      "learningTargets": [
+        "Use これ・それ・あれ・どれ and この・その・あの・どの to point out items and ask whose they are.",
+        "Ask about price and location, and notice ね・よ in a short shopping exchange.",
+        "Take a first pass through core katakana; practise a few groups per session and revisit them later. Voiced/contracted sounds, ッ, ー, and foreign-word spellings are early exposure, not a mastery deadline."
       ]
     },
     {
       "week": 3,
-      "title": "Ask, answer, and follow up",
-      "canDo": "Ask what or where something is, ask for repetition, and respond to a simple answer.",
+      "title": "Talk about routines and make plans",
+      "canDo": "Ask about a daily routine, say when and where you do something, and invite someone to join you.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -520,6 +596,16 @@
           "ja": "ゆっくりおねがいします。",
           "en": "Slowly, please.",
           "use": "Ask someone to slow down."
+        },
+        {
+          "ja": "まいにち、[こと] をします。",
+          "en": "I do [activity] every day.",
+          "use": "Talk about a simple routine."
+        },
+        {
+          "ja": "いっしょに [こと] しませんか。",
+          "en": "Would you like to [activity] together?",
+          "use": "Invite someone politely."
         }
       ],
       "kanaFocus": [
@@ -536,165 +622,199 @@
           "reading": "なに / なん",
           "meaning": "what",
           "whyHere": "Recognize this common question character; the spoken reading changes with the phrase."
+        },
+        {
+          "kanji": "毎日",
+          "reading": "まいにち",
+          "meaning": "every day",
+          "whyHere": "Recognize a common time word in routines."
+        },
+        {
+          "kanji": "時間",
+          "reading": "じかん",
+          "meaning": "time / hours",
+          "whyHere": "A practical schedule word; reading support stays in kana."
         }
       ],
       "lessons": [
         {
           "id": "W03-L1",
-          "title": "Ask what something is",
+          "title": "Ask about a morning routine",
           "stage": "recognize",
-          "goal": "Ask what an unfamiliar item is and respond to the answer.",
-          "scene": "You point to a small item on a café counter.",
+          "goal": "Ask and answer what time someone usually gets up.",
+          "scene": "A classmate asks about your morning before a weekend study session.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。これはなんですか。",
-              "en": "Excuse me. What is this?"
-            },
-            {
-              "speaker": "staff",
-              "ja": "ゆずのジュースです。",
-              "en": "It's yuzu juice."
+              "speaker": "classmate",
+              "ja": "まいあさ、なんじにおきますか。",
+              "en": "What time do you get up each morning?"
             },
             {
               "speaker": "traveller",
-              "ja": "そうですか。",
-              "en": "I see."
+              "ja": "しちじにおきます。",
+              "en": "I get up at seven."
+            },
+            {
+              "speaker": "classmate",
+              "ja": "わたしはろくじはんにおきます。",
+              "en": "I get up at half past six."
             }
           ],
           "listenCheck": {
-            "question": "What is the item?",
+            "question": "What time does the traveller get up?",
             "choices": [
-              "Yuzu juice",
-              "Coffee",
-              "A menu"
+              "7 a.m.",
+              "6:30 a.m.",
+              "8 a.m."
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You do not know what an item is. Choose the question.",
+            "prompt": "You get up at 7. Choose the answer.",
             "choices": [
-              "これはなんですか。",
-              "どちらからきましたか。",
-              "なんじですか。"
+              "しちじにおきます。",
+              "しちじにねます。",
+              "しちじはどこですか。"
+            ],
+            "meanings": [
+              "I get up at seven.",
+              "I sleep at seven.",
+              "Where is seven?"
             ],
             "answer": 0,
-            "why": "これはなんですか asks what the thing is."
+            "why": "おきます is a polite non-past form for a routine."
           },
-          "sayTask": "Point to an imagined item and ask これはなんですか. Listen to a partner's answer.",
-          "adaptation": "Replace yuzu juice with one unfamiliar item and ask a second question about it.",
+          "sayTask": "Say what time you get up, eat breakfast, or start your day.",
+          "adaptation": "Change the time and ask your partner one follow-up about their routine.",
           "successChecks": [
-            "Identifies the object being discussed",
-            "Uses これはなんですか",
-            "Responds to the answer"
+            "Catches a time",
+            "Uses a polite routine verb",
+            "Asks one related question"
           ]
         },
         {
           "id": "W03-L2",
-          "title": "Ask where a place is",
+          "title": "Say where you study",
           "stage": "supported-response",
-          "goal": "Ask where a place is and understand a short location reply.",
-          "scene": "You need to find the nearest restroom in a station.",
+          "goal": "Use a time, an activity, and a place in a short routine description.",
+          "scene": "A friend asks where you usually study Japanese after class.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。おてあらいはどこですか。",
-              "en": "Excuse me. Where is the restroom?"
-            },
-            {
-              "speaker": "staff",
-              "ja": "あそこです。",
-              "en": "It's over there."
+              "speaker": "friend",
+              "ja": "どこでにほんごをべんきょうしますか。",
+              "en": "Where do you study Japanese?"
             },
             {
               "speaker": "traveller",
-              "ja": "ありがとうございます。",
-              "en": "Thank you very much."
+              "ja": "としょかんでべんきょうします。",
+              "en": "I study at the library."
+            },
+            {
+              "speaker": "friend",
+              "ja": "まいにちですか。",
+              "en": "Every day?"
             }
           ],
           "listenCheck": {
-            "question": "Where is the restroom?",
+            "question": "Where does the traveller study?",
             "choices": [
-              "Over there",
-              "Upstairs",
-              "Outside"
+              "At the library",
+              "At home",
+              "At a café"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You need to locate the exit. Choose the useful question frame.",
+            "prompt": "Say you read at home every day.",
             "choices": [
-              "でぐちはどこですか。",
-              "これはいくらですか。",
-              "なにがすきですか。"
+              "まいにち、うちでほんをよみます。",
+              "まいにち、うちにほんをよみます。",
+              "まいにち、うちをほんです。"
+            ],
+            "meanings": [
+              "I read a book at home every day.",
+              "Incorrect particle use.",
+              "Incorrect sentence pattern."
             ],
             "answer": 0,
-            "why": "どこですか asks where something is."
+            "why": "で marks the place where an action happens, and を marks the object."
           },
-          "sayTask": "Ask where the restroom, exit, or ticket counter is; understand あそこ or こちら in reply.",
-          "adaptation": "Swap the destination and ask for one more direction, such as upstairs or outside.",
+          "sayTask": "Make one short sentence about an activity, its place, and how often you do it.",
+          "adaptation": "Swap the activity and place; try a different frequency such as よく or ときどき.",
           "successChecks": [
-            "Names a place",
-            "Uses どこですか",
-            "Understands one simple location answer"
+            "Uses a place for an action",
+            "Names an activity",
+            "Understands a frequency detail"
           ]
         },
         {
           "id": "W03-L3",
-          "title": "Ask for another listen",
+          "title": "Invite a friend",
           "stage": "adapt",
-          "goal": "Ask someone to repeat or slow down, then catch the key place or detail.",
-          "scene": "A station announcement or helpful passer-by speaks too quickly.",
+          "goal": "Invite someone to do a familiar activity and understand a yes or no reply.",
+          "scene": "After class, you ask a classmate to get a drink together.",
           "dialogue": [
             {
               "speaker": "traveller",
-              "ja": "すみません。もういちどおねがいします。",
-              "en": "Excuse me. One more time, please."
+              "ja": "このあと、コーヒーをのみませんか。",
+              "en": "Would you like to have coffee after this?"
             },
             {
-              "speaker": "helper",
-              "ja": "えきは、あちらです。",
-              "en": "The station is that way."
+              "speaker": "classmate",
+              "ja": "いいですね。いきましょう。",
+              "en": "That sounds good. Let’s go."
             },
             {
               "speaker": "traveller",
-              "ja": "ゆっくりおねがいします。",
-              "en": "Slowly, please."
+              "ja": "じゃあ、えきであいましょう。",
+              "en": "Then let’s meet at the station."
             }
           ],
           "listenCheck": {
-            "question": "Which place does the helper point to?",
+            "question": "Does the classmate accept the invitation?",
             "choices": [
-              "The station",
-              "The café",
-              "The hotel"
+              "Yes",
+              "No",
+              "They ask to meet tomorrow"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You missed an answer. Which repair phrase keeps the conversation going?",
+            "prompt": "Your friend invites you and you would like to go. Choose a reply.",
             "choices": [
-              "もういちどおねがいします。",
-              "さようなら。",
-              "これをひとつ。"
+              "いいですね。",
+              "すみません、いけません。",
+              "なんじにおきますか。"
+            ],
+            "meanings": [
+              "That sounds good.",
+              "Sorry, I can’t go.",
+              "What time do you get up?"
             ],
             "answer": 0,
-            "why": "This politely asks the other person to repeat."
+            "why": "いいですね accepts the invitation warmly."
           },
-          "sayTask": "Practise both repair phrases. Ask your partner to repeat and then to speak slowly.",
-          "adaptation": "Listen once without text, use one repair phrase, and listen again before revealing the meaning.",
+          "sayTask": "Invite someone to a café, walk, or study session; practise accepting and declining.",
+          "adaptation": "Change the activity and place, then ask what time works.",
           "successChecks": [
-            "Notices when information was missed",
-            "Uses a repair phrase",
-            "Extracts the place after repetition"
+            "Recognizes an invitation",
+            "Accepts or declines clearly",
+            "Confirms a simple plan"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 3 · Daily routines and invitations",
+      "learningTargets": [
+        "Use polite present/non-past verb forms to talk about habits and everyday actions.",
+        "Place time, activity, and location information in a simple sentence using に・で・を.",
+        "Ask about routines, use a frequency word, and invite someone with 〜ませんか.",
+        "Read familiar kana in short routine words and distinguish time and place details by listening."
       ]
     },
     {
       "week": 4,
-      "title": "Make a café request",
-      "canDo": "Order a simple drink or item, ask for the price, and say whether you will eat in or take away.",
+      "title": "Talk about places and past events",
+      "canDo": "Say where people or things are, ask what happened, and give a short account of a past day.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -716,6 +836,16 @@
           "ja": "いくらですか。",
           "en": "How much is it?",
           "use": "Ask a price."
+        },
+        {
+          "ja": "きのう、[ばしょ] にいきました。",
+          "en": "Yesterday, I went to [place].",
+          "use": "Give a simple past event."
+        },
+        {
+          "ja": "[もの] は [ばしょ] にあります。",
+          "en": "[Item] is at [place].",
+          "use": "Say where a thing is."
         }
       ],
       "kanaFocus": [
@@ -729,176 +859,204 @@
           "reading": "えん",
           "meaning": "yen",
           "whyHere": "Recognize the currency character on a menu or price display."
+        },
+        {
+          "kanji": "週末",
+          "reading": "しゅうまつ",
+          "meaning": "weekend",
+          "whyHere": "A whole-word recognition item for a past-weekend story."
         }
       ],
       "milestone": {
         "id": "M04-transactions",
-        "title": "Café and shop checkpoint",
-        "task": "Complete a 60–90 second predictable café or shop exchange with a polite request and item confirmation. Catch the requested item or choice in four of five short prompts.",
+        "title": "Places and past-events checkpoint",
+        "task": "Locate one person or object, then tell a short account of a past visit. Include one detail from the earlier shopping conversations and catch at least four of five simple details.",
         "evidence": [
-          "Exchange completed",
-          "Item/request understood",
-          "Listening result out of five",
-          "Support used and next practice target"
+          "Location question and answer",
+          "Past event described",
+          "Earlier shopping function revisited",
+          "Listening result and next practice target"
         ]
       },
       "lessons": [
         {
           "id": "W04-L1",
-          "title": "Order a drink or item",
+          "title": "Find a place in town",
           "stage": "recognize",
-          "goal": "Order a familiar drink or item and answer a simple choice question.",
-          "scene": "A café worker asks what you would like.",
+          "goal": "Ask where something is and understand whether a person or thing is there.",
+          "scene": "You are looking for a small café near a station and ask a local for help.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "ごちゅうもんは。",
-              "en": "What would you like?"
+              "speaker": "traveller",
+              "ja": "カフェはどこにありますか。",
+              "en": "Where is the café?"
+            },
+            {
+              "speaker": "local",
+              "ja": "えきのとなりにあります。",
+              "en": "It is next to the station."
             },
             {
               "speaker": "traveller",
-              "ja": "コーヒーをください。",
-              "en": "A coffee, please."
-            },
-            {
-              "speaker": "staff",
-              "ja": "ホットですか、アイスですか。",
-              "en": "Hot or iced?"
+              "ja": "ともだちもそこにいますか。",
+              "en": "Is my friend there too?"
             }
           ],
           "listenCheck": {
-            "question": "What does the traveller order?",
+            "question": "Where is the café?",
             "choices": [
-              "Coffee",
-              "Tea",
-              "Water"
+              "Next to the station",
+              "Inside the station",
+              "Across from the hotel"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Order a coffee politely.",
+            "prompt": "Ask where a friend is. Choose the location question.",
             "choices": [
-              "コーヒーをください。",
-              "コーヒーはどこですか。",
-              "コーヒーからきました。"
+              "ゆきさんはどこにいますか。",
+              "ゆきさんはなんじですか。",
+              "ゆきさんをください。"
+            ],
+            "meanings": [
+              "Where is Yuki?",
+              "What time is Yuki?",
+              "Yuki, please."
             ],
             "answer": 0,
-            "why": "ください makes a simple polite request."
+            "why": "います is used for a person or animal in a place."
           },
-          "sayTask": "Order one drink and answer ホットですか、アイスですか with your preference.",
-          "adaptation": "Replace coffee with tea or water and change hot/iced choice.",
+          "sayTask": "Ask where one person and one thing are, then repeat the location you hear.",
+          "adaptation": "Change the café and station to a shop, a bag, or a friend’s location.",
           "successChecks": [
-            "Catches the item",
-            "Makes a polite order",
-            "Answers a choice question"
+            "Asks where something is",
+            "Distinguishes a person from a thing",
+            "Understands a location reply"
           ]
         },
         {
           "id": "W04-L2",
-          "title": "Eat here or take away",
+          "title": "Describe yesterday",
           "stage": "supported-response",
-          "goal": "Say whether you want to eat here or take your order away.",
-          "scene": "The cashier asks whether the food is for here or to go.",
+          "goal": "Ask and answer what someone did yesterday using polite past forms.",
+          "scene": "A friend asks about your weekend after a day out together.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "こちらでおめしあがりですか。",
-              "en": "Will you eat here?"
+              "speaker": "friend",
+              "ja": "きのうはどうでしたか。",
+              "en": "How was yesterday?"
             },
             {
               "speaker": "traveller",
-              "ja": "はい、ここでたべます。",
-              "en": "Yes, I'll eat here."
+              "ja": "こうえんにいきました。ともだちとしゃしんをとりました。",
+              "en": "I went to the park. I took photos with a friend."
             },
             {
-              "speaker": "staff",
-              "ja": "では、こちらでどうぞ。",
-              "en": "Then please have a seat here."
+              "speaker": "friend",
+              "ja": "たのしかったですか。",
+              "en": "Was it fun?"
             }
           ],
           "listenCheck": {
-            "question": "Where will the traveller eat?",
+            "question": "Where did the traveller go?",
             "choices": [
-              "Here",
-              "At the hotel",
-              "On the train"
+              "To a park",
+              "To a museum",
+              "To a station"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You want to take the food away. Choose the response.",
+            "prompt": "Say that you went to a café yesterday.",
             "choices": [
-              "もちかえりでおねがいします。",
-              "ここでたべます。",
-              "なんじですか。"
+              "きのう、カフェにいきました。",
+              "きのう、カフェにいきます。",
+              "あした、カフェにいきました。"
+            ],
+            "meanings": [
+              "Yesterday, I went to a café.",
+              "Tomorrow/present non-past mismatch.",
+              "Tomorrow, I went to a café."
             ],
             "answer": 0,
-            "why": "もちかえりでおねがいします requests takeaway."
+            "why": "ました marks a polite past action."
           },
-          "sayTask": "Answer the dine-in question once with yes and once with takeaway.",
-          "adaptation": "Change the order from a drink to a sandwich; choose eat-in or take-away.",
+          "sayTask": "Tell a partner one thing you did yesterday and one reaction to it.",
+          "adaptation": "Change the place and add a second activity with と or も.",
           "successChecks": [
-            "Understands the choice",
-            "States a clear preference",
-            "Keeps the order polite"
+            "Recognizes a past-time word",
+            "Uses a polite past verb",
+            "Adds a simple reaction"
           ]
         },
         {
           "id": "W04-L3",
-          "title": "Confirm the price",
+          "title": "Add a detail to your story",
           "stage": "adapt",
-          "goal": "Understand a displayed or spoken price and make a choice.",
-          "scene": "You are checking a menu before ordering at a counter.",
+          "goal": "Add a quantity or duration when you talk about a past activity.",
+          "scene": "You compare notes about a visit that lasted part of the afternoon.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。これはいくらですか。",
-              "en": "Excuse me. How much is this?"
-            },
-            {
-              "speaker": "staff",
-              "ja": "ごひゃくえんです。",
-              "en": "It's 500 yen."
+              "speaker": "friend",
+              "ja": "どのくらいまちましたか。",
+              "en": "How long did you wait?"
             },
             {
               "speaker": "traveller",
-              "ja": "では、これをください。",
-              "en": "Then I'll have this, please."
+              "ja": "いちじかんぐらいまちました。",
+              "en": "I waited for about an hour."
+            },
+            {
+              "speaker": "friend",
+              "ja": "わたしもたくさんしゃしんをとりました。",
+              "en": "I took lots of photos too."
             }
           ],
           "listenCheck": {
-            "question": "How much is the item?",
+            "question": "How long did the traveller wait?",
             "choices": [
-              "500 yen",
-              "300 yen",
-              "1,000 yen"
+              "About an hour",
+              "About ten minutes",
+              "All afternoon"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You know what you want after hearing the price. What can you say?",
+            "prompt": "Say you took many photos too.",
             "choices": [
-              "では、これをください。",
-              "どちらからきましたか。",
-              "もういちどおねがいします。"
+              "わたしもしゃしんをたくさんとりました。",
+              "わたしはしゃしんをとります。",
+              "しゃしんはどこですか。"
+            ],
+            "meanings": [
+              "I took lots of photos too.",
+              "I take photos.",
+              "Where are the photos?"
             ],
             "answer": 0,
-            "why": "では connects your decision to a polite order."
+            "why": "も adds “also,” and たくさん adds quantity."
           },
-          "sayTask": "Ask the price, listen to a number, then accept or politely choose another item.",
-          "adaptation": "Use a different price and item. Ask the cashier to repeat if needed.",
+          "sayTask": "Retell a past visit and add a count, duration, or “also” detail.",
+          "adaptation": "Change the activity and duration; ask your partner one follow-up.",
           "successChecks": [
-            "Understands a price",
-            "Recognizes 円 on a price display",
-            "Makes a choice after hearing the answer"
+            "Catches a duration",
+            "Adds a quantity or shared detail",
+            "Retells a short event"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 4 · Places and the past",
+      "learningTargets": [
+        "Locate a person or thing with あります・います and a simple place relationship.",
+        "Ask and answer about a past day with polite past forms such as でした and ました.",
+        "Use も, と, たくさん, and a simple duration to add one useful detail.",
+        "Read place and time words in kana and listen for who, where, and when."
       ]
     },
     {
       "week": 5,
-      "title": "Shop for what you need",
-      "canDo": "Ask for an item, specify a simple quantity, and handle a bag or payment question.",
+      "title": "Describe a trip and make choices",
+      "canDo": "Describe a place or item, say what you like, and invite someone to choose an activity together.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -920,6 +1078,16 @@
           "ja": "ふくろはいりますか。",
           "en": "Do you need a bag?",
           "use": "A common checkout question."
+        },
+        {
+          "ja": "おきなわはあたたかいです。",
+          "en": "Okinawa is warm.",
+          "use": "Describe a place with an い-adjective."
+        },
+        {
+          "ja": "いっしょに [ばしょ] へいきましょう。",
+          "en": "Let's go to [place] together.",
+          "use": "Make a friendly suggestion."
         }
       ],
       "kanaFocus": [
@@ -933,165 +1101,193 @@
           "reading": "ひとつ",
           "meaning": "one item",
           "whyHere": "Recognize a useful quantity form; practise saying the quantity, not handwriting the character."
+        },
+        {
+          "kanji": "旅行",
+          "reading": "りょこう",
+          "meaning": "trip / travel",
+          "whyHere": "Recognize a useful travel word as a whole item."
         }
       ],
       "lessons": [
         {
           "id": "W05-L1",
-          "title": "Ask for an item",
+          "title": "Describe a place",
           "stage": "recognize",
-          "goal": "Ask for a specific item and communicate a simple quantity.",
-          "scene": "You need a bottle of water at a convenience store.",
+          "goal": "Understand a simple description and say what a place is like.",
+          "scene": "A friend is choosing between two places for a short trip.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "みずをひとつください。",
-              "en": "One water, please."
-            },
-            {
-              "speaker": "staff",
-              "ja": "はい。",
-              "en": "Certainly."
+              "speaker": "friend",
+              "ja": "おきなわはどんなところですか。",
+              "en": "What kind of place is Okinawa?"
             },
             {
               "speaker": "traveller",
-              "ja": "ありがとうございます。",
-              "en": "Thank you very much."
+              "ja": "うみがきれいで、あたたかいところです。",
+              "en": "It is a place with a beautiful sea and warm weather."
+            },
+            {
+              "speaker": "friend",
+              "ja": "いいですね。",
+              "en": "That sounds nice."
             }
           ],
           "listenCheck": {
-            "question": "How many waters does the traveller ask for?",
+            "question": "What is the sea like?",
             "choices": [
-              "One",
-              "Two",
-              "Three"
+              "Beautiful",
+              "Cold",
+              "Very busy"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Ask for one item using a polite phrase.",
+            "prompt": "Describe a room as quiet and clean.",
             "choices": [
-              "これをひとつください。",
-              "これはなんですか。",
-              "まっすぐです。"
+              "しずかできれいなへやです。",
+              "しずかなへやをのみます。",
+              "へやはどこですか。"
+            ],
+            "meanings": [
+              "It is a quiet, clean room.",
+              "Incorrect combination.",
+              "Where is the room?"
             ],
             "answer": 0,
-            "why": "ひとつ gives the quantity and ください makes it a request."
+            "why": "A な-adjective can appear before a noun with な."
           },
-          "sayTask": "Choose a familiar shop item and order one. Then order two.",
-          "adaptation": "Swap the item and quantity; say the whole request without the model.",
+          "sayTask": "Describe one place with an adjective, then add one detail about what you can see there.",
+          "adaptation": "Swap the place and use a different adjective; say how it was after a visit.",
           "successChecks": [
-            "Names an item",
-            "Communicates a quantity",
-            "Uses a polite request"
+            "Understands a description",
+            "Uses an adjective with a noun",
+            "Adds one relevant detail"
           ]
         },
         {
           "id": "W05-L2",
-          "title": "Answer a checkout question",
+          "title": "Share a preference",
           "stage": "supported-response",
-          "goal": "Understand a bag question and accept or decline politely.",
-          "scene": "At checkout, the worker asks if you need a bag.",
+          "goal": "Say what you like and understand a short suggestion.",
+          "scene": "You and a friend are picking an activity for a day off.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "ふくろはいりますか。",
-              "en": "Do you need a bag?"
+              "speaker": "friend",
+              "ja": "どんなたべものがすきですか。",
+              "en": "What kind of food do you like?"
             },
             {
               "speaker": "traveller",
-              "ja": "はい、おねがいします。",
-              "en": "Yes, please."
+              "ja": "あまいものがすきです。",
+              "en": "I like sweet things."
             },
             {
-              "speaker": "staff",
-              "ja": "かしこまりました。",
-              "en": "Certainly."
+              "speaker": "friend",
+              "ja": "じゃあ、ケーキをふたつかいましょう。",
+              "en": "Then let’s buy two cakes."
             }
           ],
           "listenCheck": {
-            "question": "What does the traveller ask for?",
+            "question": "What kind of food does the traveller like?",
             "choices": [
-              "A bag",
-              "A receipt",
-              "A bigger size"
+              "Sweet food",
+              "Spicy food",
+              "Sour food"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You do not need a bag. Choose a short answer.",
+            "prompt": "Say you like a quiet café.",
             "choices": [
-              "いいえ、だいじょうぶです。",
-              "はい、ふたつ。",
-              "ここでたべます。"
+              "しずかなカフェがすきです。",
+              "しずかなカフェをすきです。",
+              "カフェはなんじですか。"
+            ],
+            "meanings": [
+              "I like a quiet café.",
+              "Incorrect particle.",
+              "What time is the café?"
             ],
             "answer": 0,
-            "why": "This politely declines the offer."
+            "why": "好き is commonly paired with が."
           },
-          "sayTask": "Answer ふくろはいりますか both ways: yes and no.",
-          "adaptation": "Add one more checkout detail, such as a receipt or payment method.",
+          "sayTask": "Name one thing you like and one you do not like; a real or pretend answer is fine.",
+          "adaptation": "Change the food or activity, then ask what your partner likes.",
           "successChecks": [
-            "Understands the yes/no question",
-            "Accepts or declines clearly",
-            "Recognizes one checkout word in katakana"
+            "Answers a preference question",
+            "Uses が with 好き in a model phrase",
+            "Responds to a suggestion"
           ]
         },
         {
           "id": "W05-L3",
-          "title": "Pay and finish the purchase",
+          "title": "Suggest an activity and count",
           "stage": "adapt",
-          "goal": "Pay for a small purchase and recover when a checkout detail changes.",
-          "scene": "You have chosen two snacks and want to pay by card.",
+          "goal": "Suggest a shared activity and understand a simple item count.",
+          "scene": "At a market, you and a friend plan to buy a few souvenirs before heading out.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "おしはらいはどうしますか。",
-              "en": "How would you like to pay?"
+              "speaker": "traveller",
+              "ja": "このおみやげをみましょうか。",
+              "en": "Shall we look at this souvenir?"
+            },
+            {
+              "speaker": "friend",
+              "ja": "いいですね。はがきをさんまいかいましょう。",
+              "en": "Good idea. Let’s buy three postcards."
             },
             {
               "speaker": "traveller",
-              "ja": "カードでおねがいします。",
-              "en": "By card, please."
-            },
-            {
-              "speaker": "staff",
-              "ja": "こちらにカードをおねがいします。",
-              "en": "Please tap or insert your card here."
+              "ja": "それから、うみへいきましょう。",
+              "en": "Then let’s go to the sea."
             }
           ],
           "listenCheck": {
-            "question": "How does the traveller pay?",
+            "question": "How many postcards will they buy?",
             "choices": [
-              "By card",
-              "With cash",
-              "With a mobile ticket"
+              "Three",
+              "Two",
+              "Five"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "The cashier asks how you will pay. Choose card.",
+            "prompt": "Suggest going to the museum together.",
             "choices": [
-              "カードでおねがいします。",
-              "ふたつください。",
-              "なんじですか。"
+              "いっしょにびじゅつかんへいきましょう。",
+              "びじゅつかんはいくらですか。",
+              "びじゅつかんにすんでいます。"
+            ],
+            "meanings": [
+              "Let's go to the museum together.",
+              "How much is the museum?",
+              "I live in a museum."
             ],
             "answer": 0,
-            "why": "カード identifies card payment."
+            "why": "ましょう is a friendly way to suggest an activity."
           },
-          "sayTask": "Role-play an entire checkout: request an item, confirm the amount, answer about the bag, and pay.",
-          "adaptation": "Change one detail unexpectedly (no bag, different quantity, or cash instead) and keep going.",
+          "sayTask": "Suggest one place or activity and include a small number of items you might bring or buy.",
+          "adaptation": "Change the place, activity, or count. Try ましょうか to offer help.",
           "successChecks": [
-            "Understands the payment choice",
-            "Asks for a quantity",
-            "Recovers when one checkout detail changes"
+            "Makes a suggestion",
+            "Understands a simple counter",
+            "Keeps the plan friendly"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 5 · Travel and choices",
+      "learningTargets": [
+        "Describe things with common い-adjectives and な-adjectives in present and past contexts.",
+        "Say what you like or dislike and place a simple adjective before a noun.",
+        "Make a suggestion with ましょう・ましょうか and count a few familiar items.",
+        "Use kana to read simple travel and menu words; keep kanji as optional recognition support."
       ]
     },
     {
       "week": 6,
-      "title": "Preferences and recommendations",
-      "canDo": "Say what you like or cannot eat, ask for a recommendation, and respond to a suggestion.",
+      "title": "Connect actions and ask permission",
+      "canDo": "Make a polite request, connect two simple actions, ask permission, and understand a simple rule.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -1113,6 +1309,16 @@
           "ja": "[たべもの] のアレルギーがあります。たべられません。",
           "en": "I have an allergy to [food]. I can't eat it.",
           "use": "Name the specific allergy; show a written allergy card and have staff confirm ingredients and cross-contact risk."
+        },
+        {
+          "ja": "ちょっとまってください。",
+          "en": "Please wait a moment.",
+          "use": "Make a short polite request."
+        },
+        {
+          "ja": "ここでしゃしんをとってもいいですか。",
+          "en": "May I take a photo here?",
+          "use": "Ask permission politely."
         }
       ],
       "kanaFocus": [
@@ -1126,36 +1332,42 @@
           "reading": "すき",
           "meaning": "like / favourite",
           "whyHere": "A useful sign or menu word tied directly to preferences."
+        },
+        {
+          "kanji": "毎日",
+          "reading": "まいにち",
+          "meaning": "every day",
+          "whyHere": "Recall this time word while describing a routine."
         }
       ],
       "milestone": {
         "id": "M06-preferences",
-        "title": "Preference and recommendation checkpoint",
-        "task": "State a preference, ask for a recommendation, and add at least one follow-up. Identify the recommendation or choice in four of five clear replies.",
+        "title": "Requests and daily-life checkpoint",
+        "task": "Make a polite request, ask permission or check a rule, and connect two actions with a reason. Catch the key action and reason in four of five clear prompts.",
         "evidence": [
-          "Preference expressed",
-          "Recommendation requested and understood",
-          "Follow-up attempted",
-          "Listening result out of five"
+          "Polite request attempted",
+          "Permission or rule understood",
+          "Two actions connected",
+          "Support used and next practice target"
         ]
       },
       "lessons": [
         {
           "id": "W06-L1",
-          "title": "Ask for a recommendation",
+          "title": "Make a polite request",
           "stage": "recognize",
-          "goal": "Ask what is recommended and add a relevant follow-up question.",
-          "scene": "You are looking at a menu and ask the server what is popular.",
+          "goal": "Ask someone to do a small action using a polite request.",
+          "scene": "At a guesthouse, you ask the host for help with a window before going out.",
           "dialogue": [
             {
               "speaker": "traveller",
-              "ja": "おすすめはなんですか。",
-              "en": "What do you recommend?"
+              "ja": "すみません、まどをあけてください。",
+              "en": "Excuse me, please open the window."
             },
             {
-              "speaker": "server",
-              "ja": "カレーがおすすめです。",
-              "en": "I recommend the curry."
+              "speaker": "host",
+              "ja": "はい、わかりました。",
+              "en": "Yes, certainly."
             },
             {
               "speaker": "traveller",
@@ -1164,138 +1376,160 @@
             }
           ],
           "listenCheck": {
-            "question": "What does the server recommend?",
+            "question": "What does the traveller ask the host to do?",
             "choices": [
-              "Curry",
-              "Ice cream",
-              "Bread"
+              "Open the window",
+              "Close the door",
+              "Bring some water"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You want advice about what to order. Choose the question.",
+            "prompt": "Ask someone to wait a moment, politely.",
             "choices": [
-              "おすすめはなんですか。",
-              "どこからきましたか。",
-              "ふくろはいりますか。"
+              "ちょっとまってください。",
+              "ちょっとまちます。",
+              "ちょっとまちませんか。"
+            ],
+            "meanings": [
+              "Please wait a moment.",
+              "I will wait a moment.",
+              "Shall we wait a moment?"
             ],
             "answer": 0,
-            "why": "おすすめ asks for a recommendation."
+            "why": "てください makes a direct but polite request."
           },
-          "sayTask": "Ask for a recommendation and listen for one menu item.",
-          "adaptation": "Ask whether the recommended item is spicy, hot, or sweet.",
+          "sayTask": "Ask for one helpful action, such as opening a window or showing a place.",
+          "adaptation": "Change the action and add a short thank-you after the response.",
           "successChecks": [
-            "Recognizes the recommended item",
-            "Asks for a recommendation",
-            "Adds a relevant question"
+            "Names the requested action",
+            "Uses a polite request",
+            "Acknowledges the help"
           ]
         },
         {
           "id": "W06-L2",
-          "title": "Say what you like",
+          "title": "Ask what is allowed",
           "stage": "supported-response",
-          "goal": "Say which option you like and respond to a suggestion.",
-          "scene": "A travelling companion asks which dessert you prefer.",
+          "goal": "Ask permission for an activity and understand a simple rule.",
+          "scene": "At a garden, you check whether taking photos is okay before you begin.",
           "dialogue": [
             {
-              "speaker": "companion",
-              "ja": "あまいものはすきですか。",
-              "en": "Do you like sweet things?"
+              "speaker": "traveller",
+              "ja": "ここでしゃしんをとってもいいですか。",
+              "en": "May I take a photo here?"
+            },
+            {
+              "speaker": "staff",
+              "ja": "はい、いいですよ。でも、あそこでおよいではいけません。",
+              "en": "Yes, that is fine. But you must not swim over there."
             },
             {
               "speaker": "traveller",
-              "ja": "はい、あまいものがすきです。",
-              "en": "Yes, I like sweet things."
-            },
-            {
-              "speaker": "companion",
-              "ja": "じゃあ、アイスクリームはどうですか。",
-              "en": "Then how about ice cream?"
+              "ja": "わかりました。",
+              "en": "I understand."
             }
           ],
           "listenCheck": {
-            "question": "What kind of food does the traveller like?",
+            "question": "What activity is not allowed over there?",
             "choices": [
-              "Sweet food",
-              "Spicy food",
-              "Salty food"
+              "Swimming",
+              "Taking photos",
+              "Walking"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Say that you like curry.",
+            "prompt": "Ask whether you may sit here.",
             "choices": [
-              "カレーがすきです。",
-              "カレーはどこですか。",
-              "カレーをふたつ。"
+              "ここにすわってもいいですか。",
+              "ここにすわってはいけません。",
+              "ここにすわりませんか。"
+            ],
+            "meanings": [
+              "May I sit here?",
+              "You must not sit here.",
+              "Shall we sit here?"
             ],
             "answer": 0,
-            "why": "がすきです is a beginner-friendly way to state a preference."
+            "why": "てもいいですか asks permission; the answer can set a boundary."
           },
-          "sayTask": "State one food you like and one you do not like. Keep the answer simple.",
-          "adaptation": "Respond to a suggestion with a yes or a polite no and a reason you choose.",
+          "sayTask": "Ask permission for one ordinary activity and listen for yes, no, or a rule.",
+          "adaptation": "Change the place or activity and say the rule in a gentle, clear way.",
           "successChecks": [
-            "Understands a preference question",
-            "Names a preference",
-            "Responds to a suggestion"
+            "Recognizes a permission question",
+            "Catches a simple prohibition",
+            "Responds appropriately"
           ]
         },
         {
           "id": "W06-L3",
-          "title": "Handle a food limitation",
+          "title": "Give a reason and offer help",
           "stage": "adapt",
-          "goal": "Explain one food limitation and ask for or accept an alternative.",
-          "scene": "You ask what is in a dish and explain that you cannot eat one ingredient.",
+          "goal": "Give a short reason and offer to help with one action.",
+          "scene": "A travel companion is carrying bags while it starts to rain.",
           "dialogue": [
             {
               "speaker": "traveller",
-              "ja": "これはなんですか。",
-              "en": "What is this?"
+              "ja": "あめですから、かさをもちましょうか。",
+              "en": "It is raining, so shall I carry the umbrella?"
             },
             {
-              "speaker": "server",
-              "ja": "えびのサラダです。",
-              "en": "It's shrimp salad."
+              "speaker": "friend",
+              "ja": "ありがとうございます。にもつもおねがいします。",
+              "en": "Thank you. Please take the bag too."
             },
             {
               "speaker": "traveller",
-              "ja": "すみません。えびのアレルギーがあります。たべられません。",
-              "en": "Excuse me. I'm allergic to shrimp. I can't eat it."
+              "ja": "はい、もちます。",
+              "en": "Of course, I will carry it."
             }
           ],
           "listenCheck": {
-            "question": "What ingredient can the traveller not eat?",
+            "question": "What does the traveller offer to carry?",
             "choices": [
-              "Shrimp",
-              "Egg",
-              "Peanuts"
+              "An umbrella and a bag",
+              "A camera",
+              "A map"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "For a real allergy, state the specific food and show a written allergy card.",
+            "prompt": "Offer to help open a door.",
             "choices": [
-              "[たべもの] のアレルギーがあります。たべられません。",
-              "[たべもの] がすきです。",
-              "[たべもの] はどこですか。"
+              "ドアをあけましょうか。",
+              "ドアをあけてはいけません。",
+              "ドアをあけました。"
+            ],
+            "meanings": [
+              "Shall I open the door?",
+              "You must not open the door.",
+              "I opened the door."
             ],
             "answer": 0,
-            "why": "This states the named allergy, but this short phrase is not a safety guarantee. For a real allergy, show a specific written allergy card, ask staff to check ingredients and cross-contact risk, and do not eat unless it is confirmed safe."
+            "why": "ましょうか can offer help; から can connect a reason to an action."
           },
-          "sayTask": "Practise saying one real or pretend food limitation clearly; have a partner repeat what they understood.",
-          "adaptation": "Ask for another recommendation after explaining the limitation.",
+          "sayTask": "Give one short reason for a request or plan, then offer one helpful action.",
+          "adaptation": "Change the weather or need and offer a different action.",
           "successChecks": [
-            "Catches the ingredient in a reply",
-            "States the limitation clearly",
-            "Asks for or accepts an alternative"
+            "Gives a clear reason",
+            "Offers a specific action",
+            "Understands the reply"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 6 · Requests and linked actions",
+      "learningTargets": [
+        "Use common て-form requests with 〜てください and link two actions in order.",
+        "Ask permission with 〜てもいいですか and recognize a prohibition with 〜てはいけません.",
+        "Give a simple reason with から and offer help with 〜ましょうか.",
+        "Read action phrases in kana and use them in a familiar trip or daily-life scene."
       ]
     },
     {
       "week": 7,
-      "title": "Find places and follow directions",
-      "canDo": "Ask where a place is and follow a short direction with one or two turns.",
+      "title": "Describe people and what they are doing",
+      "canDo": "Describe a person’s appearance, say what someone is doing or where they live, and count family members.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -1317,6 +1551,16 @@
           "ja": "ここからちかいですか。",
           "en": "Is it close from here?",
           "use": "Check distance."
+        },
+        {
+          "ja": "あのひとは [ふく] をきています。",
+          "en": "That person is wearing [clothes].",
+          "use": "Describe clothing you can see."
+        },
+        {
+          "ja": "かぞくはなんにんですか。",
+          "en": "How many people are in your family?",
+          "use": "Ask about a family or group."
         }
       ],
       "kanaFocus": [
@@ -1336,165 +1580,193 @@
           "reading": "いりぐち / でぐち",
           "meaning": "entrance / exit",
           "whyHere": "Immediate practical value on buildings and transit signs."
+        },
+        {
+          "kanji": "家族",
+          "reading": "かぞく",
+          "meaning": "family",
+          "whyHere": "Recognize a common topic word; the reading remains alongside it."
         }
       ],
       "lessons": [
         {
           "id": "W07-L1",
-          "title": "Ask for the station",
+          "title": "Notice what someone is doing",
           "stage": "recognize",
-          "goal": "Ask for the nearest station and recognize 駅 on a sign.",
-          "scene": "You are outside and need to find the nearest station.",
+          "goal": "Say what a person is doing right now using a simple action-in-progress phrase.",
+          "scene": "You are looking at a photo from a group outing and describe what your friend is doing.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。えきはどこですか。",
-              "en": "Excuse me. Where is the station?"
-            },
-            {
-              "speaker": "local",
-              "ja": "あのしんごうのところです。",
-              "en": "It's by that traffic light."
+              "speaker": "friend",
+              "ja": "このしゃしんで、ゆきさんはなにをしていますか。",
+              "en": "What is Yuki doing in this photo?"
             },
             {
               "speaker": "traveller",
-              "ja": "ありがとうございます。",
-              "en": "Thank you very much."
+              "ja": "おべんとうをたべています。",
+              "en": "She is eating a packed lunch."
+            },
+            {
+              "speaker": "friend",
+              "ja": "みんな、たのしそうですね。",
+              "en": "Everyone looks like they are having fun."
             }
           ],
           "listenCheck": {
-            "question": "What landmark is near the station?",
+            "question": "What is Yuki doing?",
             "choices": [
-              "A traffic light",
-              "A bridge",
-              "A shop"
+              "Eating lunch",
+              "Taking a photo",
+              "Reading a book"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Ask where the hotel is.",
+            "prompt": "Say your friend is reading a book now.",
             "choices": [
-              "ホテルはどこですか。",
-              "ホテルはいくらですか。",
-              "ホテルがすきです。"
+              "ともだちはほんをよんでいます。",
+              "ともだちはほんをよみます。",
+              "ともだちはほんをよみました。"
+            ],
+            "meanings": [
+              "My friend is reading a book.",
+              "My friend reads books.",
+              "My friend read a book."
             ],
             "answer": 0,
-            "why": "どこですか asks for a location."
+            "why": "ています can describe an action happening now."
           },
-          "sayTask": "Ask for the station, hotel, or restroom. Listen for a place or landmark in reply.",
-          "adaptation": "Change the destination and ask whether it is near.",
+          "sayTask": "Describe one action in a photo using 〜ています.",
+          "adaptation": "Change the person and action; say what you are doing now too.",
           "successChecks": [
-            "Asks where a place is",
-            "Recognizes a landmark",
-            "Understands 駅 on a sign"
+            "Identifies the current action",
+            "Uses a ています phrase",
+            "Adds a person or object detail"
           ]
         },
         {
           "id": "W07-L2",
-          "title": "Follow two directions",
+          "title": "Describe a family member",
           "stage": "supported-response",
-          "goal": "Follow two short direction steps and confirm their order.",
-          "scene": "A passer-by gives a short route to a convenience store.",
+          "goal": "Describe a person’s clothes and appearance with two short details.",
+          "scene": "A friend asks you to identify your sibling in a family photo.",
           "dialogue": [
             {
-              "speaker": "local",
-              "ja": "まっすぐいってください。",
-              "en": "Please go straight."
-            },
-            {
-              "speaker": "local",
-              "ja": "それから、みぎにまがってください。",
-              "en": "Then turn right."
+              "speaker": "friend",
+              "ja": "おとうとはどのひとですか。",
+              "en": "Which person is your younger brother?"
             },
             {
               "speaker": "traveller",
-              "ja": "まっすぐいって、みぎですね。",
-              "en": "Go straight, then right, correct?"
+              "ja": "あおいシャツをきています。かみがみじかくて、げんきなひとです。",
+              "en": "He is wearing a blue shirt. He has short hair and is energetic."
+            },
+            {
+              "speaker": "friend",
+              "ja": "あのひとですね。",
+              "en": "That person, right?"
             }
           ],
           "listenCheck": {
-            "question": "Which way does the traveller turn?",
+            "question": "What color shirt is the brother wearing?",
             "choices": [
-              "Right",
-              "Left",
-              "Back"
+              "Blue",
+              "Red",
+              "White"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Confirm that you heard 'straight, then right'.",
+            "prompt": "Describe someone as kind and quiet.",
             "choices": [
-              "まっすぐいって、みぎですね。",
-              "あしたのさんじです。",
-              "これをください。"
+              "やさしくて、しずかなひとです。",
+              "やさしいひとをのみます。",
+              "しずかなひとにいきます。"
+            ],
+            "meanings": [
+              "A kind and quiet person.",
+              "I drink a kind person.",
+              "I go to a quiet person."
             ],
             "answer": 0,
-            "why": "Repeating back the route checks your understanding."
+            "why": "The て-form can join two simple descriptions."
           },
-          "sayTask": "Listen to two short direction steps and repeat them back in order.",
-          "adaptation": "Change the second step to a left turn or going upstairs.",
+          "sayTask": "Describe someone’s clothing and one more visible or familiar quality.",
+          "adaptation": "Choose another family member or friend; keep details respectful and simple.",
           "successChecks": [
-            "Gets the order of two steps",
-            "Recognizes right versus left",
-            "Confirms the route aloud"
+            "Names a clothing detail",
+            "Links two descriptions",
+            "Identifies the intended person"
           ]
         },
         {
           "id": "W07-L3",
-          "title": "Clarify the destination",
+          "title": "Talk about family plans",
           "stage": "adapt",
-          "goal": "Distinguish an entrance from an exit and clarify which way to go.",
-          "scene": "You see both an entrance and an exit and need to know which way to go.",
+          "goal": "Ask how many people are in a family and share a simple plan to go somewhere for an activity.",
+          "scene": "You talk about your family and invite a friend to see a film together.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。いりぐちはどこですか。",
-              "en": "Excuse me. Where is the entrance?"
-            },
-            {
-              "speaker": "staff",
-              "ja": "でぐちのとなりです。",
-              "en": "It's next to the exit."
+              "speaker": "friend",
+              "ja": "かぞくはなんにんですか。",
+              "en": "How many people are in your family?"
             },
             {
               "speaker": "traveller",
-              "ja": "でぐちのとなりですね。",
-              "en": "Next to the exit, right?"
+              "ja": "よにんです。らいしゅう、いもうととえいがをみにいきます。",
+              "en": "Four. Next week, I’m going to see a film with my younger sister."
+            },
+            {
+              "speaker": "friend",
+              "ja": "いいですね。",
+              "en": "That sounds nice."
             }
           ],
           "listenCheck": {
-            "question": "Where is the entrance?",
+            "question": "How many people are in the traveller’s family?",
             "choices": [
-              "Next to the exit",
-              "Across from the station",
-              "Upstairs"
+              "Four",
+              "Three",
+              "Five"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Ask where the exit is.",
+            "prompt": "Say you are going to eat ramen with a friend.",
             "choices": [
-              "でぐちはどこですか。",
-              "でぐちはなんじですか。",
-              "でぐちはいくらですか。"
+              "ともだちとラーメンをたべにいきます。",
+              "ともだちとラーメンをたべています。",
+              "ともだちとラーメンがすきです。"
+            ],
+            "meanings": [
+              "I am going to eat ramen with a friend.",
+              "I am eating ramen with a friend.",
+              "I like ramen with a friend."
             ],
             "answer": 0,
-            "why": "どこですか asks for a place."
+            "why": "A verb stem plus に行きます expresses going somewhere to do an activity."
           },
-          "sayTask": "Ask for an entrance or exit, then repeat the location to confirm it.",
-          "adaptation": "Combine one location question with one route step and recover if you miss a direction.",
+          "sayTask": "Say how many people are in a group and one activity you plan to go and do.",
+          "adaptation": "Change the group size, person, or activity; ask one follow-up question.",
           "successChecks": [
-            "Recognizes entrance/exit signs",
-            "Understands a nearby-place answer",
-            "Uses confirmation or repetition"
+            "Gives a simple people count",
+            "Names a shared plan",
+            "Uses a purpose for going"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 7 · People and family",
+      "learningTargets": [
+        "Use 〜ています for an action in progress or a current state such as where someone lives.",
+        "Describe appearance and clothing with body words and adjective phrases.",
+        "Join two descriptions with adjective て-forms and count people in a family or group.",
+        "Say what you plan to go and do with a simple verb-stem + に行く pattern."
       ]
     },
     {
       "week": 8,
-      "title": "Make a time and travel plan",
-      "canDo": "Ask what time something starts, agree on a simple meeting time, and confirm how long a trip takes.",
+      "title": "Enjoy a meal and talk casually",
+      "canDo": "Use simple casual language with a friend, share an opinion, and report a short comment.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -1516,6 +1788,16 @@
           "ja": "もういちどかくにんします。",
           "en": "I'll confirm once more.",
           "use": "Check a plan."
+        },
+        {
+          "ja": "このりょうり、おいしいね。",
+          "en": "This dish is tasty, isn’t it?",
+          "use": "Share a casual reaction with a friend."
+        },
+        {
+          "ja": "しゃしんをとらないでください。",
+          "en": "Please do not take photos.",
+          "use": "Make a clear, polite negative request."
         }
       ],
       "kanaFocus": [
@@ -1535,176 +1817,204 @@
           "reading": "じ",
           "meaning": "o'clock",
           "whyHere": "Helps read a time on a sign or timetable."
+        },
+        {
+          "kanji": "友達",
+          "reading": "ともだち",
+          "meaning": "friend",
+          "whyHere": "Recognize a common social word as a whole item."
         }
       ],
       "milestone": {
         "id": "M08-directions-plans",
-        "title": "Directions and plans checkpoint",
-        "task": "Ask for and confirm a simple direction or meeting time. Extract at least three of four route or time details from a short clear dialogue.",
+        "title": "People and casual-conversation checkpoint",
+        "task": "Describe a person or current activity, then share a casual opinion with a familiar friend. Switch to a polite option when the scene calls for it and catch four of five key details.",
         "evidence": [
-          "Plan or route agreed",
-          "Three of four details understood",
-          "Confirmation or repair used",
-          "Next practice target"
+          "Description or current action",
+          "Opinion or reported comment",
+          "Register choice noted",
+          "Listening result and next practice target"
         ]
       },
       "lessons": [
         {
           "id": "W08-L1",
-          "title": "Catch the meeting time",
+          "title": "React to a shared meal",
           "stage": "recognize",
-          "goal": "Suggest a meeting time and confirm the day and time you heard.",
-          "scene": "A friend suggests meeting before a museum visit.",
+          "goal": "Understand a casual comment and reply naturally with a friend.",
+          "scene": "At a relaxed picnic, a friend passes you a dish and asks what you think.",
           "dialogue": [
             {
               "speaker": "friend",
-              "ja": "あした、なんじにあいましょうか。",
-              "en": "What time shall we meet tomorrow?"
+              "ja": "このやきそば、おいしいね。",
+              "en": "This yakisoba is tasty, isn’t it?"
             },
             {
               "speaker": "traveller",
-              "ja": "さんじはどうですか。",
-              "en": "How about three?"
+              "ja": "うん、おいしい。わたしはやさいがすき。",
+              "en": "Yeah, it is. I like vegetables."
             },
             {
               "speaker": "friend",
-              "ja": "いいですね。さんじにあいましょう。",
-              "en": "Sounds good. Let's meet at three."
+              "ja": "わたしも。",
+              "en": "Me too."
             }
           ],
           "listenCheck": {
-            "question": "When will they meet?",
+            "question": "What food do they like?",
             "choices": [
-              "Tomorrow at three",
-              "Today at two",
-              "Tomorrow at four"
+              "Vegetables",
+              "Fish",
+              "Sweet food"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Suggest meeting at three.",
+            "prompt": "A close friend says the food is good. Choose a casual agreement.",
             "choices": [
-              "さんじはどうですか。",
-              "さんじはどこですか。",
-              "さんじをください。"
+              "うん、おいしいね。",
+              "はい、おいしいです。",
+              "おいしいですか。"
+            ],
+            "meanings": [
+              "Yeah, it’s good, isn’t it?",
+              "Yes, it is good. (polite)",
+              "Is it good?"
             ],
             "answer": 0,
-            "why": "はどうですか makes a simple suggestion."
+            "why": "With a familiar friend, a short plain-form response can sound relaxed."
           },
-          "sayTask": "Suggest a time, listen to the other person's response, and confirm it.",
-          "adaptation": "Change the day or time and repeat the exchange.",
+          "sayTask": "Give a casual reaction to a food or activity you know; switch back to polite speech for a staff member.",
+          "adaptation": "Change the dish or activity and add one personal preference.",
           "successChecks": [
-            "Catches day and time",
-            "Makes a simple proposal",
-            "Confirms the agreed time"
+            "Understands a casual reaction",
+            "Shares a preference",
+            "Recognizes when polite speech is safer"
           ]
         },
         {
           "id": "W08-L2",
-          "title": "Ask how long it takes",
+          "title": "Share what you think",
           "stage": "supported-response",
-          "goal": "Ask how long a trip takes and confirm the duration.",
-          "scene": "At a station, you ask how long the train ride will take.",
+          "goal": "Share a simple opinion and report a short comment from a friend.",
+          "scene": "Two friends discuss a new café they heard about.",
           "dialogue": [
             {
               "speaker": "traveller",
-              "ja": "とうきょうまで、どのくらいかかりますか。",
-              "en": "How long does it take to Tokyo?"
+              "ja": "あのカフェはいいとおもう。",
+              "en": "I think that café is good."
             },
             {
-              "speaker": "staff",
-              "ja": "さんじゅっぷんぐらいです。",
-              "en": "About thirty minutes."
+              "speaker": "friend",
+              "ja": "ゆきさんもおいしいっていっていたよ。",
+              "en": "Yuki said it was tasty too."
             },
             {
               "speaker": "traveller",
-              "ja": "さんじゅっぷんですね。",
-              "en": "Thirty minutes, right?"
+              "ja": "じゃあ、いってみよう。",
+              "en": "Then let’s go try it."
             }
           ],
           "listenCheck": {
-            "question": "About how long is the trip?",
+            "question": "Who else said the café food was tasty?",
             "choices": [
-              "Thirty minutes",
-              "One hour",
-              "Ten minutes"
+              "Yuki",
+              "Sam",
+              "The shop owner"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Ask how long the trip takes.",
+            "prompt": "Say that you think the new café is good.",
             "choices": [
-              "どのくらいかかりますか。",
-              "どちらからきましたか。",
-              "なにがすきですか。"
+              "あたらしいカフェはいいとおもう。",
+              "あたらしいカフェはいいですか。",
+              "あたらしいカフェにいます。"
+            ],
+            "meanings": [
+              "I think the new café is good.",
+              "Is the new café good?",
+              "I am at the new café."
             ],
             "answer": 0,
-            "why": "This asks for an approximate duration."
+            "why": "と思う lets you offer an opinion; って can introduce a casual quote."
           },
-          "sayTask": "Ask about a travel time and repeat the number you hear to confirm.",
-          "adaptation": "Change the destination and use a different duration.",
+          "sayTask": "Share one opinion about a place, film, or meal; report a friend’s short comment.",
+          "adaptation": "Change the person or opinion and ask whether your partner agrees.",
           "successChecks": [
-            "Understands a duration",
-            "Uses the travel-time question",
-            "Confirms the number"
+            "States a simple opinion",
+            "Identifies who said something",
+            "Keeps casual speech in a friend scene"
           ]
         },
         {
           "id": "W08-L3",
-          "title": "Reconfirm a plan",
+          "title": "Talk about activities and requests",
           "stage": "adapt",
-          "goal": "Confirm a meeting place and time, asking for repetition instead of guessing.",
-          "scene": "You are checking a meeting point and time before leaving the hotel.",
+          "goal": "Say what activity you enjoy and make a polite request not to do something.",
+          "scene": "At a small cooking get-together, you tell a friend what you like doing and ask before taking a photo.",
           "dialogue": [
             {
+              "speaker": "friend",
+              "ja": "りょうりするのがすき？",
+              "en": "Do you like cooking?"
+            },
+            {
               "speaker": "traveller",
-              "ja": "あしたのさんじに、えきでいいですか。",
-              "en": "Is the station okay at three tomorrow?"
+              "ja": "うん、すき。しゃしんをとらないでください。",
+              "en": "Yeah, I do. Please don’t take a photo."
             },
             {
               "speaker": "friend",
-              "ja": "はい、えきのいりぐちであいましょう。",
-              "en": "Yes, let's meet at the station entrance."
-            },
-            {
-              "speaker": "traveller",
-              "ja": "さんじに、いりぐちですね。",
-              "en": "Three o'clock, at the entrance, right?"
+              "ja": "ごめんね。",
+              "en": "Sorry about that."
             }
           ],
           "listenCheck": {
-            "question": "Where will they meet?",
+            "question": "What does the traveller ask the friend not to do?",
             "choices": [
-              "At the station entrance",
-              "At the hotel exit",
-              "At the café"
+              "Take a photo",
+              "Cook",
+              "Leave"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Confirm both the time and meeting place.",
+            "prompt": "Ask someone not to open the door, politely.",
             "choices": [
-              "さんじに、えきのいりぐちですね。",
-              "コーヒーをふたつ。",
-              "これはあまいです。"
+              "ドアをあけないでください。",
+              "ドアをあけてください。",
+              "ドアをあけてもいいですか。"
+            ],
+            "meanings": [
+              "Please do not open the door.",
+              "Please open the door.",
+              "May I open the door?"
             ],
             "answer": 0,
-            "why": "Repeating the time and place checks the important details."
+            "why": "ないでください is a clear polite request not to do an action."
           },
-          "sayTask": "Listen for day, time, and meeting point; repeat all three details back.",
-          "adaptation": "Ask for one detail again if it was unclear, then complete the plan.",
+          "sayTask": "Name one activity you like doing, then practise a polite request not to do something.",
+          "adaptation": "Change the activity and make the request more relevant to your own scene.",
           "successChecks": [
-            "Extracts time and place",
-            "Confirms more than one detail",
-            "Uses repetition rather than guessing"
+            "Talks about an activity preference",
+            "Makes a polite negative request",
+            "Responds to an apology"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 8 · Casual talk and opinions",
+      "learningTargets": [
+        "Recognize and try common plain forms in low-stakes talk with a familiar friend; retain polite options for public situations.",
+        "Share a thought with と思う and report a friend’s words with a simple quote.",
+        "Talk about a preferred activity and make a gentle request not to do something.",
+        "Use the subject marker が and simple “something / nothing” responses in everyday conversation."
       ]
     },
     {
       "week": 9,
-      "title": "Tell a short travel story",
-      "canDo": "Describe a simple sequence of what you did or will do, and understand the main events in a brief account.",
+      "title": "Retell a story and check what happened",
+      "canDo": "Talk casually about a past event, report what someone said, and check whether something is finished.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -1726,6 +2036,16 @@
           "ja": "とてもたのしかったです。",
           "en": "It was a lot of fun.",
           "use": "Give a simple reaction."
+        },
+        {
+          "ja": "もう [こと] をした？",
+          "en": "Have you already [done it]?",
+          "use": "Check whether an activity is finished."
+        },
+        {
+          "ja": "まだ [こと] をしていない。",
+          "en": "I haven’t [done it] yet.",
+          "use": "Say an activity is not finished yet."
         }
       ],
       "kanaFocus": [
@@ -1745,170 +2065,193 @@
           "reading": "あした",
           "meaning": "tomorrow",
           "whyHere": "Common on plans and schedules; learn it as a whole word."
+        },
+        {
+          "kanji": "映画",
+          "reading": "えいが",
+          "meaning": "film",
+          "whyHere": "Recognize a common leisure word in a story."
         }
       ],
       "lessons": [
         {
           "id": "W09-L1",
-          "title": "Share today's plan",
+          "title": "Ask about yesterday",
           "stage": "recognize",
-          "goal": "Say what you plan to do today and ask one relevant follow-up.",
-          "scene": "A host asks what you plan to do today.",
+          "goal": "Understand and answer a casual question about a past activity.",
+          "scene": "A friend asks what you thought of a cultural performance you saw yesterday.",
           "dialogue": [
             {
-              "speaker": "host",
-              "ja": "きょう、どこにいきますか。",
-              "en": "Where are you going today?"
+              "speaker": "friend",
+              "ja": "きのう、ぶたいをみた？",
+              "en": "Did you see the performance yesterday?"
             },
             {
               "speaker": "traveller",
-              "ja": "おおさかじょうにいきます。",
-              "en": "I'm going to Osaka Castle."
+              "ja": "うん、みたよ。おもしろかった。",
+              "en": "Yeah, I did. It was interesting."
             },
             {
-              "speaker": "host",
-              "ja": "いいですね。",
-              "en": "That sounds nice."
+              "speaker": "friend",
+              "ja": "どんなところがよかった？",
+              "en": "What part did you like?"
             }
           ],
           "listenCheck": {
-            "question": "Where is the traveller going?",
+            "question": "Did the traveller see the performance?",
             "choices": [
-              "Osaka Castle",
-              "The station",
-              "A café"
+              "Yes",
+              "No",
+              "The dialogue does not say"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Say that you are going to the hotel today.",
+            "prompt": "Say that you did not see the performance.",
             "choices": [
-              "きょう、ホテルにいきます。",
-              "きのう、ホテルです。",
-              "ホテルはいくらですか。"
+              "ううん、みなかった。",
+              "うん、みたよ。",
+              "まだみている。"
+            ],
+            "meanings": [
+              "No, I didn’t see it.",
+              "Yes, I saw it.",
+              "I am still watching it."
             ],
             "answer": 0,
-            "why": "きょう marks today, and にいきます says where you are going."
+            "why": "A plain negative past form answers about a completed past event."
           },
-          "sayTask": "Say one place you are going to today and one question you could ask about it.",
-          "adaptation": "Change the place and add when you plan to go.",
+          "sayTask": "Tell a friend one thing you did or did not do yesterday, using a short reaction.",
+          "adaptation": "Change the event and ask what your friend thought about it.",
           "successChecks": [
-            "Catches the destination",
-            "Uses a simple plan sentence",
-            "Asks a relevant follow-up"
+            "Catches a past event",
+            "Gives a casual past answer",
+            "Shares a reaction"
           ]
         },
         {
           "id": "W09-L2",
-          "title": "Tell what happened first",
+          "title": "Report a friend’s opinion",
           "stage": "supported-response",
-          "goal": "Tell someone one thing you did and respond to their reaction.",
-          "scene": "You tell a friend about the first thing you did yesterday.",
+          "goal": "Tell someone what a friend said and include one describing detail.",
+          "scene": "A friend asks about a film recommended by someone in your group.",
           "dialogue": [
             {
               "speaker": "friend",
-              "ja": "きのう、なにをしましたか。",
-              "en": "What did you do yesterday?"
+              "ja": "ゆきさんはそのえいがをどうおもった？",
+              "en": "What did Yuki think of that film?"
             },
             {
               "speaker": "traveller",
-              "ja": "おてらにいきました。",
-              "en": "I went to a temple."
+              "ja": "おもしろかったといっていたよ。",
+              "en": "She said it was interesting."
             },
             {
               "speaker": "friend",
-              "ja": "どうでしたか。",
-              "en": "How was it?"
+              "ja": "ともだちとみたの？",
+              "en": "Did you see it with a friend?"
             }
           ],
           "listenCheck": {
-            "question": "Where did the traveller go?",
+            "question": "What did Yuki say about the film?",
             "choices": [
-              "A temple",
-              "A museum",
-              "A restaurant"
+              "It was interesting",
+              "It was too long",
+              "She has not seen it"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Answer a question about an activity you did yesterday.",
+            "prompt": "Describe a person who is wearing a red coat.",
             "choices": [
-              "[ばしょ] にいきました。",
-              "[ばしょ] はどこですか。",
-              "[ばしょ] をください。"
+              "あかいコートをきているひと。",
+              "あかいコートをきるひと。",
+              "あかいコートがすき。"
+            ],
+            "meanings": [
+              "The person wearing a red coat.",
+              "A person who will wear a red coat.",
+              "I like red coats."
             ],
             "answer": 0,
-            "why": "This gives a simple past-tense answer with a place."
+            "why": "A short verb phrase can come before a noun to identify it."
           },
-          "sayTask": "Say one thing you did yesterday; a real or imagined example is fine.",
-          "adaptation": "Add a reaction, such as たのしかったです or おいしかったです.",
+          "sayTask": "Report one comment from a friend and add a detail that helps identify the person or event.",
+          "adaptation": "Change the speaker, opinion, or describing detail; ask one follow-up.",
           "successChecks": [
-            "Understands the main past event",
-            "Gives a short account",
-            "Adds a simple reaction"
+            "Reports a simple comment",
+            "Identifies the speaker",
+            "Uses a detail to describe a noun"
           ]
         },
         {
           "id": "W09-L3",
-          "title": "Put two events in order",
+          "title": "Check whether it is done",
           "stage": "adapt",
-          "goal": "Put two travel events in order and answer a follow-up question.",
-          "scene": "You tell a travel companion about a day out.",
+          "goal": "Ask whether an activity is already finished and give a reason for your answer.",
+          "scene": "Two friends are deciding where to eat after an event.",
           "dialogue": [
             {
-              "speaker": "travellerA",
-              "ja": "きのう、まちをあるきました。",
-              "en": "Yesterday, I walked around town."
+              "speaker": "friend",
+              "ja": "もうばんごはんをたべた？",
+              "en": "Have you eaten dinner yet?"
             },
             {
-              "speaker": "travellerA",
-              "ja": "それから、ラーメンをたべました。",
-              "en": "After that, I ate ramen."
+              "speaker": "traveller",
+              "ja": "まだたべていない。おなかがすいたから。",
+              "en": "Not yet. Because I’m hungry."
             },
             {
-              "speaker": "travellerB",
-              "ja": "たのしかったですか。",
-              "en": "Was it fun?"
-            },
-            {
-              "speaker": "travellerA",
-              "ja": "はい、とてもたのしかったです。",
-              "en": "Yes, it was a lot of fun."
+              "speaker": "friend",
+              "ja": "じゃあ、いっしょにたべよう。",
+              "en": "Then let’s eat together."
             }
           ],
           "listenCheck": {
-            "question": "What did the traveller do after walking around town?",
+            "question": "Has the traveller eaten dinner?",
             "choices": [
-              "Ate ramen",
-              "Went to the hotel",
-              "Met a guide"
+              "No, not yet",
+              "Yes, already",
+              "They do not say"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Add a second event after describing the first.",
+            "prompt": "Say you have already finished the film.",
             "choices": [
-              "それから、[こと] をしました。",
-              "それはどこですか。",
-              "もういちどください。"
+              "もうえいがをみた。",
+              "まだえいがをみていない。",
+              "えいがをみるとおもう。"
+            ],
+            "meanings": [
+              "I already saw the film.",
+              "I haven’t seen the film yet.",
+              "I think I will watch a film."
             ],
             "answer": 0,
-            "why": "それから links the events in sequence."
+            "why": "もう indicates completion; まだ〜ていない means not yet."
           },
-          "sayTask": "Tell a two-event story. The listener names which event happened second.",
-          "adaptation": "Retell it with the events in a new order or add one detail from a follow-up question.",
+          "sayTask": "Ask a friend whether something is already done, then explain briefly why or why not.",
+          "adaptation": "Change the activity and give a different simple reason with から.",
           "successChecks": [
-            "Understands the gist",
-            "Puts two events in order",
-            "Answers one follow-up"
+            "Distinguishes already from not yet",
+            "Gives a short reason",
+            "Responds to a follow-up"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 9 · Past stories and explanations",
+      "learningTargets": [
+        "Use plain past and negative-past forms in a relaxed story with a familiar person.",
+        "Report a past opinion or comment and describe a person or thing with a short clause before its noun.",
+        "Use もう and まだ to say whether something has happened, and give a short reason with から.",
+        "Listen for event order and the speaker’s reaction rather than memorizing a scripted passage."
       ]
     },
     {
       "week": 10,
-      "title": "Explain a problem and get help",
-      "canDo": "Describe one simple travel problem, ask for help, and repair a misunderstanding.",
+      "title": "Compare options and make a winter plan",
+      "canDo": "Compare two places or ways to travel, say what you intend to do, and confirm how you will get there.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -1930,6 +2273,16 @@
           "ja": "えいごをはなせますか。",
           "en": "Can you speak English?",
           "use": "Ask for language support."
+        },
+        {
+          "ja": "[A] のほうが [B] より [けいようし] です。",
+          "en": "[A] is more [adjective] than [B].",
+          "use": "Compare two choices."
+        },
+        {
+          "ja": "[ばしょ] へ [のりもの] でいくつもりです。",
+          "en": "I plan to go to [place] by [transport].",
+          "use": "Share a simple travel intention."
         }
       ],
       "kanaFocus": [
@@ -1943,181 +2296,204 @@
           "reading": "こうばん",
           "meaning": "police box",
           "whyHere": "A practical place to recognize when seeking help; learn the whole sign with its reading."
+        },
+        {
+          "kanji": "冬休み",
+          "reading": "ふゆやすみ",
+          "meaning": "winter vacation",
+          "whyHere": "Recognize a whole-word seasonal plan label."
         }
       ],
       "milestone": {
         "id": "M10-repair-help",
-        "title": "Repair and help checkpoint",
-        "task": "Describe a simple problem, ask for clarification or repetition, and continue the exchange. Recognize the main issue and requested help in two short scenarios.",
+        "title": "Comparison and plans checkpoint",
+        "task": "Compare two travel or everyday options, state a plan, and confirm one transport or time detail. Ask for repetition rather than guessing when needed.",
         "evidence": [
-          "Problem stated",
-          "Help or repetition requested",
-          "Two scenario gist checks",
-          "Repair phrase used and next target"
+          "Comparison made",
+          "Plan stated",
+          "One travel detail confirmed",
+          "Repair/support used and next practice target"
         ]
       },
       "lessons": [
         {
           "id": "W10-L1",
-          "title": "Ask for help at a station",
+          "title": "Compare two ways to travel",
           "stage": "recognize",
-          "goal": "Ask station staff for help and explain the main problem.",
-          "scene": "You cannot find your platform and ask station staff for help.",
+          "goal": "Compare two transport choices and catch which one is faster.",
+          "scene": "A friend asks whether to take a bus or train to a nearby town.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。たすけてください。",
-              "en": "Excuse me. Please help me."
-            },
-            {
-              "speaker": "staff",
-              "ja": "どうしましたか。",
-              "en": "What's the matter?"
+              "speaker": "friend",
+              "ja": "バスとでんしゃと、どちらがはやいですか。",
+              "en": "Which is faster, the bus or train?"
             },
             {
               "speaker": "traveller",
-              "ja": "のりばがわかりません。",
-              "en": "I don't know which platform to use."
+              "ja": "でんしゃのほうがはやいです。",
+              "en": "The train is faster."
+            },
+            {
+              "speaker": "friend",
+              "ja": "じゃあ、でんしゃでいきましょう。",
+              "en": "Then let’s go by train."
             }
           ],
           "listenCheck": {
-            "question": "What does the traveller need help with?",
+            "question": "Which transport is faster?",
             "choices": [
-              "Finding the platform",
-              "Buying lunch",
-              "Calling a hotel"
+              "The train",
+              "The bus",
+              "They are the same"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You need immediate help. Choose a clear opener.",
+            "prompt": "Say the train is faster than the bus.",
             "choices": [
-              "たすけてください。",
-              "おすすめはなんですか。",
-              "ここでたべます。"
+              "でんしゃのほうがバスよりはやいです。",
+              "バスのほうがでんしゃよりはやいです。",
+              "でんしゃでねます。"
+            ],
+            "meanings": [
+              "The train is faster than the bus.",
+              "The bus is faster than the train.",
+              "I sleep on the train."
             ],
             "answer": 0,
-            "why": "This directly asks someone for help."
+            "why": "のほうが and より help compare two things."
           },
-          "sayTask": "Ask for help and name a simple problem; use a real or imagined situation.",
-          "adaptation": "Change the problem to a lost ticket or a missed train.",
+          "sayTask": "Compare two familiar transport choices, foods, or places using one clear adjective.",
+          "adaptation": "Change both choices and then agree on one option.",
           "successChecks": [
-            "States that help is needed",
-            "Names the main problem",
-            "Understands a short response"
+            "Understands a comparison",
+            "Names the preferred option",
+            "Confirms the decision"
           ]
         },
         {
           "id": "W10-L2",
-          "title": "Explain what is missing",
+          "title": "Say what you intend to do",
           "stage": "supported-response",
-          "goal": "Report a missing item and handle one next-step question.",
-          "scene": "You report a lost wallet at a police box.",
+          "goal": "Share a simple plan and understand what someone intends to do.",
+          "scene": "A classmate asks about your winter break and how you plan to travel.",
           "dialogue": [
             {
-              "speaker": "officer",
-              "ja": "どうしましたか。",
-              "en": "What's the matter?"
+              "speaker": "classmate",
+              "ja": "ふゆやすみに、どこへいくつもりですか。",
+              "en": "Where do you intend to go during winter break?"
             },
             {
               "speaker": "traveller",
-              "ja": "さいふをなくしました。",
-              "en": "I lost my wallet."
+              "ja": "やまへバスでいくつもりです。",
+              "en": "I plan to go to the mountains by bus."
             },
             {
-              "speaker": "officer",
-              "ja": "いつ、なくしましたか。",
-              "en": "When did you lose it?"
+              "speaker": "classmate",
+              "ja": "いいですね。",
+              "en": "That sounds nice."
             }
           ],
           "listenCheck": {
-            "question": "What has the traveller lost?",
+            "question": "How does the traveller plan to travel?",
             "choices": [
-              "A wallet",
-              "A phone",
-              "A passport"
+              "By bus",
+              "By train",
+              "By bicycle"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Say that you lost a ticket.",
+            "prompt": "Say you plan to visit a museum.",
             "choices": [
-              "きっぷをなくしました。",
-              "きっぷをください。",
-              "きっぷはどこですか。"
+              "びじゅつかんへいくつもりです。",
+              "びじゅつかんへいきました。",
+              "びじゅつかんにいます。"
+            ],
+            "meanings": [
+              "I plan to go to the museum.",
+              "I went to the museum.",
+              "I am at the museum."
             ],
             "answer": 0,
-            "why": "なくしました says you lost something; add the missing item before it."
+            "why": "つもり expresses an intention or plan."
           },
-          "sayTask": "Practise reporting a lost item and giving one follow-up detail such as when or where.",
-          "adaptation": "Ask where to go next or use the 交番 sign to identify a place to seek help.",
+          "sayTask": "Say one place you intend to visit and how you might get there.",
+          "adaptation": "Change the destination or transport; say how you expect the place to change at a different time of day.",
           "successChecks": [
-            "Names the missing item",
-            "Understands a follow-up question",
-            "Can ask or answer one next-step question"
+            "States a future intention",
+            "Names a destination",
+            "Catches the transport detail"
           ]
         },
         {
           "id": "W10-L3",
-          "title": "Repair and continue",
+          "title": "Choose a place and confirm the plan",
           "stage": "adapt",
-          "goal": "Ask someone to repeat an instruction, then confirm what to do next.",
-          "scene": "A helpful person gives an instruction you did not catch.",
+          "goal": "Choose among several options, say where you might go, and estimate travel time.",
+          "scene": "You and a friend compare three possible day trips and settle on one.",
           "dialogue": [
             {
-              "speaker": "helper",
-              "ja": "こうさてんをひだりにまがってください。",
-              "en": "Please turn left at the intersection."
+              "speaker": "friend",
+              "ja": "どこかにいきたいですか。",
+              "en": "Would you like to go somewhere?"
             },
             {
               "speaker": "traveller",
-              "ja": "すみません。もういちどおねがいできますか。",
-              "en": "Excuse me. Could you say that one more time, please?"
+              "ja": "このまちで、こうえんがいちばんしずかです。そこへバスでいきたいです。",
+              "en": "In this town, the park is the quietest. I’d like to go there by bus."
             },
             {
-              "speaker": "helper",
-              "ja": "こうさてんで、ひだりにまがってください。",
-              "en": "At the intersection, turn left."
-            },
-            {
-              "speaker": "traveller",
-              "ja": "ひだりですね。ありがとうございます。",
-              "en": "Left, right? Thank you."
+              "speaker": "friend",
+              "ja": "えきからじゅっぷんぐらいです。",
+              "en": "It is about ten minutes from the station."
             }
           ],
           "listenCheck": {
-            "question": "Which direction should the traveller turn?",
+            "question": "How long is the trip from the station?",
             "choices": [
-              "Left",
-              "Right",
-              "Straight"
+              "About ten minutes",
+              "About an hour",
+              "They do not say"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "You missed a direction. Choose a polite repair phrase.",
+            "prompt": "Say you did not go anywhere last weekend.",
             "choices": [
-              "もういちどおねがいできますか。",
-              "どちらからきましたか。",
-              "ふたつください。"
+              "せんしゅうまつ、どこにもいきませんでした。",
+              "せんしゅうまつ、どこかにいきました。",
+              "せんしゅうまつ、どこがいちばんですか。"
+            ],
+            "meanings": [
+              "I did not go anywhere last weekend.",
+              "I went somewhere last weekend.",
+              "Where is the best weekend?"
             ],
             "answer": 0,
-            "why": "This requests repetition and keeps the exchange moving."
+            "why": "どこにも with a negative expresses “nowhere.”"
           },
-          "sayTask": "Practise asking for repetition, hearing the instruction again, and confirming the direction.",
-          "adaptation": "Use えいごをはなせますか only after trying a repair phrase if the exchange is still blocked.",
+          "sayTask": "Choose one destination, name a transport option, and repeat an approximate travel time.",
+          "adaptation": "Change one option and explain which one you would choose instead.",
           "successChecks": [
-            "Uses repetition instead of pretending to understand",
-            "Catches the repeated direction",
-            "Confirms and continues"
+            "Chooses among several options",
+            "Uses a travel mode",
+            "Confirms an approximate duration"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 10 · Comparisons and plans",
+      "learningTargets": [
+        "Compare two options and choose a favourite among several with simple comparison phrases.",
+        "Say what you intend to do with つもり and describe a change with なる.",
+        "Talk about where to go, where to go by transport with で, and how long a trip takes.",
+        "Use どこか and どこにも in a simple plan or “nowhere” reply."
       ]
     },
     {
       "week": 11,
-      "title": "Combine functions and handle changes",
-      "canDo": "Combine a request, a follow-up question, and a clarification when a travel detail changes.",
+      "title": "Share wishes and past experiences",
+      "canDo": "Say what you would like to do, talk about a past experience, and introduce someone from your hometown.",
       "conversationStage": "recognize → supported response → adapt",
       "phraseBank": [
         {
@@ -2139,6 +2515,16 @@
           "ja": "かくにんしてもいいですか。",
           "en": "May I confirm?",
           "use": "Check a detail before proceeding."
+        },
+        {
+          "ja": "[こと] をしたいです。",
+          "en": "I want to [activity].",
+          "use": "Share one wish or intention."
+        },
+        {
+          "ja": "[こと] をしたことがあります。",
+          "en": "I have [done activity] before.",
+          "use": "Talk about a past experience."
         }
       ],
       "kanaFocus": [
@@ -2146,169 +2532,193 @@
         "Read short dialogue turns before revealing English",
         "Review common sound changes and long vowels"
       ],
-      "kanjiCards": [],
+      "kanjiCards": [
+        {
+          "kanji": "経験",
+          "reading": "けいけん",
+          "meaning": "experience",
+          "whyHere": "Recognize a useful whole-word topic in conversation."
+        }
+      ],
       "lessons": [
         {
           "id": "W11-L1",
-          "title": "Handle a menu change",
+          "title": "Say what you would like to do",
           "stage": "recognize",
-          "goal": "Handle an unavailable menu choice and politely choose an alternative.",
-          "scene": "The café has run out of your first choice and offers another drink.",
+          "goal": "Share one activity you want to try and ask another person about their wish.",
+          "scene": "You and a new friend are planning a free afternoon in town.",
           "dialogue": [
             {
-              "speaker": "staff",
-              "ja": "すみません。コーヒーはありません。",
-              "en": "I'm sorry. We don't have coffee."
+              "speaker": "friend",
+              "ja": "なにをしたいですか。",
+              "en": "What would you like to do?"
             },
             {
               "speaker": "traveller",
-              "ja": "そうですか。おちゃはありますか。",
-              "en": "I see. Do you have tea?"
+              "ja": "かわのちかくをさんぽしたいです。",
+              "en": "I want to take a walk near the river."
             },
             {
-              "speaker": "staff",
-              "ja": "はい、あります。",
-              "en": "Yes, we do."
+              "speaker": "friend",
+              "ja": "わたしはカフェにいきたいです。",
+              "en": "I want to go to a café."
             }
           ],
           "listenCheck": {
-            "question": "What does the café still have?",
+            "question": "What does the traveller want to do?",
             "choices": [
-              "Tea",
-              "Coffee",
-              "Curry"
+              "Walk near a river",
+              "Visit a museum",
+              "Go shopping"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Your first choice is unavailable. Ask for tea instead.",
+            "prompt": "Say you want to see a film.",
             "choices": [
-              "では、おちゃをください。",
-              "おちゃはどこからですか。",
-              "おちゃはなんじですか。"
+              "えいがをみたいです。",
+              "えいがをみました。",
+              "えいがをみています。"
+            ],
+            "meanings": [
+              "I want to watch a film.",
+              "I watched a film.",
+              "I am watching a film."
             ],
             "answer": 0,
-            "why": "では signals a change of plan; ください makes the new order."
+            "why": "たい attaches to a verb stem to express a wish."
           },
-          "sayTask": "Hear that an item is unavailable, acknowledge it, then ask about an alternative.",
-          "adaptation": "Change the unavailable item and make a different choice.",
+          "sayTask": "Say one activity you want to do and ask a partner what they would like.",
+          "adaptation": "Change the time or place, then suggest one shared option.",
           "successChecks": [
-            "Understands what changed",
-            "Asks about an alternative",
-            "Makes a new choice politely"
+            "Expresses a wish",
+            "Understands a partner’s choice",
+            "Makes one follow-up"
           ]
         },
         {
           "id": "W11-L2",
-          "title": "Adjust a meeting plan",
+          "title": "Ask about an experience",
           "stage": "supported-response",
-          "goal": "Adjust a meeting plan and repeat the new place and time back.",
-          "scene": "A companion changes the meeting point from the station to the hotel entrance.",
+          "goal": "Ask whether someone has ever tried an activity and answer yes or no.",
+          "scene": "A friend asks about something you did on a previous visit.",
           "dialogue": [
             {
-              "speaker": "companion",
-              "ja": "あしたは、ホテルのいりぐちであいましょう。",
-              "en": "Let's meet at the hotel entrance tomorrow."
+              "speaker": "friend",
+              "ja": "おきなわでおよいだことがありますか。",
+              "en": "Have you ever swum in Okinawa?"
             },
             {
               "speaker": "traveller",
-              "ja": "ホテルのいりぐちですね。なんじですか。",
-              "en": "The hotel entrance, right? What time?"
+              "ja": "はい、あります。うみでおよぎました。",
+              "en": "Yes. I swam in the sea."
             },
             {
-              "speaker": "companion",
-              "ja": "ごぜんくじです。",
-              "en": "At nine in the morning."
+              "speaker": "friend",
+              "ja": "どうでしたか。",
+              "en": "How was it?"
             }
           ],
           "listenCheck": {
-            "question": "What time will they meet?",
+            "question": "Has the traveller swum in Okinawa?",
             "choices": [
-              "9 a.m.",
-              "9 p.m.",
-              "3 p.m."
+              "Yes",
+              "No",
+              "The dialogue does not say"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Repeat the changed meeting point, then ask the time.",
+            "prompt": "Say that you have never ridden a horse.",
             "choices": [
-              "ホテルのいりぐちですね。なんじですか。",
-              "ホテルをひとつください。",
-              "ホテルがあまいです。"
+              "うまにのったことがありません。",
+              "うまにのりたいです。",
+              "うまにのりました。"
+            ],
+            "meanings": [
+              "I have never ridden a horse.",
+              "I want to ride a horse.",
+              "I rode a horse."
             ],
             "answer": 0,
-            "why": "Repeat the place to confirm it, then ask for the missing time."
+            "why": "たことがあります asks about a past experience."
           },
-          "sayTask": "Confirm a changed meeting place and ask for any missing detail.",
-          "adaptation": "Change the time or destination; repeat the new plan back.",
+          "sayTask": "Ask a partner whether they have tried a familiar activity; answer truthfully or imagine an answer.",
+          "adaptation": "Change the activity and add one short reaction to the experience.",
           "successChecks": [
-            "Notices the changed place",
-            "Asks for a missing detail",
-            "Repeats the full plan back"
+            "Recognizes an experience question",
+            "Answers yes or no",
+            "Adds a reaction"
           ]
         },
         {
           "id": "W11-L3",
-          "title": "Connect a request and a follow-up",
+          "title": "Introduce a friend and hometown",
           "stage": "adapt",
-          "goal": "Connect a practical request with a follow-up about platform or travel time.",
-          "scene": "At a station, you ask for a ticket, confirm the platform, and check the travel time.",
+          "goal": "Introduce a friend and mention a few things to do in a hometown.",
+          "scene": "You introduce a friend at a local gathering and compare places to visit.",
           "dialogue": [
             {
               "speaker": "traveller",
-              "ja": "きょうとまでのおとなのきっぷをください。",
-              "en": "One adult ticket to Kyoto, please."
+              "ja": "こちらはあきさんです。メルボルンからきました。",
+              "en": "This is Aki. They are from Melbourne."
             },
             {
-              "speaker": "staff",
-              "ja": "ごばんせんです。",
-              "en": "Platform five."
+              "speaker": "friend",
+              "ja": "はじめまして。メルボルンにはこうえんやカフェがあります。",
+              "en": "Nice to meet you. Melbourne has parks, cafés, and other places."
             },
             {
-              "speaker": "traveller",
-              "ja": "ごばんせんですね。なんぷんぐらいですか。",
-              "en": "Platform five, right? About how many minutes?"
-            },
-            {
-              "speaker": "staff",
-              "ja": "よんじゅっぷんぐらいです。",
-              "en": "About forty minutes."
+              "speaker": "host",
+              "ja": "いいですね。",
+              "en": "That sounds nice."
             }
           ],
           "listenCheck": {
-            "question": "What platform and travel time are given?",
+            "question": "Which town is mentioned?",
             "choices": [
-              "Platform 5, about 40 minutes",
-              "Platform 4, about 30 minutes",
-              "Platform 5, about 14 minutes"
+              "Melbourne",
+              "Sydney",
+              "Kyoto"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Repeat the platform number and ask how long it takes.",
+            "prompt": "Give two examples of places in your hometown.",
             "choices": [
-              "ごばんせんですね。なんぷんぐらいですか。",
-              "おすすめはなんですか。",
-              "ふくろはいりますか。"
+              "こうえんやカフェがあります。",
+              "こうえんもカフェをいきます。",
+              "どこかにいきたいです。"
+            ],
+            "meanings": [
+              "There are parks, cafés, and other places.",
+              "Incorrect pattern.",
+              "I want to go somewhere."
             ],
             "answer": 0,
-            "why": "This confirms one important detail and asks a useful follow-up."
+            "why": "や gives a few examples without listing everything."
           },
-          "sayTask": "Do the station exchange once with a phrase bank, then once with only the goal card.",
-          "adaptation": "Have the partner change one number or platform; notice it, clarify, and confirm.",
+          "sayTask": "Introduce a friend, then name two or three places or things in a hometown.",
+          "adaptation": "Change the friend and town; ask one question about what they like doing there.",
           "successChecks": [
-            "Makes a practical request",
-            "Understands key numbers and places",
-            "Handles one changed detail and a follow-up"
+            "Introduces someone clearly",
+            "Names a hometown",
+            "Gives examples naturally"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 11 · Experiences and introductions",
+      "learningTargets": [
+        "Express a wish with 〜たい and name a small set of activities with 〜たり〜たりする.",
+        "Ask and answer whether someone has ever done something with 〜たことがある.",
+        "Introduce a friend, ask about a hometown, and give examples with や.",
+        "Listen for whether a story is a plan, a past experience, or a list of activities."
       ]
     },
     {
       "week": 12,
-      "title": "Integrated travel conversation",
-      "canDo": "Manage a familiar multi-step travel exchange, ask follow-up questions, and recover from one misunderstanding.",
+      "title": "Explain a health concern and respond",
+      "canDo": "Describe a simple symptom, give or understand gentle advice, and say what needs to happen next.",
       "conversationStage": "recognize → supported response → adapt → communicate with less scripting",
       "phraseBank": [
         {
@@ -2330,6 +2740,16 @@
           "ja": "わかりました。ありがとうございます。",
           "en": "I understand. Thank you.",
           "use": "Close after confirming help."
+        },
+        {
+          "ja": "あたまがいたいんです。",
+          "en": "I have a headache.",
+          "use": "Explain a simple symptom."
+        },
+        {
+          "ja": "くすりをのんだほうがいいです。",
+          "en": "You should take medicine.",
+          "use": "Give a gentle, familiar suggestion."
         }
       ],
       "kanaFocus": [
@@ -2337,16 +2757,29 @@
         "Read short signs, menu items, and travel prompts",
         "No new script requirement; prioritize confident communication"
       ],
-      "kanjiCards": [],
+      "kanjiCards": [
+        {
+          "kanji": "病院",
+          "reading": "びょういん",
+          "meaning": "hospital",
+          "whyHere": "Recognize a practical place word with its kana reading."
+        },
+        {
+          "kanji": "薬",
+          "reading": "くすり",
+          "meaning": "medicine",
+          "whyHere": "Recognize a common care-related word; no handwriting required."
+        }
+      ],
       "milestone": {
         "id": "M12-integrated-conversation",
         "title": "Integrated conversation checkpoint",
-        "task": "Sustain a roughly three-minute familiar travel role-play across at least three functions, ask two follow-ups, and use one clarification or repair phrase. After a 45–60 second clear beginner dialogue, state its gist and at least four of five key details.",
+        "task": "Sustain a short familiar conversation across at least three functions, including a health or help-seeking exchange, ask two follow-ups, and use one clarification or repair phrase. After a clear beginner dialogue, state its gist and key details.",
         "evidence": [
           "Three functions used",
           "Two follow-ups attempted",
           "One repair phrase used",
-          "Gist plus details score",
+          "Gist plus key details",
           "Support used and next learning goal"
         ],
         "rubric": [
@@ -2360,178 +2793,176 @@
       "lessons": [
         {
           "id": "W12-L1",
-          "title": "Check the Kyoto platform and departure time",
+          "title": "Explain a symptom",
           "stage": "recognize",
-          "goal": "Ask for a platform and departure time, then choose a useful follow-up.",
-          "scene": "At a station, ask which platform the Kyoto train leaves from and check its departure time.",
+          "goal": "Tell a helper what is wrong and understand one follow-up question.",
+          "scene": "In a language-practice role-play at a clinic reception, explain a simple symptom and when it started.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "すみません。きょうといきのでんしゃは、どのホームですか。",
-              "en": "Excuse me. Which platform is the train to Kyoto on?"
-            },
-            {
               "speaker": "staff",
-              "ja": "ごばんせんです。",
-              "en": "Platform five."
+              "ja": "どうしましたか。",
+              "en": "What seems to be the problem?"
             },
             {
               "speaker": "traveller",
-              "ja": "このでんしゃはなんじにでますか。",
-              "en": "What time does this train leave?"
+              "ja": "あたまがいたいんです。きのうからです。",
+              "en": "I have a headache. Since yesterday."
             },
             {
               "speaker": "staff",
-              "ja": "よじにでます。",
-              "en": "It leaves at four."
+              "ja": "ねつはありますか。",
+              "en": "Do you have a fever?"
             }
           ],
           "listenCheck": {
-            "question": "Which platform and departure time are given?",
+            "question": "What symptom does the traveller mention?",
             "choices": [
-              "Platform five, at four",
-              "Platform four, at five",
-              "Platform five, at two"
+              "A headache",
+              "A sore throat",
+              "A stomachache"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "After learning the platform, ask when this train leaves.",
+            "prompt": "Explain that your throat hurts.",
             "choices": [
-              "このでんしゃはなんじにでますか。",
-              "これはあまいですか。",
-              "ふくろはいりますか。"
+              "のどがいたいんです。",
+              "のどがいたいですか。",
+              "のどをのみます。"
+            ],
+            "meanings": [
+              "My throat hurts.",
+              "Does your throat hurt?",
+              "I drink a throat."
             ],
             "answer": 0,
-            "why": "このでんしゃ makes the subject clear, and なんじにでますか asks its departure time."
+            "why": "んです introduces a short explanation of a situation."
           },
-          "sayTask": "Ask which platform the train to Kyoto uses, confirm the platform, then ask and confirm the departure time.",
-          "adaptation": "Change the destination and time; repeat the platform and departure time back.",
+          "sayTask": "Use a fictional or simple role-play symptom and add when it started.",
+          "adaptation": "Change the symptom and ask one clear follow-up question; for real health needs, use qualified medical help.",
           "successChecks": [
-            "Recognizes the exchange sequence",
-            "Identifies missing travel information",
-            "Chooses a relevant follow-up"
+            "Names a symptom",
+            "Gives a time detail",
+            "Understands a follow-up question"
           ]
         },
         {
           "id": "W12-L2",
-          "title": "Rehearse a full travel exchange",
+          "title": "Give gentle advice",
           "stage": "supported-response",
-          "goal": "Complete a café order and ask a passer-by for station directions.",
-          "scene": "Order a drink at a café; after the transaction, ask a passer-by where the station is. Use phrase cards only when needed.",
+          "goal": "Understand a suggestion and give a simple reason for it.",
+          "scene": "A friend has been very busy and says they are tired after doing too much.",
           "dialogue": [
             {
-              "speaker": "traveller",
-              "ja": "コーヒーをひとつください。",
-              "en": "One coffee, please."
-            },
-            {
-              "speaker": "staff",
-              "ja": "ホットですか、アイスですか。",
-              "en": "Hot or iced?"
+              "speaker": "friend",
+              "ja": "きのう、べんきょうしすぎました。とてもつかれています。",
+              "en": "I studied too much yesterday. I am very tired."
             },
             {
               "speaker": "traveller",
-              "ja": "ホットでおねがいします。",
-              "en": "Hot, please."
+              "ja": "きょうはゆっくりやすんだほうがいいです。",
+              "en": "You should take it easy and get some rest today."
             },
             {
-              "speaker": "staff",
-              "ja": "かしこまりました。",
-              "en": "Certainly."
-            },
-            {
-              "speaker": "traveller",
-              "ja": "すみません。えきはどこですか。",
-              "en": "Excuse me. Where is the station?"
-            },
-            {
-              "speaker": "local",
-              "ja": "あちらです。",
-              "en": "That way."
+              "speaker": "friend",
+              "ja": "そうですね。",
+              "en": "You’re right."
             }
           ],
           "listenCheck": {
-            "question": "What kind of coffee does the traveller choose?",
+            "question": "What does the traveller suggest?",
             "choices": [
-              "Hot",
-              "Iced",
-              "The traveller doesn't choose"
+              "Rest today",
+              "Study more",
+              "Go to work"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "The café asks whether you want hot or iced coffee. Choose hot.",
+            "prompt": "Give advice to someone with a cold.",
             "choices": [
-              "ホットでおねがいします。",
-              "アイスでおねがいします。",
-              "えきはどこですか。"
+              "びょういんへいったほうがいいです。",
+              "もっとはたらいたほうがいいです。",
+              "なにもありません。"
+            ],
+            "meanings": [
+              "You should go to a hospital.",
+              "You should work more.",
+              "There is nothing."
             ],
             "answer": 0,
-            "why": "ホットでおねがいします clearly chooses hot coffee. Ask the passer-by the direction question after leaving the café."
+            "why": "ほうがいい offers a simple suggestion; choose wording that fits the situation."
           },
-          "sayTask": "Role-play both encounters in order with phrase cards, then hide them and try again.",
-          "adaptation": "Change the drink and destination; include one natural follow-up.",
+          "sayTask": "Give one gentle suggestion for a fictional situation and say why with ので.",
+          "adaptation": "Change the problem and suggestion; keep the tone caring, not forceful.",
           "successChecks": [
-            "Completes a familiar transaction",
-            "Asks a follow-up",
-            "Uses kana support without needing English prompts"
+            "Understands advice",
+            "Connects a reason and suggestion",
+            "Uses a supportive tone"
           ]
         },
         {
           "id": "W12-L3",
-          "title": "Complete the travel mission",
+          "title": "Plan the next step",
           "stage": "adapt",
-          "goal": "Combine familiar travel exchanges, ask follow-ups, and repair one missed detail.",
-          "scene": "Three-minute role-play: meet a local, ask directions, order a drink, confirm the time, and recover from one missed detail.",
+          "goal": "Say what needs to happen next and complete the final open-ended conversation without a fixed answer menu.",
+          "scene": "Final mission: combine a greeting, one practical detail from earlier weeks, and a simple health concern in a short role-play. Use a phrase card only after you have tried.",
           "dialogue": [
             {
-              "speaker": "local",
-              "ja": "えきのいりぐちで、さんじにあいましょう。",
-              "en": "Let's meet at the station entrance at three."
+              "speaker": "staff",
+              "ja": "きょうはどうしましたか。",
+              "en": "What brings you in today?"
             },
             {
               "speaker": "traveller",
-              "ja": "すみません。もういちどおねがいします。",
-              "en": "Excuse me. One more time, please."
+              "ja": "ねつがあるんです。くすりをのみましたが、まだあたまがいたいです。",
+              "en": "I have a fever. I took medicine, but my head still hurts."
             },
             {
-              "speaker": "local",
-              "ja": "さんじに、えきのいりぐちです。",
-              "en": "At three, at the station entrance."
+              "speaker": "staff",
+              "ja": "きょうはやすまなければいけません。しんぱいでしたら、びょういんへいってください。",
+              "en": "You need to rest today. If you are worried, please go to a hospital."
             },
             {
               "speaker": "traveller",
-              "ja": "さんじに、いりぐちですね。わかりました。",
-              "en": "Three o'clock, at the entrance, right? I understand."
+              "ja": "わかりました。ありがとうございます。",
+              "en": "I understand. Thank you."
             }
           ],
           "listenCheck": {
-            "question": "What are the meeting time and place?",
+            "question": "What does the helper say the traveller needs to do today?",
             "choices": [
-              "3 o'clock at the station entrance",
-              "2 o'clock at the hotel",
-              "3 o'clock at the café"
+              "Rest today",
+              "Go shopping",
+              "Take a train"
             ],
             "answer": 0
           },
           "responsePractice": {
-            "prompt": "Complete the final mission without a fixed answer menu; use a phrase bank only after a genuine attempt.",
+            "prompt": "Complete the final mission without a fixed answer menu; explain a symptom, ask for one next step, and respond to the advice in your own words.",
             "choices": [],
+            "meanings": [],
             "answer": null,
-            "why": "The final task measures flexible use of familiar language, not memorization of one dialogue."
+            "why": "There is no single correct sentence. Try first, then use a cue if you need one."
           },
-          "sayTask": "Complete the integrated mission and record which parts you handled independently, with support, or not yet.",
-          "adaptation": "After the first run, change one place, number, item, or plan and complete the exchange again.",
+          "sayTask": "Complete the role-play and note what you handled independently, with support, or want to practise next.",
+          "adaptation": "Change the symptom and one earlier detail such as a time, place, or activity; keep the conversation understandable.",
           "successChecks": [
-            "Uses at least three conversation functions",
-            "Asks two follow-up questions",
-            "Uses a clarification or repair phrase",
-            "Understands gist and at least four of five key details",
-            "Records one next-step practice goal"
+            "Explains a simple concern",
+            "Understands a next step",
+            "Uses a supportive response",
+            "Records a next practice goal"
           ]
         }
+      ],
+      "curriculumUnit": "Unit 12 · Health and getting support",
+      "learningTargets": [
+        "Explain a symptom or situation with 〜んです and describe that something is too much with 〜すぎる.",
+        "Give gentle advice with 〜ほうがいい and connect a reason with ので.",
+        "Say what you have to do with 〜なければいけない and ask a polite question about the next step.",
+        "Use kana-first health words and selective kanji recognition to navigate a simple care-seeking conversation."
       ]
     }
-  ]
+  ],
+  "courseAlignment": "An original, independent 12-week companion aligned to the broad scope and sequence of GENKI I (Third Edition), Lessons 1–12. It uses new scenes, explanations, prompts, and dialogues; it does not reproduce textbook text, exercises, or audio and is not affiliated with the publisher."
 }

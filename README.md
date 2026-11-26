@@ -1,13 +1,13 @@
 # Kanafish
 
-Kanafish is a local-first Japanese travel and conversation-learning app for beginner-to-intermediate learners. Its 12-week route turns practical scenes into short interactive lessons, daily recall, searchable phrase cards, and learner-recorded checkpoints. Speaking practice is optional; there is no automated pronunciation or fluency grade.
+Kanafish is a local-first Japanese conversation-learning app for beginner-to-low-intermediate learners. Its original 12-week companion broadly follows the scope and sequence of *GENKI I* (Third Edition), using new scenes, explanations, prompts, and dialogues; it does not reproduce textbook material and is not affiliated with the publisher. Learners make a first pass through the full core hiragana set in Week 1 and katakana in Week 2 alongside conversation, then revisit kana in later practice; neither script gates speaking or progress. The route turns practical scenes into short interactive lessons, daily recall, searchable phrase cards, and learner-recorded checkpoints. Speaking practice is optional; there is no automated pronunciation or fluency grade.
 
 ## What works now
 
 - **Daily learning:** next-lesson guidance, course progress, a small due-card session, and a recall-first routine.
 - **Interactive lessons:** previous-lesson retrieval, listen-first dialogue, normal-speed and slow replay, revealable kana and English, comprehension and reply choices, changed-detail practice, and optional speaking work.
 - **Local speech in coursework:** Supertonic 3 reads dialogues, phrases, kana groups, kanji readings, and reply choices. Haas-ja-v1.0 can optionally transcribe a learner's short recording on-device. Learners can also practise aloud and self-rate without recording.
-- **A full course path:** all 12 weeks and 36 existing lessons, with stable lesson IDs and the six original milestone IDs and task intent.
+- **A full course path:** all 12 weeks and 36 original conversation-first lessons, broadly aligned to the beginner textbook sequence, with complete early kana practice, stable lesson IDs, and six milestone IDs.
 - **Spaced retrieval:** dialogue and phrase cards join phrase, kana, and kanji cards. Again/Hard/Good/Easy ratings set due dates; difficult items return sooner, intervals adapt to review history, and successful reviews remove the extra weak-item priority.
 - **Adaptive script support:** romaji appears under kana and kana readings while they are still being learned, then fades away after two comfortable reviews on different days. Settings can keep it always visible or hide it immediately. A difficult kana review brings it back in adaptive mode.
 - **Phrasebook and checkpoints:** searchable course language, listening controls, and fields for learner-entered milestone evidence and next practice targets.
