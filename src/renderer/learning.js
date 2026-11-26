@@ -1,13 +1,14 @@
 import { kanaToRomaji } from './romaji.js'
+import { getKanaCards } from './kana-curriculum.js'
 
-const VERSION = 3
+const VERSION = 4
 const isRecord = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const validId = (v) => typeof v === 'string' && v.trim().length > 0
 const validDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v
 const isKanaCharacter = (value) => /^[\u3040-\u30ff\u31f0-\u31ffー]$/u.test(value)
 
 export function createInitialProgress() {
-  return { version: VERSION, completedLessonIds: [], lessonSessions: {}, milestones: {}, flashcards: {}, kanaMastery: {}, lastStudyDate: null }
+  return { version: VERSION, completedLessonIds: [], lessonSessions: {}, milestones: {}, flashcards: {}, kanaMastery: {}, kanaRecall: {}, lastStudyDate: null }
 }
 
 export function normalizeProgress(value) {
@@ -43,7 +44,16 @@ export function normalizeProgress(value) {
       ? [...new Set(state.successfulDays.filter(validDate))].sort().slice(-2) : []
     kanaMastery[character] = { successfulDays }
   }
-  return { version: VERSION, completedLessonIds, lessonSessions, milestones, flashcards, kanaMastery,
+  const kanaRecall = {}
+  if (isRecord(value.kanaRecall)) for (const [cardId, record] of Object.entries(value.kanaRecall)) {
+    if (!/^kana-(?:hira|kata)-[a-z0-9-]+$/i.test(cardId) || !isRecord(record)) continue
+    const attempts = Number.isInteger(record.attempts) && record.attempts >= 0 ? record.attempts : 0
+    const correct = Number.isInteger(record.correct) && record.correct >= 0 ? Math.min(record.correct, attempts) : 0
+    const successfulDays = Array.isArray(record.successfulDays)
+      ? [...new Set(record.successfulDays.filter(validDate))].sort().slice(-2) : []
+    kanaRecall[cardId] = { attempts, correct, successfulDays, lastPracticed: validDate(record.lastPracticed) ? record.lastPracticed : null }
+  }
+  return { version: VERSION, completedLessonIds, lessonSessions, milestones, flashcards, kanaMastery, kanaRecall,
     lastStudyDate: validDate(value.lastStudyDate) ? value.lastStudyDate : null }
 }
 
@@ -182,14 +192,19 @@ export function getFlashcards(course) {
   const cards = []
   for (const week of Array.isArray(course?.weeks) ? course.weeks : []) {
     const w = week.week
+    const weekLessonIds = (week.lessons ?? []).map((lesson) => lesson.id)
     ;(week.phraseBank ?? []).forEach((p, i) => cards.push({ id: `w${w}-phrase-${i + 1}`, type: 'phrase', week: w, front: p.ja, back: p.en, detail: p.use ?? '', romaji: kanaToRomaji(p.ja), lessonIds: (week.lessons ?? []).filter((lesson) => phraseAppearsInLesson(p, lesson)).map((lesson) => lesson.id) }))
     ;(week.kanaFocus ?? []).forEach((kana, i) => cards.push({ id: `w${w}-kana-${i + 1}`, type: 'kana', week: w, front: kana, back: `Read aloud: ${kana}`, detail: 'Recognize and pronounce this kana group.', romaji: kanaToRomaji(kana) }))
-    ;(week.kanjiCards ?? []).forEach((k, i) => cards.push({ id: `w${w}-kanji-${i + 1}`, type: 'kanji', week: w, front: k.kanji, reading: k.reading, back: `${k.reading} — ${k.meaning}`, detail: k.whyHere ?? '', romaji: kanaToRomaji(k.reading) }))
+    ;(week.kanjiCards ?? []).forEach((k, i) => {
+      cards.push({ id: `w${w}-kanji-${i + 1}`, type: 'kanji', week: w, front: k.kanji, reading: k.reading, back: `${k.reading} — ${k.meaning}`, detail: k.whyHere ?? '', romaji: kanaToRomaji(k.reading), lessonIds: weekLessonIds })
+      cards.push({ id: `w${w}-kanji-${i + 1}-meaning`, type: 'kanji', week: w, front: k.meaning, back: k.kanji, reading: k.reading, detail: k.whyHere ?? '', romaji: kanaToRomaji(k.reading), lessonIds: weekLessonIds, recallDirection: 'produce', srsOnly: true })
+    })
     ;(week.lessons ?? []).forEach((lesson) => (lesson.dialogue ?? []).forEach((line, i) => cards.push({
       id: `${lesson.id}-line-${i + 1}`, type: 'dialogue', week: w, front: line.ja, back: line.en,
       detail: `${lesson.title} · ${line.speaker}`, romaji: kanaToRomaji(line.ja), lessonId: lesson.id,
     })))
   }
+  cards.push(...getKanaCards())
   return cards
 }
 
@@ -244,7 +259,29 @@ export function rateCard(progress, cardId, rating, dateISO, card = null) {
   const next = { ...state, flashcards: { ...state.flashcards,
       [cardId]: { intervalDays, dueDate: addDays(dateISO, intervalDays), repetitions: rating === 'again' ? 0 : repetitions + 1,
         lastReviewed: dateISO, introducedAt: prior?.introducedAt ?? null, lastRating: rating, easeFactor, lapses: (prior?.lapses ?? 0) + (rating === 'again' ? 1 : 0) } }, lastStudyDate: dateISO }
-  return card?.type === 'kana' ? recordKanaPractice(next, card.front, rating, dateISO) : next
+  if (card?.type !== 'kana') return next
+  const kanaState = recordKanaPractice(next, card.front, rating, dateISO)
+  return card.kanaItem ? recordKanaRecall(kanaState, cardId, rating, dateISO) : kanaState
+}
+
+function recordKanaRecall(progress, cardId, rating, dateISO) {
+  const state = normalizeProgress(progress)
+  const previous = state.kanaRecall[cardId] ?? { attempts: 0, correct: 0, successfulDays: [], lastPracticed: null }
+  const successfulDays = rating === 'good' || rating === 'easy'
+    ? [...new Set([...previous.successfulDays, dateISO])].sort().slice(-2)
+    : []
+  return {
+    ...state,
+    kanaRecall: {
+      ...state.kanaRecall,
+      [cardId]: {
+        attempts: previous.attempts + 1,
+        correct: previous.correct + (rating === 'again' ? 0 : 1),
+        successfulDays,
+        lastPracticed: dateISO,
+      },
+    },
+  }
 }
 
 export function recordKanaPractice(progress, kanaText, rating, dateISO) {

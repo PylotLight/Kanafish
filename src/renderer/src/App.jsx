@@ -24,6 +24,7 @@ import GuidedSubstitution from './components/GuidedSubstitution.jsx'
 import DailyPhraseWidget from './components/DailyPhraseWidget.jsx'
 import WeeklyTimelineWidget from './components/WeeklyTimelineWidget.jsx'
 import QuickSoundboardWidget from './components/QuickSoundboardWidget.jsx'
+import KanaPracticePage from './components/KanaPracticePage.jsx'
 
 const STORAGE_KEY = 'kanafish-progress-v1'
 const todayISO = () => {
@@ -75,7 +76,7 @@ function App() {
   }, [view, tts.stopPlayback])
 
   useEffect(() => {
-    if (!['course', 'review', 'phrasebook'].includes(view) || !tts.activeEngineStatus?.ready) return
+    if (!['course', 'review', 'phrasebook', 'kana'].includes(view) || !tts.activeEngineStatus?.ready) return
     void tts.prewarm?.().catch(() => {})
   }, [view, tts.activeEngineStatus?.ready, tts.prewarm])
 
@@ -111,7 +112,7 @@ function App() {
   }
 
   function exportProgress() {
-    const blob = new Blob([JSON.stringify({ app: 'Kanafish', version: 3, exportedAt: new Date().toISOString(), progress: progressRef.current }, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify({ app: 'Kanafish', version: progressRef.current.version, exportedAt: new Date().toISOString(), progress: progressRef.current }, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
@@ -137,6 +138,7 @@ function App() {
         <nav id="primary-nav" className="primary-nav" aria-label="Main navigation">
           <NavButton icon={<CalendarDays size={16} />} label="Today" active={view === 'today'} onClick={() => navigate('today')} />
           <NavButton icon={<Compass size={16} />} label="Course path" active={view === 'course'} onClick={() => navigate('course')} />
+          <NavButton icon={<Type size={16} />} label="Kana practice" active={view === 'kana'} onClick={() => navigate('kana')} />
           <NavButton icon={<RotateCcw size={16} />} label="Review cards" active={view === 'review'} onClick={() => navigate('review')} badge={dueCards.length || null} />
           <NavButton icon={<BookOpen size={16} />} label="Phrasebook" active={view === 'phrasebook'} onClick={() => navigate('phrasebook')} />
           <NavButton icon={<Volume2 size={16} />} label="Voice Lab" active={view === 'voice-lab'} onClick={() => navigate('voice-lab')} />
@@ -172,6 +174,7 @@ function App() {
             setSelectedLessonId(null)
           }} onRateCard={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} romajiMode={preferences.romajiMode} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'review' && <ReviewPage cards={dueCards} progress={progress} romajiMode={preferences.romajiMode} onRate={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} onPhrasebook={() => navigate('phrasebook')} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'kana' && <KanaPracticePage progress={progress} cards={cards} course={course} tts={tts} onRate={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} onOpenCourse={(weekNumber) => { setExpandedWeeks(new Set([weekNumber])); navigate('course') }} />}
           {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} progress={progress} romajiMode={preferences.romajiMode} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'voice-lab' && <VoiceLabPage tts={tts} voiceSettings={preferences.supertonicVoice} onVoiceSettingsChange={(supertonicVoice) => updatePreferences({ supertonicVoice })} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
@@ -219,7 +222,7 @@ function ProgressBar({ value }) {
 
 function viewTitle(view, lesson) {
   if (view === 'lesson') return lesson?.title || 'Lesson'
-  return ({ today: 'Today', course: 'Course path', review: 'Review cards', phrasebook: 'Phrasebook', 'voice-lab': 'Voice Lab', milestones: 'Milestones', settings: 'Settings' })[view] || 'Today'
+  return ({ today: 'Today', course: 'Course path', kana: 'Kana practice', review: 'Review cards', phrasebook: 'Phrasebook', 'voice-lab': 'Voice Lab', milestones: 'Milestones', settings: 'Settings' })[view] || 'Today'
 }
 
 function TodayPage({ course, stats, dueCount, onOpenLesson, onReview, onCourse, progress, tts }) {
@@ -716,7 +719,15 @@ function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, on
   const current = cards.find((card) => queueIds.has(card.id) && !reviewedIds.has(card.id))
   const queueSize = queueIds.size
   const reviewedCount = reviewedIds.size
-  const useProductionPrompt = direction === 'produce' && ['phrase', 'dialogue'].includes(current?.type)
+  const useKanjiProduction = current?.type === 'kanji' && current.recallDirection === 'produce'
+  const useProductionPrompt = direction === 'produce' && (['phrase', 'dialogue'].includes(current?.type) || current?.kanaItem)
+  const promptText = useKanjiProduction ? current.front : useProductionPrompt ? current.back : current?.front
+  const answerText = useKanjiProduction ? current.back : useProductionPrompt ? current.front : current?.back
+  const promptLang = useKanjiProduction ? undefined : useProductionPrompt ? 'ja-Latn' : 'ja'
+  const answerLang = useKanjiProduction || useProductionPrompt || ['kana', 'kanji'].includes(current?.type) ? 'ja' : undefined
+  const promptHint = useKanjiProduction ? 'Recall the Japanese word from its meaning and use.' : current?.kanaItem && useProductionPrompt ? 'Recall the kana from its sound.' : useProductionPrompt ? 'Recall the Japanese line, then tap to reveal.' : current?.type === 'kana' ? 'Recall the sound, then tap to reveal.' : 'Think of the reading and meaning, then tap to reveal.'
+  const answerHint = useKanjiProduction ? 'Japanese word and reading' : useProductionPrompt ? (current?.kanaItem ? 'kana character' : 'Japanese line') : current?.type === 'kanji' ? 'reading and meaning' : current?.type === 'kana' ? 'sound' : 'meaning'
+  const speechText = useKanjiProduction ? (flipped ? current.back : '') : useProductionPrompt ? (flipped ? current.front : '') : current?.front
   const ratingIntervals = current ? getRatingIntervals(progress, current.id, todayISO()) : {}
   function rate(rating) {
     if (!current) return
@@ -726,21 +737,31 @@ function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, on
   }
   const remaining = Math.max(0, queueSize - reviewedCount)
   return <div className="content-page review-page page-enter">
-    <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> SHORT, SPACED PRACTICE</div><h1>Review cards<span className="title-period">.</span></h1><p>Try to recall first, flip for the meaning, then choose how easily it came back.</p></div>
-    <div className="review-summary"><div className="summary-icon"><RotateCcw size={19} /></div><div><strong>{queueSize ? `${queueSize} cards in today’s short session` : 'All caught up for today'}</strong><span>Cards come from your unlocked course phrases, kana focus, and practical kanji.</span></div><span className="review-progress-text">{queueSize ? `${reviewedCount} / ${queueSize} reviewed` : 'Queue complete'}</span></div>
-    <div className="review-direction" role="group" aria-label="Choose recall direction"><span>Practice direction</span><button type="button" className={direction === 'recognize' ? 'is-selected' : ''} aria-pressed={direction === 'recognize'} onClick={() => setDirection('recognize')}>Japanese → meaning</button><button type="button" className={direction === 'produce' ? 'is-selected' : ''} aria-pressed={direction === 'produce'} onClick={() => setDirection('produce')}>Meaning → Japanese</button><small>Reverse recall applies to phrase and dialogue cards; kana and kanji stay recognition-first.</small></div>
+    <div className="page-intro"><div className="eyebrow"><span className="eyebrow-line" /> SHORT, SPACED PRACTICE</div><h1>Review cards<span className="title-period">.</span></h1><p>Recall first, flip for the answer, readings or context, then rate how easily it came back. Every rating updates the shared review schedule.</p></div>
+    <div className="review-summary"><div className="summary-icon"><RotateCcw size={19} /></div><div><strong>{queueSize ? `${queueSize} cards in today’s short session` : 'All caught up for today'}</strong><span>One queue for course phrases, individual kana, and useful kanji with readings and usage notes.</span></div><span className="review-progress-text">{queueSize ? `${reviewedCount} / ${queueSize} reviewed` : 'Queue complete'}</span></div>
+    <div className="review-direction" role="group" aria-label="Choose recall direction"><span>Practice direction</span><button type="button" className={direction === 'recognize' ? 'is-selected' : ''} aria-pressed={direction === 'recognize'} onClick={() => setDirection('recognize')}>Japanese → reading / meaning</button><button type="button" className={direction === 'produce' ? 'is-selected' : ''} aria-pressed={direction === 'produce'} onClick={() => setDirection('produce')}>Sound / meaning → Japanese</button><small>Reverse recall includes individual kana. Course kanji also have separate meaning-to-word cards, each with its reading and use note.</small></div>
     <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
-    {!current ? <div className="empty-review panel"><div className="empty-icon"><Sparkles size={21} /></div><h2>Nice work. You’re done for now.</h2><p>{queueSize ? 'You have finished today’s selected cards. More come back as they become due.' : 'Start a lesson to add useful phrases to your spaced-retrieval deck.'}</p><button className="primary-button" onClick={onPhrasebook}>Browse phrasebook <ArrowRight size={15} /></button></div> : <div className="flashcard-wrap">
+    {!current ? <div className="empty-review panel"><div className="empty-icon"><Sparkles size={21} /></div><h2>Nice work. You’re done for now.</h2><p>{queueSize ? 'You have finished today’s selected cards. More come back as they become due.' : 'Practice kana or complete a course lesson to add useful items to the shared spaced-retrieval queue.'}</p><button className="primary-button" onClick={onPhrasebook}>Browse phrasebook <ArrowRight size={15} /></button></div> : <div className="flashcard-wrap">
       <div className="flashcard-meta"><span className={`type-pill type-${current.type}`}>{current.type}</span><span>Week {String(current.week).padStart(2, '0')}</span><span className="flashcard-index">CARD {String(reviewedCount + 1).padStart(2, '0')}</span></div>
-      {(!useProductionPrompt || flipped) && <div className="flashcard-listen"><SpeechButton text={current.front} tts={tts} label={useProductionPrompt ? 'Listen to the Japanese answer' : `Listen to ${current.type} review prompt`} />{tts.isPlaying && <span role="status">Playing prompt…</span>}</div>}
+      {speechText && <div className="flashcard-listen"><SpeechButton text={speechText} tts={tts} label={flipped ? `Listen to the ${current.type} answer` : `Listen to ${current.type} review prompt`} />{tts.isPlaying && <span role="status">Playing prompt…</span>}</div>}
       <button className={`flashcard ${flipped ? 'flashcard-flipped' : ''}`} onClick={() => setFlipped((value) => !value)} aria-label={flipped ? 'Show card front' : 'Reveal answer'}>
-          <span className="flashcard-corner">{flipped ? 'ANSWER' : 'RECALL'}</span>{flipped ? <><span className="flashcard-main" lang={useProductionPrompt ? 'ja' : undefined}>{useProductionPrompt ? current.front : current.back}</span>{current.type === 'kanji' ? <RomajiText text={current.reading} progress={progress} mode={romajiMode} /> : (useProductionPrompt || current.type !== 'kanji') && <RomajiText text={current.front} progress={progress} mode={romajiMode} />}{current.detail && <span className="flashcard-detail">{current.detail}</span>}</> : <><span className="flashcard-main" lang={useProductionPrompt ? undefined : 'ja'}>{useProductionPrompt ? current.back : current.front}</span>{!useProductionPrompt && <RomajiText text={current.front} progress={progress} mode={romajiMode} />}<span className="flashcard-hint">{useProductionPrompt ? 'Recall the Japanese line, then tap to reveal.' : 'Think of the meaning, then tap to reveal.'}</span></>}
+          <span className="flashcard-corner">{flipped ? 'ANSWER' : 'RECALL'}</span>
+          {flipped ? <>
+            <span className="flashcard-main" lang={answerLang}>{answerText}</span>
+            {useKanjiProduction && current.reading && <span className="flashcard-detail flashcard-reading" lang="ja">{current.reading}</span>}
+            {current.type === 'kanji' ? <RomajiText text={current.reading} progress={progress} mode={romajiMode} /> : <RomajiText text={current.front} progress={progress} mode={romajiMode} />}
+            {current.detail && <span className="flashcard-detail">{current.detail}</span>}
+          </> : <>
+            <span className="flashcard-main" lang={promptLang}>{promptText}</span>
+            {!useProductionPrompt && !useKanjiProduction && <RomajiText text={current.front} progress={progress} mode={romajiMode} />}
+            <span className="flashcard-hint">{promptHint}</span>
+          </>}
         <span className="flashcard-flip">{flipped ? 'Tap to see prompt' : 'Tap to reveal'} <RotateCcw size={13} /></span>
       </button>
-      {flipped ? <div className="rating-row"><span>How easy was that?</span><div>{[['again', 'Again'], ['hard', 'Hard'], ['good', 'Good'], ['easy', 'Easy']].map(([rating, label]) => <button key={rating} className={`rating-button rating-${rating}`} onClick={() => rate(rating)}>{label}<small>{ratingIntervals[rating]} day{ratingIntervals[rating] === 1 ? '' : 's'}</small></button>)}</div></div> : <div className="flip-instruction"><RotateCcw size={14} /> Reveal the {useProductionPrompt ? 'Japanese line' : 'meaning'} when you’ve had a try</div>}
+      {flipped ? <div className="rating-row"><span>How easy was that?</span><div>{[['again', 'Again'], ['hard', 'Hard'], ['good', 'Good'], ['easy', 'Easy']].map(([rating, label]) => <button key={rating} className={`rating-button rating-${rating}`} onClick={() => rate(rating)}>{label}<small>{ratingIntervals[rating]} day{ratingIntervals[rating] === 1 ? '' : 's'}</small></button>)}</div></div> : <div className="flip-instruction"><RotateCcw size={14} /> Reveal the {answerHint} when you’ve had a try</div>}
       <div className="review-footer"><span>Up to 8 cards · difficult items return sooner</span><button className="text-link" onClick={onPhrasebook}>Open phrasebook <ArrowRight size={14} /></button></div>
     </div>}
-    <div className="review-footnote"><Lightbulb size={15} /><span>Missed a phrase? It returns sooner. Recalled it easily? It will wait longer before the next review.</span></div>
+    <div className="review-footnote"><Lightbulb size={15} /><span>Missed an item? It returns sooner. Recalled it easily? It will wait longer before the next review.</span></div>
   </div>
 }
 
@@ -748,6 +769,7 @@ function PhrasebookPage({ cards, search, setSearch, progress, romajiMode, tts, o
   const [filter, setFilter] = useState('all')
   const [revealed, setRevealed] = useState(new Set())
   const filtered = cards.filter((card) => {
+    if (card.srsOnly) return false
     const matchesType = filter === 'all' || card.type === filter
     const query = search.trim().toLowerCase()
     return matchesType && (!query || `${card.front} ${card.back} ${card.detail} ${card.week}`.toLowerCase().includes(query))

@@ -33,6 +33,8 @@ const DIGRAPHS = Object.freeze({
   てぃ: 'ti', でぃ: 'di', とぅ: 'tu', どぅ: 'du',
   ふぁ: 'fa', ふぃ: 'fi', ふぇ: 'fe', ふぉ: 'fo',
   うぃ: 'wi', うぇ: 'we', うぉ: 'wo',
+  しぇ: 'she', じぇ: 'je', ちぇ: 'che',
+  つぁ: 'tsa', つぃ: 'tsi', つぇ: 'tse', つぉ: 'tso',
   ゔぁ: 'va', ゔぃ: 'vi', ゔぇ: 've', ゔぉ: 'vo',
 })
 
