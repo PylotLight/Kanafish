@@ -10,6 +10,15 @@ function todayISO() {
   return date.toISOString().slice(0, 10)
 }
 
+function isScheduleDue(schedule, today, now) {
+  if (schedule?.dueAt) {
+    const dueAt = Date.parse(schedule.dueAt)
+    if (Number.isFinite(dueAt)) return dueAt <= now.getTime()
+  }
+  if (schedule?.dueDate) return schedule.dueDate <= today
+  return schedule?.lastRating === 'again'
+}
+
 function listen(text, tts, voiceContext = {}) {
   if (!text || !tts?.activeEngineStatus?.ready || tts.busy) return
   void tts.playText(text, voiceContext).catch(() => {})
@@ -54,10 +63,11 @@ export default function KanaPracticePage({ progress, cards, course, tts, onRate,
 
   function startPractice() {
     if (!selectedUnit) return
+    const now = new Date()
     const today = todayISO()
     const priorItems = units.slice(0, unitIndex).flatMap((unit) => unit.items).filter((item) => {
       const schedule = progress?.flashcards?.[item.id]
-      return schedule?.lastRating === 'again' || Boolean(schedule?.dueDate && schedule.dueDate <= today)
+      return isScheduleDue(schedule, today, now)
     }).sort((left, right) => {
       const leftSchedule = progress?.flashcards?.[left.id]
       const rightSchedule = progress?.flashcards?.[right.id]
@@ -66,7 +76,7 @@ export default function KanaPracticePage({ progress, cards, course, tts, onRate,
       return leftRank - rightRank || (leftSchedule?.dueDate || '').localeCompare(rightSchedule?.dueDate || '')
     }).slice(0, 3)
     const practicePool = [...selectedUnit.items, ...priorItems]
-    const nextQuiz = buildKanaQuiz(practicePool, practicePool, progress, today, 10)
+    const nextQuiz = buildKanaQuiz(practicePool, practicePool, progress, today, 10, Math.random, now)
     setQuiz(nextQuiz)
     setQuestionIndex(0)
     setAnswered(null)

@@ -27,11 +27,12 @@ import QuickSoundboardWidget from './components/QuickSoundboardWidget.jsx'
 import KanaPracticePage from './components/KanaPracticePage.jsx'
 
 const STORAGE_KEY = 'kanafish-progress-v1'
-const todayISO = () => {
-  const date = new Date()
+const localDateISO = (value) => {
+  const date = new Date(value)
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
   return date.toISOString().slice(0, 10)
 }
+const todayISO = () => localDateISO(new Date())
 const labelSpeaker = (speaker) => ({
   staff: 'Staff', traveller: 'You', travellerA: 'Traveller A', travellerB: 'Traveller B',
   guest: 'Guest', host: 'Host', visitor: 'Visitor', friend: 'Friend', guide: 'Guide',
@@ -61,19 +62,35 @@ function App() {
   const progressRef = useRef(progress)
   const [persistenceError, setPersistenceError] = useState('')
   const [view, setView] = useState('today')
+  const [reviewClock, setReviewClock] = useState(() => Date.now())
   const [selectedLessonId, setSelectedLessonId] = useState(null)
   const [search, setSearch] = useState('')
   const [expandedWeeks, setExpandedWeeks] = useState(() => new Set([1]))
   const lessons = useMemo(() => getLessons(course), [])
   const cards = useMemo(() => getFlashcards(course), [])
   const stats = useMemo(() => getCourseStats(course, progress), [progress])
-  const dueCards = useMemo(() => getDueCards(cards, progress, todayISO(), 8), [cards, progress])
+  const dueCards = useMemo(() => {
+    const now = new Date(reviewClock)
+    return getDueCards(cards, progress, localDateISO(now), 8, now)
+  }, [cards, progress, view, reviewClock])
   const selected = lessons.find(({ lesson }) => lesson.id === selectedLessonId)
   const selectedWeek = selected ? course.weeks.find((week) => week.week === selected.week) : null
 
   useEffect(() => {
     if (view !== 'lesson') tts.stopPlayback()
   }, [view, tts.stopPlayback])
+
+  useEffect(() => {
+    const nextDue = Object.values(progress.flashcards || {})
+      .filter((schedule) => ['learning', 'relearning'].includes(schedule?.fsrsCard?.scheduleStatus))
+      .map((schedule) => Date.parse(schedule.fsrsCard.dueAt))
+      .filter((time) => Number.isFinite(time) && time > reviewClock)
+      .sort((a, b) => a - b)[0]
+    if (!nextDue) return undefined
+    const delay = Math.min(Math.max(1, nextDue - Date.now()), 24 * 60 * 60 * 1000)
+    const timer = window.setTimeout(() => setReviewClock(Date.now()), delay)
+    return () => window.clearTimeout(timer)
+  }, [progress, reviewClock])
 
   useEffect(() => {
     if (!['course', 'review', 'phrasebook', 'kana'].includes(view) || !tts.activeEngineStatus?.ready) return
@@ -90,6 +107,11 @@ function App() {
     } catch {
       setPersistenceError('This change could not be saved on this device. It will remain in memory only until Kanafish closes; export a copy before closing.')
     }
+  }
+
+  function reviewCard(card, rating, reviewedAt = new Date()) {
+    const now = reviewedAt instanceof Date ? reviewedAt : new Date(reviewedAt)
+    updateProgress((state) => rateCard(state, card.id, rating, localDateISO(now), card, now))
   }
 
   function openLesson(lessonId) {
@@ -172,9 +194,9 @@ function App() {
             updateProgress((state) => markLessonComplete(state, selected.lesson.id, todayISO(), cards))
             setView('today')
             setSelectedLessonId(null)
-          }} onRateCard={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} romajiMode={preferences.romajiMode} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
-          {view === 'review' && <ReviewPage cards={dueCards} progress={progress} romajiMode={preferences.romajiMode} onRate={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} onPhrasebook={() => navigate('phrasebook')} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
-          {view === 'kana' && <KanaPracticePage progress={progress} cards={cards} course={course} tts={tts} onRate={(card, rating) => updateProgress((state) => rateCard(state, card.id, rating, todayISO(), card))} onOpenCourse={(weekNumber) => { setExpandedWeeks(new Set([weekNumber])); navigate('course') }} />}
+          }} onRateCard={reviewCard} romajiMode={preferences.romajiMode} onBack={() => navigate('course')} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'review' && <ReviewPage cards={cards} queueCards={dueCards} progress={progress} romajiMode={preferences.romajiMode} onRate={reviewCard} onPhrasebook={() => navigate('phrasebook')} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
+          {view === 'kana' && <KanaPracticePage progress={progress} cards={cards} course={course} tts={tts} onRate={reviewCard} onOpenCourse={(weekNumber) => { setExpandedWeeks(new Set([weekNumber])); navigate('course') }} />}
           {view === 'phrasebook' && <PhrasebookPage cards={cards} search={search} setSearch={setSearch} progress={progress} romajiMode={preferences.romajiMode} tts={tts} onOpenVoiceLab={() => setView('voice-lab')} />}
           {view === 'voice-lab' && <VoiceLabPage tts={tts} voiceSettings={preferences.supertonicVoice} onVoiceSettingsChange={(supertonicVoice) => updatePreferences({ supertonicVoice })} />}
           {view === 'milestones' && <MilestonesPage weeks={course.weeks} progress={progress} onSave={(id, patch) => updateProgress((state) => saveMilestone(state, id, patch))} />}
@@ -711,14 +733,21 @@ function QuestionCard({ number, label, title, prompt, choices, meanings, value, 
   </section>
 }
 
-function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, onOpenVoiceLab }) {
-  const [queueIds] = useState(() => new Set(cards.map((card) => card.id)))
+function ReviewPage({ cards, queueCards, progress, romajiMode, onRate, onPhrasebook, tts, onOpenVoiceLab }) {
+  const [queueIds, setQueueIds] = useState(() => new Set(queueCards.map((card) => card.id)))
   const [reviewedIds, setReviewedIds] = useState(() => new Set())
+  const [deferredIds, setDeferredIds] = useState(() => new Set())
+  const [clockNow, setClockNow] = useState(() => Date.now())
   const [flipped, setFlipped] = useState(false)
   const [direction, setDirection] = useState('recognize')
-  const current = cards.find((card) => queueIds.has(card.id) && !reviewedIds.has(card.id))
+  const current = cards.find((card) => {
+    if (!queueIds.has(card.id) || reviewedIds.has(card.id)) return false
+    const dueAt = Date.parse(progress?.flashcards?.[card.id]?.dueAt || '')
+    return !deferredIds.has(card.id) || !Number.isFinite(dueAt) || dueAt <= clockNow
+  })
   const queueSize = queueIds.size
   const reviewedCount = reviewedIds.size
+  const waitingCount = [...deferredIds].filter((id) => !reviewedIds.has(id)).length
   const useKanjiProduction = current?.type === 'kanji' && current.recallDirection === 'produce'
   const useProductionPrompt = direction === 'produce' && (['phrase', 'dialogue'].includes(current?.type) || current?.kanaItem)
   const promptText = useKanjiProduction ? current.front : useProductionPrompt ? current.back : current?.front
@@ -728,12 +757,33 @@ function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, on
   const promptHint = useKanjiProduction ? 'Recall the Japanese word from its meaning and use.' : current?.kanaItem && useProductionPrompt ? 'Recall the kana from its sound.' : useProductionPrompt ? 'Recall the Japanese line, then tap to reveal.' : current?.type === 'kana' ? 'Recall the sound, then tap to reveal.' : 'Think of the reading and meaning, then tap to reveal.'
   const answerHint = useKanjiProduction ? 'Japanese word and reading' : useProductionPrompt ? (current?.kanaItem ? 'kana character' : 'Japanese line') : current?.type === 'kanji' ? 'reading and meaning' : current?.type === 'kana' ? 'sound' : 'meaning'
   const speechText = useKanjiProduction ? (flipped ? current.back : '') : useProductionPrompt ? (flipped ? current.front : '') : current?.front
-  const ratingIntervals = current ? getRatingIntervals(progress, current.id, todayISO()) : {}
+  const ratingIntervals = current ? getRatingIntervals(progress, current.id, todayISO(), new Date(clockNow)) : {}
+  useEffect(() => {
+    const relearningCards = queueCards.filter((card) => ['learning', 'relearning'].includes(progress?.flashcards?.[card.id]?.fsrsCard?.scheduleStatus))
+    if (!relearningCards.length) return
+    setQueueIds((known) => new Set([...known, ...relearningCards.map((card) => card.id)]))
+    setClockNow(Date.now())
+  }, [queueCards, progress])
+  useEffect(() => {
+    const nextDue = [...deferredIds]
+      .map((id) => Date.parse(progress?.flashcards?.[id]?.dueAt || ''))
+      .filter((time) => Number.isFinite(time) && time > clockNow)
+      .sort((a, b) => a - b)[0]
+    if (!nextDue) return undefined
+    const timeout = window.setTimeout(() => setClockNow(Date.now()), Math.max(0, nextDue - Date.now()))
+    return () => window.clearTimeout(timeout)
+  }, [deferredIds, progress, clockNow])
   function rate(rating) {
     if (!current) return
-    onRate(current, rating)
+    onRate(current, rating, new Date())
     setFlipped(false)
-    setReviewedIds((known) => new Set([...known, current.id]))
+    if (rating === 'again') {
+      setDeferredIds((known) => new Set([...known, current.id]))
+    } else {
+      setReviewedIds((known) => new Set([...known, current.id]))
+      setDeferredIds((known) => { const next = new Set(known); next.delete(current.id); return next })
+    }
+    setClockNow(Date.now())
   }
   const remaining = Math.max(0, queueSize - reviewedCount)
   return <div className="content-page review-page page-enter">
@@ -741,7 +791,7 @@ function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, on
     <div className="review-summary"><div className="summary-icon"><RotateCcw size={19} /></div><div><strong>{queueSize ? `${queueSize} cards in today’s short session` : 'All caught up for today'}</strong><span>One queue for course phrases, individual kana, and useful kanji with readings and usage notes.</span></div><span className="review-progress-text">{queueSize ? `${reviewedCount} / ${queueSize} reviewed` : 'Queue complete'}</span></div>
     <div className="review-direction" role="group" aria-label="Choose recall direction"><span>Practice direction</span><button type="button" className={direction === 'recognize' ? 'is-selected' : ''} aria-pressed={direction === 'recognize'} onClick={() => setDirection('recognize')}>Japanese → reading / meaning</button><button type="button" className={direction === 'produce' ? 'is-selected' : ''} aria-pressed={direction === 'produce'} onClick={() => setDirection('produce')}>Sound / meaning → Japanese</button><small>Reverse recall includes individual kana. Course kanji also have separate meaning-to-word cards, each with its reading and use note.</small></div>
     <SpeechSetupNote tts={tts} onOpenVoiceLab={onOpenVoiceLab} />
-    {!current ? <div className="empty-review panel"><div className="empty-icon"><Sparkles size={21} /></div><h2>Nice work. You’re done for now.</h2><p>{queueSize ? 'You have finished today’s selected cards. More come back as they become due.' : 'Practice kana or complete a course lesson to add useful items to the shared spaced-retrieval queue.'}</p><button className="primary-button" onClick={onPhrasebook}>Browse phrasebook <ArrowRight size={15} /></button></div> : <div className="flashcard-wrap">
+    {!current ? <div className="empty-review panel"><div className="empty-icon"><Sparkles size={21} /></div><h2>{waitingCount ? 'Short relearning step' : 'Nice work. You’re done for now.'}</h2><p>{waitingCount ? `${waitingCount} missed item${waitingCount === 1 ? '' : 's'} will return here when its short learning step is due.` : queueSize ? 'You have finished today’s selected cards. More come back as they become due.' : 'Practice kana or complete a course lesson to add useful items to the shared spaced-retrieval queue.'}</p><button className="primary-button" onClick={onPhrasebook}>Browse phrasebook <ArrowRight size={15} /></button></div> : <div className="flashcard-wrap">
       <div className="flashcard-meta"><span className={`type-pill type-${current.type}`}>{current.type}</span><span>Week {String(current.week).padStart(2, '0')}</span><span className="flashcard-index">CARD {String(reviewedCount + 1).padStart(2, '0')}</span></div>
       {speechText && <div className="flashcard-listen"><SpeechButton text={speechText} tts={tts} label={flipped ? `Listen to the ${current.type} answer` : `Listen to ${current.type} review prompt`} />{tts.isPlaying && <span role="status">Playing prompt…</span>}</div>}
       <button className={`flashcard ${flipped ? 'flashcard-flipped' : ''}`} onClick={() => setFlipped((value) => !value)} aria-label={flipped ? 'Show card front' : 'Reveal answer'}>
@@ -758,10 +808,10 @@ function ReviewPage({ cards, progress, romajiMode, onRate, onPhrasebook, tts, on
           </>}
         <span className="flashcard-flip">{flipped ? 'Tap to see prompt' : 'Tap to reveal'} <RotateCcw size={13} /></span>
       </button>
-      {flipped ? <div className="rating-row"><span>How easy was that?</span><div>{[['again', 'Again'], ['hard', 'Hard'], ['good', 'Good'], ['easy', 'Easy']].map(([rating, label]) => <button key={rating} className={`rating-button rating-${rating}`} onClick={() => rate(rating)}>{label}<small>{ratingIntervals[rating]} day{ratingIntervals[rating] === 1 ? '' : 's'}</small></button>)}</div></div> : <div className="flip-instruction"><RotateCcw size={14} /> Reveal the {answerHint} when you’ve had a try</div>}
-      <div className="review-footer"><span>Up to 8 cards · difficult items return sooner</span><button className="text-link" onClick={onPhrasebook}>Open phrasebook <ArrowRight size={14} /></button></div>
+      {flipped ? <div className="rating-row"><span>How easy was that?</span><div>{[['again', 'Again'], ['hard', 'Hard'], ['good', 'Good'], ['easy', 'Easy']].map(([rating, label]) => <button key={rating} className={`rating-button rating-${rating}`} onClick={() => rate(rating)}>{label}<small>{ratingIntervals[rating]}</small></button>)}</div></div> : <div className="flip-instruction"><RotateCcw size={14} /> Reveal the {answerHint} when you’ve had a try</div>}
+      <div className="review-footer"><span>Up to 8 cards · missed items return on their short learning step</span><button className="text-link" onClick={onPhrasebook}>Open phrasebook <ArrowRight size={14} /></button></div>
     </div>}
-    <div className="review-footnote"><Lightbulb size={15} /><span>Missed an item? It returns sooner. Recalled it easily? It will wait longer before the next review.</span></div>
+    <div className="review-footnote"><Lightbulb size={15} /><span>Again schedules a short same-day retry. Hard, Good and Easy use FSRS-7 to set longer intervals based on the card’s recall history.</span></div>
   </div>
 }
 

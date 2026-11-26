@@ -1,14 +1,87 @@
 import { kanaToRomaji } from './romaji.js'
 import { getKanaCards } from './kana-curriculum.js'
+import { DefaultScheduler, Rating } from 'ts-fsrs'
 
-const VERSION = 4
+const VERSION = 5
 const isRecord = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const validId = (v) => typeof v === 'string' && v.trim().length > 0
 const validDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v
+const validTimestamp = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString() === v
 const isKanaCharacter = (value) => /^[\u3040-\u30ff\u31f0-\u31ffー]$/u.test(value)
+const FSRS_RATING = { again: Rating.Again, hard: Rating.Hard, good: Rating.Good, easy: Rating.Easy }
+const REVIEW_RATING = { 1: 'again', 2: 'hard', 3: 'good', 4: 'easy' }
+const FSRS_STATUSES = new Set(['new', 'learning', 'review', 'relearning'])
+const fsrsScheduler = await DefaultScheduler({
+  version: 'FSRS-7',
+  desiredRetention: 0.9,
+  enableFuzz: false,
+  enableShortTerm: true,
+  learningSteps: ['1m', '10m'],
+  relearningSteps: ['10m'],
+  maximumInterval: 36500,
+})
+
+function localDateISO(date) {
+  const local = new Date(date)
+  local.setMinutes(local.getMinutes() - local.getTimezoneOffset())
+  return local.toISOString().slice(0, 10)
+}
+
+function localNoon(dateISO) {
+  return new Date(`${dateISO}T12:00:00`)
+}
+
+function normalizeFsrsCard(value, cardId) {
+  if (!isRecord(value) || value.cardId !== cardId || !validTimestamp(value.dueAt)) return null
+  if (value.lastReviewAt !== null && !validTimestamp(value.lastReviewAt)) return null
+  if (!FSRS_STATUSES.has(value.scheduleStatus) || ![0, 1, 2, 3].includes(value.state)) return null
+  if (![value.stability, value.stabilityFast, value.difficulty, value.scheduledDays].every((n) => Number.isFinite(n) && n >= 0)) return null
+  if (![value.reps, value.lapses, value.learningStep].every((n) => Number.isInteger(n) && n >= 0)) return null
+  return {
+    stability: value.stability, stabilityFast: value.stabilityFast, difficulty: value.difficulty,
+    state: value.state, scheduleStatus: value.scheduleStatus, dueAt: value.dueAt,
+    lastReviewAt: value.lastReviewAt, cardId, reps: value.reps, lapses: value.lapses,
+    scheduledDays: value.scheduledDays, learningStep: value.learningStep,
+  }
+}
+
+function normalizeReviewHistory(value) {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item, index) => {
+    if (!isRecord(item) || !validId(item.cardId) || !validTimestamp(item.reviewTime) || !validTimestamp(item.dueAt)) return []
+    if (item.lastReviewAt !== null && !validTimestamp(item.lastReviewAt)) return []
+    if (!FSRS_STATUSES.has(item.scheduleStatus) || ![0, 1, 2, 3].includes(item.state) || !REVIEW_RATING[item.rating]) return []
+    if (![item.stability, item.stabilityFast, item.difficulty, item.scheduledDays].every((n) => Number.isFinite(n) && n >= 0)) return []
+    if (!Number.isInteger(item.learningStep) || item.learningStep < 0) return []
+    return [{
+      eventId: validId(item.eventId) ? item.eventId : `review-${index}`,
+      cardId: item.cardId, dueAt: item.dueAt, lastReviewAt: item.lastReviewAt,
+      reviewTime: item.reviewTime, scheduleStatus: item.scheduleStatus, rating: item.rating,
+      state: item.state, stability: item.stability, stabilityFast: item.stabilityFast,
+      difficulty: item.difficulty, scheduledDays: item.scheduledDays, learningStep: item.learningStep,
+    }]
+  })
+}
+
+function toSchedulerCard(schedule, cardId, now) {
+  if (schedule?.fsrsCard) {
+    return { ...schedule.fsrsCard, dueAt: new Date(schedule.fsrsCard.dueAt),
+      lastReviewAt: schedule.fsrsCard.lastReviewAt ? new Date(schedule.fsrsCard.lastReviewAt) : null }
+  }
+  const baseDate = validDate(schedule?.dueDate) ? localNoon(schedule.dueDate)
+    : validDate(schedule?.introducedAt) ? localNoon(schedule.introducedAt) : now
+  const card = fsrsScheduler.newCard({ now: baseDate, cardId })
+  card.reps = schedule?.repetitions ?? 0
+  card.lapses = schedule?.lapses ?? 0
+  return card
+}
+
+function serializeFsrsCard(card) {
+  return { ...card, dueAt: card.dueAt.toISOString(), lastReviewAt: card.lastReviewAt?.toISOString() ?? null }
+}
 
 export function createInitialProgress() {
-  return { version: VERSION, completedLessonIds: [], lessonSessions: {}, milestones: {}, flashcards: {}, kanaMastery: {}, kanaRecall: {}, lastStudyDate: null }
+  return { version: VERSION, completedLessonIds: [], lessonSessions: {}, milestones: {}, flashcards: {}, kanaMastery: {}, kanaRecall: {}, reviewHistory: [], lastStudyDate: null }
 }
 
 export function normalizeProgress(value) {
@@ -31,11 +104,21 @@ export function normalizeProgress(value) {
     const repetitions = Number.isInteger(item.repetitions) && item.repetitions >= 0 ? item.repetitions : 0
     const easeFactor = Number.isFinite(item.easeFactor) ? Math.max(1.3, Math.min(3.2, item.easeFactor)) : 2.5
     const lapses = Number.isInteger(item.lapses) && item.lapses >= 0 ? item.lapses : 0
-    flashcards[id] = { intervalDays, dueDate: validDate(item.dueDate) ? item.dueDate : null, repetitions,
-      lastReviewed: validDate(item.lastReviewed) ? item.lastReviewed : null,
-      introducedAt: validDate(item.introducedAt) ? item.introducedAt : null,
-      lastRating: ['again', 'hard', 'good', 'easy'].includes(item.lastRating) ? item.lastRating : null,
-      easeFactor, lapses }
+    const fsrsCard = normalizeFsrsCard(item.fsrsCard, id)
+    const dueAt = validTimestamp(item.dueAt) ? item.dueAt : fsrsCard?.dueAt ?? null
+    const dueDate = validDate(item.dueDate) ? item.dueDate : dueAt ? localDateISO(new Date(dueAt)) : null
+    const lastReviewed = validDate(item.lastReviewed) ? item.lastReviewed : null
+    const introducedAt = validDate(item.introducedAt) ? item.introducedAt : null
+    const lastRating = ['again', 'hard', 'good', 'easy'].includes(item.lastRating) ? item.lastRating : null
+    const legacySchedule = isRecord(item.legacySchedule) ? item.legacySchedule : fsrsCard ? null
+      : (intervalDays || dueDate || lastReviewed || introducedAt || repetitions || lapses || lastRating) ? {
+        intervalDays, dueDate, repetitions, lastReviewed, introducedAt, lastRating,
+        easeFactor, lapses,
+      } : null
+    flashcards[id] = { intervalDays, dueDate, dueAt, repetitions,
+      lastReviewed, introducedAt, lastRating,
+      easeFactor, lapses, fsrsCard, legacySchedule,
+      schedulerSource: fsrsCard ? 'fsrs-7' : legacySchedule ? 'legacy-no-history' : null }
   }
   const kanaMastery = {}
   if (isRecord(value.kanaMastery)) for (const [character, state] of Object.entries(value.kanaMastery)) {
@@ -54,6 +137,7 @@ export function normalizeProgress(value) {
     kanaRecall[cardId] = { attempts, correct, successfulDays, lastPracticed: validDate(record.lastPracticed) ? record.lastPracticed : null }
   }
   return { version: VERSION, completedLessonIds, lessonSessions, milestones, flashcards, kanaMastery, kanaRecall,
+    reviewHistory: normalizeReviewHistory(value.reviewHistory),
     lastStudyDate: validDate(value.lastStudyDate) ? value.lastStudyDate : null }
 }
 
@@ -208,15 +292,20 @@ export function getFlashcards(course) {
   return cards
 }
 
-export function getDueCards(cards, progress, dateISO, limit = 20) {
+export function getDueCards(cards, progress, dateISO, limit = 20, now = null) {
   const state = normalizeProgress(progress)
   const completedLessons = new Set(state.completedLessonIds)
+  const currentTime = now instanceof Date && Number.isFinite(now.getTime()) ? now.getTime()
+    : validTimestamp(now) ? Date.parse(now) : null
   const due = (Array.isArray(cards) ? cards : []).filter((card) => {
     const schedule = state.flashcards[card.id]
     const tiedToCompletedLesson = completedLessons.has(card.lessonId)
       || (Array.isArray(card.lessonIds) && card.lessonIds.some((lessonId) => completedLessons.has(lessonId)))
     const hasStudyHistory = Boolean(schedule?.introducedAt || schedule?.lastReviewed || tiedToCompletedLesson)
-    return hasStudyHistory && (!schedule?.dueDate || schedule.dueDate <= dateISO)
+    const due = schedule?.dueAt
+      ? currentTime !== null && Date.parse(schedule.dueAt) <= currentTime
+      : !schedule?.dueDate || schedule.dueDate <= dateISO
+    return hasStudyHistory && due
   })
   const urgency = (card) => {
     const schedule = state.flashcards[card.id]
@@ -240,25 +329,55 @@ function addDays(dateISO, days) {
   return date.toISOString().slice(0, 10)
 }
 
-export function rateCard(progress, cardId, rating, dateISO, card = null) {
+function ratingIntervalLabel(dueAt, now) {
+  const minutes = Math.max(1, Math.ceil((dueAt.getTime() - now.getTime()) / 60_000))
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.max(1, Math.ceil(minutes / 60))
+  if (hours < 24) return `${hours}h`
+  const days = Math.max(1, Math.round(minutes / 1440))
+  if (days < 30) return `${days}d`
+  if (days < 365) return `${Math.round(days / 30)}mo`
+  return `${Math.round(days / 365)}y`
+}
+
+function getReviewTime(dateISO, now) {
+  if (now === null || now === undefined) return localNoon(dateISO)
+  if (now instanceof Date && Number.isFinite(now.getTime())) return new Date(now)
+  if (validTimestamp(now)) return new Date(now)
+  throw new TypeError('now must be a valid Date or ISO timestamp')
+}
+
+export function rateCard(progress, cardId, rating, dateISO, card = null, now = null) {
   if (!validId(cardId)) throw new TypeError('cardId must be a non-empty string')
   if (!['again', 'hard', 'good', 'easy'].includes(rating)) throw new RangeError(`Unknown rating: ${rating}`)
   if (!validDate(dateISO)) throw new TypeError('dateISO must be a valid YYYY-MM-DD date')
   const state = normalizeProgress(progress)
   const prior = state.flashcards[cardId]
-  const repetitions = prior?.repetitions ?? 0
-  const oldInterval = prior?.intervalDays ?? 0
-  const oldEase = prior?.easeFactor ?? 2.5
-  const easeFactor = rating === 'again' ? Math.max(1.3, oldEase - 0.2)
-    : rating === 'hard' ? Math.max(1.3, oldEase - 0.15)
-      : rating === 'easy' ? Math.min(3.2, oldEase + 0.15) : oldEase
-  const intervalDays = rating === 'again' ? 1
-    : rating === 'hard' ? Math.max(2, Math.ceil(oldInterval ? oldInterval * Math.max(1.2, easeFactor - 1.3) : 2))
-      : rating === 'good' ? (repetitions === 0 ? 3 : Math.max(4, Math.ceil(oldInterval * easeFactor)))
-        : (repetitions === 0 ? 5 : Math.max(7, Math.ceil(oldInterval * (easeFactor + 1))))
+  const reviewTime = getReviewTime(dateISO, now)
+  const schedulerCard = toSchedulerCard(prior, cardId, reviewTime)
+  const result = fsrsScheduler.review({ card: schedulerCard, grade: FSRS_RATING[rating], now: reviewTime })
+  const fsrsCard = serializeFsrsCard(result.card)
+  const legacySchedule = prior?.legacySchedule ?? (prior && !prior.fsrsCard ? {
+    intervalDays: prior.intervalDays, dueDate: prior.dueDate, repetitions: prior.repetitions,
+    lastReviewed: prior.lastReviewed, introducedAt: prior.introducedAt,
+    lastRating: prior.lastRating, easeFactor: prior.easeFactor, lapses: prior.lapses,
+  } : null)
+  const revlog = result.revlog
+  const reviewHistory = [...state.reviewHistory, {
+    eventId: `${cardId}:${reviewTime.getTime()}:${state.reviewHistory.length}`,
+    cardId, dueAt: revlog.dueAt.toISOString(), lastReviewAt: revlog.lastReviewAt?.toISOString() ?? null,
+    reviewTime: revlog.reviewTime.toISOString(), scheduleStatus: revlog.scheduleStatus,
+    rating: revlog.rating, state: revlog.state, stability: revlog.stability,
+    stabilityFast: revlog.stabilityFast, difficulty: revlog.difficulty,
+    scheduledDays: revlog.scheduledDays, learningStep: revlog.learningStep,
+  }]
   const next = { ...state, flashcards: { ...state.flashcards,
-      [cardId]: { intervalDays, dueDate: addDays(dateISO, intervalDays), repetitions: rating === 'again' ? 0 : repetitions + 1,
-        lastReviewed: dateISO, introducedAt: prior?.introducedAt ?? null, lastRating: rating, easeFactor, lapses: (prior?.lapses ?? 0) + (rating === 'again' ? 1 : 0) } }, lastStudyDate: dateISO }
+      [cardId]: { intervalDays: result.card.scheduledDays, dueDate: localDateISO(result.card.dueAt),
+        dueAt: result.card.dueAt.toISOString(), repetitions: result.card.reps,
+        lastReviewed: dateISO, introducedAt: prior?.introducedAt ?? null, lastRating: rating,
+        easeFactor: prior?.easeFactor ?? 2.5, lapses: result.card.lapses,
+        fsrsCard, legacySchedule, schedulerSource: 'fsrs-7' } },
+    reviewHistory, lastStudyDate: dateISO }
   if (card?.type !== 'kana') return next
   const kanaState = recordKanaPractice(next, card.front, rating, dateISO)
   return card.kanaItem ? recordKanaRecall(kanaState, cardId, rating, dateISO) : kanaState
@@ -312,10 +431,14 @@ export function shouldShowRomaji(text, progress, mode = 'adaptive') {
   return !isKanaMastered(progress, text)
 }
 
-export function getRatingIntervals(progress, cardId, dateISO) {
-  return Object.fromEntries(['again', 'hard', 'good', 'easy'].map((rating) => [
-    rating, rateCard(progress, cardId, rating, dateISO).flashcards[cardId].intervalDays,
-  ]))
+export function getRatingIntervals(progress, cardId, dateISO, now = null) {
+  if (!validId(cardId)) throw new TypeError('cardId must be a non-empty string')
+  if (!validDate(dateISO)) throw new TypeError('dateISO must be a valid YYYY-MM-DD date')
+  const reviewTime = getReviewTime(dateISO, now)
+  const state = normalizeProgress(progress)
+  const schedulerCard = toSchedulerCard(state.flashcards[cardId], cardId, reviewTime)
+  return Object.fromEntries([...fsrsScheduler.preview({ card: schedulerCard, now: reviewTime })]
+    .map(({ grade, card: previewCard }) => [REVIEW_RATING[grade], ratingIntervalLabel(previewCard.dueAt, reviewTime)]))
 }
 
 export function markLessonComplete(progress, lessonId, dateISO, cards = []) {
@@ -327,8 +450,11 @@ export function markLessonComplete(progress, lessonId, dateISO, cards = []) {
     if (card.lessonId !== lessonId && !card.lessonIds?.includes(lessonId)) continue
     const previous = flashcards[card.id]
     if (previous?.introducedAt || previous?.lastReviewed) continue
-    flashcards[card.id] = { intervalDays: 1, dueDate: addDays(dateISO, 1), repetitions: 0, lastReviewed: null,
-      introducedAt: dateISO, lastRating: null, easeFactor: 2.5, lapses: 0 }
+    flashcards[card.id] = { intervalDays: 1, dueDate: addDays(dateISO, 1), dueAt: null, repetitions: 0, lastReviewed: null,
+      introducedAt: dateISO, lastRating: null, easeFactor: 2.5, lapses: 0,
+      fsrsCard: null, legacySchedule: { intervalDays: 1, dueDate: addDays(dateISO, 1), repetitions: 0,
+        lastReviewed: null, introducedAt: dateISO, lastRating: null, easeFactor: 2.5, lapses: 0 },
+      schedulerSource: 'legacy-no-history' }
   }
   return { ...state, flashcards, completedLessonIds: [...new Set([...state.completedLessonIds, lessonId])], lastStudyDate: dateISO }
 }
