@@ -178,11 +178,20 @@ function shuffle(items, random) {
   return result
 }
 
-function itemPriority(item, progress, todayISO) {
+function isScheduleDue(schedule, todayISO, now) {
+  if (schedule?.dueAt) {
+    const dueAt = Date.parse(schedule.dueAt)
+    if (Number.isFinite(dueAt)) return dueAt <= now.getTime()
+  }
+  if (schedule?.dueDate) return schedule.dueDate <= todayISO
+  return schedule?.lastRating === 'again'
+}
+
+function itemPriority(item, progress, todayISO, now) {
   const record = progress?.kanaRecall?.[item.id]
   const schedule = progress?.flashcards?.[item.id]
-  if (schedule?.lastRating === 'again') return 0
-  if (schedule?.dueDate && schedule.dueDate <= todayISO) return 1
+  if (schedule?.lastRating === 'again' && isScheduleDue(schedule, todayISO, now)) return 0
+  if (isScheduleDue(schedule, todayISO, now)) return 1
   if (!record?.attempts) return 2
   return 3
 }
@@ -213,12 +222,13 @@ function makeQuestion(item, candidates, random) {
   }
 }
 
-export function buildKanaQuiz(items, candidates, progress, todayISO, limit = 10, random = Math.random) {
+export function buildKanaQuiz(items, candidates, progress, todayISO, limit = 10, random = Math.random, now = new Date()) {
   const pool = Array.isArray(items) ? items.filter((item) => item?.id && item.kana && item.reading) : []
   if (!pool.length) return []
   const available = Array.isArray(candidates) ? candidates.filter((item) => item?.id && item.kana && item.reading) : pool
   const uniqueCandidates = [...new Map([...available, ...pool].map((item) => [item.id, item])).values()]
-  const ranked = shuffle(pool, random).sort((a, b) => itemPriority(a, progress, todayISO) - itemPriority(b, progress, todayISO))
+  const currentTime = now instanceof Date ? now : new Date(now)
+  const ranked = shuffle(pool, random).sort((a, b) => itemPriority(a, progress, todayISO, currentTime) - itemPriority(b, progress, todayISO, currentTime))
   const selected = ranked.slice(0, Math.max(1, Math.min(limit, ranked.length)))
   return selected.map((item) => makeQuestion(item, uniqueCandidates, random))
 }
